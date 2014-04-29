@@ -95,6 +95,7 @@ public:
     CBigNum(unsigned long n)      { BN_init(this); setulong(n); }
     CBigNum(unsigned long long n) { BN_init(this); setuint64(n); }
     explicit CBigNum(uint256 n)   { BN_init(this); setuint256(n); }
+    explicit CBigNum(uint160 n) { BN_init(this); setuint160(n); }
 
     explicit CBigNum(const std::vector<unsigned char>& vch)
     {
@@ -237,6 +238,62 @@ public:
         if (vch.size() > 4)
             vch[4] &= 0x7f;
         uint256 n = 0;
+        for (unsigned int i = 0, j = vch.size()-1; i < sizeof(n) && j >= 4; i++, j--)
+            ((unsigned char*)&n)[i] = vch[j];
+        return n;
+    }
+
+    void setuint160(uint160 n)
+    {
+        unsigned char pch[sizeof(n) + 6];
+        unsigned char* p = pch + 4;
+        bool fLeadingZeroes = true;
+        unsigned char* pbegin = (unsigned char*)&n;
+        unsigned char* psrc = pbegin + sizeof(n);
+        while (psrc != pbegin)
+        {
+            unsigned char c = *(--psrc);
+            if (fLeadingZeroes)
+            {
+                if (c == 0)
+                    continue;
+                if (c & 0x80)
+                    *p++ = 0;
+                fLeadingZeroes = false;
+            }
+            *p++ = c;
+        }
+        unsigned int nSize = p - (pch + 4);
+        pch[0] = (nSize >> 24) & 0xff;
+        pch[1] = (nSize >> 16) & 0xff;
+        pch[2] = (nSize >> 8) & 0xff;
+        pch[3] = (nSize >> 0) & 0xff;
+        BN_mpi2bn(pch, p - pch, this);
+    }
+    uint160 getuint160() const
+    {
+        unsigned int nSize = BN_bn2mpi(this, NULL);
+        if (nSize < 4)
+            return 0;
+        std::vector<unsigned char> vch(nSize);
+        BN_bn2mpi(this, &vch[0]);
+        if (vch.size() > 4)
+            vch[4] &= 0x7f;
+        uint160 n = 0;
+        for (unsigned int i = 0, j = vch.size()-1; i < sizeof(n) && j >= 4; i++, j--)
+            ((unsigned char*)&n)[i] = vch[j];
+        return n;
+    }
+    uint64_t getuint64() const
+    {
+        unsigned int nSize = BN_bn2mpi(this, NULL);
+        if (nSize < 4)
+            return 0;
+        std::vector<unsigned char> vch(nSize);
+        BN_bn2mpi(this, &vch[0]);
+        if (vch.size() > 4)
+            vch[4] &= 0x7f;
+        uint64_t n = 0;
         for (unsigned int i = 0, j = vch.size()-1; i < sizeof(n) && j >= 4; i++, j--)
             ((unsigned char*)&n)[i] = vch[j];
         return n;

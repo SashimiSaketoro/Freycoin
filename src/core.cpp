@@ -1,5 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin developers
+// Copyright (c) 2014 The riecoin developers (gatra)
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -214,7 +215,12 @@ uint64_t CTxOutCompressor::DecompressAmount(uint64_t x)
 
 uint256 CBlockHeader::GetHash() const
 {
-    return Hash(BEGIN(nVersion), END(nNonce));
+    return Hash(BEGIN(nVersion), END(nOffset));
+}
+
+uint256 CBlockHeader::GetHashForPoW() const
+{
+    return Hash(BEGIN(nVersion), BEGIN(nOffset));
 }
 
 uint256 CBlock::BuildMerkleTree() const
@@ -269,12 +275,12 @@ uint256 CBlock::CheckMerkleBranch(uint256 hash, const std::vector<uint256>& vMer
 
 void CBlock::print() const
 {
-    LogPrintf("CBlock(hash=%s, ver=%d, hashPrevBlock=%s, hashMerkleRoot=%s, nTime=%u, nBits=%08x, nNonce=%u, vtx=%"PRIszu")\n",
+    LogPrintf("CBlock(hash=%s, ver=%d, hashPrevBlock=%s, hashMerkleRoot=%s, nTime=%"PRI64u", nBitsCompact=0x%08x, nOffset=%s, vtx=%"PRIszu")\n",
         GetHash().ToString(),
         nVersion,
         hashPrevBlock.ToString(),
         hashMerkleRoot.ToString(),
-        nTime, nBits, nNonce,
+            nTime, nBits, nOffset.ToString().c_str(),
         vtx.size());
     for (unsigned int i = 0; i < vtx.size(); i++)
     {

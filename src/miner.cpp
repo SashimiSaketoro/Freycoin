@@ -1,5 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin developers
+// Copyright (c) 2013-2014 The Riecoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -13,8 +14,105 @@
 #endif
 //////////////////////////////////////////////////////////////////////////////
 //
-// BitcoinMiner
+// RiecoinMiner
 //
+
+class CSieve
+{
+public:
+    static const int sieveSize = 1000000;
+
+private:
+
+    static const int largestPrimeInTable = 1000;
+
+    static std::vector<int> primeTable;
+    static bool primeTableInited;
+    char pSieve[sieveSize];
+    int _index;
+
+    static void InitPrimeTable( void )
+    {
+        if( primeTableInited )
+            return;
+        static CCriticalSection cs;
+        {
+            LOCK(cs);
+            if( primeTableInited )
+                return;
+            primeTableInited = true;
+            primeTable.push_back(2);
+            for( int i = 3; i <= largestPrimeInTable; i += 2 )
+            {
+                if( isPrime(i) )
+                    primeTable.push_back(i);
+            }
+        }
+    }
+    static bool isPrime( int candidate )
+    {
+        for( unsigned int i = 0; i < primeTable.size(); i++ )
+        {
+            const int prime = primeTable[i];
+            if( prime * prime > candidate )
+                return true;
+            if( (candidate % prime) == 0 )
+                return false;
+        }
+        return true;
+    }
+
+public:
+    void init( CBigNum const &base )
+    {
+        InitPrimeTable();
+        /*if( pSieve == NULL )
+        {
+            pSieve = (char *)malloc(sieveSize);
+        }*/
+        memset( pSieve, true, sieveSize );
+        for( unsigned int primeIndex = 0; primeIndex < primeTable.size(); primeIndex++ )
+        {
+            int prime = primeTable[primeIndex];
+            for( int sieveIndex = prime - (base % prime).getint(); sieveIndex < sieveSize; sieveIndex += prime )
+            {
+                pSieve[sieveIndex] = false;
+            }
+        }
+        _index = 4;
+    }
+    static void dumpPrimeTable( void )
+    {
+        InitPrimeTable();
+        for( unsigned int primeIndex = 0; primeIndex < primeTable.size(); primeIndex++ )
+        {
+            printf(" Prime %d: %d\n", primeIndex, primeTable[primeIndex]);
+        }
+    }
+
+    int getNext( void )
+    {
+        if( _index >= sieveSize - 16 )
+        {
+            return -1;
+        }
+        while( 1 )
+        {
+            _index++;
+            if( _index >= sieveSize - 16 )
+            {
+                return -1;
+            }
+            if( pSieve[_index] && pSieve[_index+4] &&
+                pSieve[_index+6] && pSieve[_index+10] &&
+                pSieve[_index+12] && pSieve[_index+16] )
+                return _index;
+        }
+    }
+
+};
+std::vector<int> CSieve::primeTable;
+bool CSieve::primeTableInited;
 
 int static FormatHashBlocks(void* pbuffer, unsigned int len)
 {
@@ -328,7 +426,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         pblock->hashPrevBlock  = pindexPrev->GetBlockHash();
         UpdateTime(*pblock, pindexPrev);
         pblock->nBits          = GetNextWorkRequired(pindexPrev, pblock);
-        pblock->nNonce         = 0;
+        pblock->nOffset        = 0;
         pblock->vtx[0].vin[0].scriptSig = CScript() << OP_0 << OP_0;
         pblocktemplate->vTxSigOps[0] = GetLegacySigOpCount(pblock->vtx[0]);
 
@@ -362,7 +460,7 @@ void IncrementExtraNonce(CBlock* pblock, CBlockIndex* pindexPrev, unsigned int& 
 }
 
 
-void FormatHashBuffers(CBlock* pblock, char* pmidstate, char* pdata, char* phash1)
+void FormatHashBuffers(CBlock* pblock, char* pdata)
 {
     //
     // Pre-build hash buffers
@@ -374,14 +472,11 @@ void FormatHashBuffers(CBlock* pblock, char* pmidstate, char* pdata, char* phash
             int nVersion;
             uint256 hashPrevBlock;
             uint256 hashMerkleRoot;
-            unsigned int nTime;
-            unsigned int nBits;
-            unsigned int nNonce;
+            bitsType nBits;
+            int64 nTime;
         }
         block;
         unsigned char pchPadding0[64];
-        uint256 hash1;
-        unsigned char pchPadding1[64];
     }
     tmp;
     memset(&tmp, 0, sizeof(tmp));
@@ -391,20 +486,14 @@ void FormatHashBuffers(CBlock* pblock, char* pmidstate, char* pdata, char* phash
     tmp.block.hashMerkleRoot = pblock->hashMerkleRoot;
     tmp.block.nTime          = pblock->nTime;
     tmp.block.nBits          = pblock->nBits;
-    tmp.block.nNonce         = pblock->nNonce;
 
     FormatHashBlocks(&tmp.block, sizeof(tmp.block));
-    FormatHashBlocks(&tmp.hash1, sizeof(tmp.hash1));
 
     // Byte swap all the input buffer
     for (unsigned int i = 0; i < sizeof(tmp)/4; i++)
         ((unsigned int*)&tmp)[i] = ByteReverse(((unsigned int*)&tmp)[i]);
 
-    // Precalc the first half of the first hash, which stays constant
-    SHA256Transform(pmidstate, &tmp.block, pSHA256InitState);
-
     memcpy(pdata, &tmp.block, 128);
-    memcpy(phash1, &tmp.hash1, 64);
 }
 
 #ifdef ENABLE_WALLET
@@ -415,40 +504,6 @@ void FormatHashBuffers(CBlock* pblock, char* pmidstate, char* pdata, char* phash
 double dHashesPerSec = 0.0;
 int64_t nHPSTimerStart = 0;
 
-//
-// ScanHash scans nonces looking for a hash with at least some zero bits.
-// It operates on big endian data.  Caller does the byte reversing.
-// All input buffers are 16-byte aligned.  nNonce is usually preserved
-// between calls, but periodically or if nNonce is 0xffff0000 or above,
-// the block is rebuilt and nNonce starts over at zero.
-//
-unsigned int static ScanHash_CryptoPP(char* pmidstate, char* pdata, char* phash1, char* phash, unsigned int& nHashesDone)
-{
-    unsigned int& nNonce = *(unsigned int*)(pdata + 12);
-    for (;;)
-    {
-        // Crypto++ SHA256
-        // Hash pdata using pmidstate as the starting state into
-        // pre-formatted buffer phash1, then hash phash1 into phash
-        nNonce++;
-        SHA256Transform(phash1, pdata, pmidstate);
-        SHA256Transform(phash, phash1, pSHA256InitState);
-
-        // Return the nonce if the hash has at least some zero bits,
-        // caller will check if it has enough to reach the target
-        if (((unsigned short*)phash)[14] == 0)
-            return nNonce;
-
-        // If nothing found after trying for a while, return -1
-        if ((nNonce & 0xffff) == 0)
-        {
-            nHashesDone = 0xffff+1;
-            return (unsigned int) -1;
-        }
-        if ((nNonce & 0xfff) == 0)
-            boost::this_thread::interruption_point();
-    }
-}
 
 CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey)
 {
@@ -462,15 +517,23 @@ CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey)
 
 bool CheckWork(CBlock* pblock, CWallet& wallet, CReserveKey& reservekey)
 {
-    uint256 hash = pblock->GetHash();
-    uint256 hashTarget = CBigNum().SetCompact(pblock->nBits).getuint256();
+    uint256 hash = pblock->GetHashForPoW();
 
-    if (hash > hashTarget)
+    CBigNum bnNewBlock;
+    bnNewBlock.SetCompact(pblock->nBits);
+
+    if( bnNewBlock > bnBestChainLastDiff * 3)
+    {
+        // if it's too difficult, we don't want it. This limits memory allocated for primeBase used for PoW calculation
+        return error("CheckWork() : block with too much proof-of-work");
+    }
+
+    if (!CheckProofOfWork( hash, pblock->nBits, pblock->nOffset))
         return false;
 
     //// debug print
-    LogPrintf("BitcoinMiner:\n");
-    LogPrintf("proof-of-work found  \n  hash: %s  \ntarget: %s\n", hash.GetHex(), hashTarget.GetHex());
+    LogPrintf("RiecoinMiner:\n");
+    LogPrintf("proof-of-work found\n  hash: %s\n  diff compacted: %08x nOffset: %s\n", hash.GetHex().c_str(), pblock->nBits, pblock->nOffset.GetHex().c_str());
     pblock->print();
     LogPrintf("generated %s\n", FormatMoney(pblock->vtx[0].vout[0].nValue));
 
@@ -478,7 +541,7 @@ bool CheckWork(CBlock* pblock, CWallet& wallet, CReserveKey& reservekey)
     {
         LOCK(cs_main);
         if (pblock->hashPrevBlock != chainActive.Tip()->GetBlockHash())
-            return error("BitcoinMiner : generated block is stale");
+            return error("RiecoinMiner : generated block is stale");
 
         // Remove key from key pool
         reservekey.KeepKey();
@@ -492,23 +555,29 @@ bool CheckWork(CBlock* pblock, CWallet& wallet, CReserveKey& reservekey)
         // Process this block the same as if we had received it from another node
         CValidationState state;
         if (!ProcessBlock(state, NULL, pblock))
-            return error("BitcoinMiner : ProcessBlock, block not accepted");
+            return error("RiecoinMiner : ProcessBlock, block not accepted");
     }
 
     return true;
 }
 
-void static BitcoinMiner(CWallet *pwallet)
+void static RiecoinMiner(CWallet *pwallet)
 {
-    LogPrintf("BitcoinMiner started\n");
+    LogPrintf("RiecoinMiner started\n");
     SetThreadPriority(THREAD_PRIORITY_LOWEST);
-    RenameThread("bitcoin-miner");
+    RenameThread("riecoin-miner");
 
     // Each thread has its own key and counter
     CReserveKey reservekey(pwallet);
     unsigned int nExtraNonce = 0;
+    CSieve mySieve;
+    int previousDelta;
+    int candidateDelta = -1;
 
-    try { while (true) {
+    try {
+
+        loop {
+
         if (Params().NetworkID() != CChainParams::REGTEST) {
             // Busy-wait for the network to come online so we don't waste time mining
             // on an obsolete chain. In regtest mode we expect to fly solo.
@@ -528,73 +597,91 @@ void static BitcoinMiner(CWallet *pwallet)
         CBlock *pblock = &pblocktemplate->block;
         IncrementExtraNonce(pblock, pindexPrev, nExtraNonce);
 
-        LogPrintf("Running BitcoinMiner with %"PRIszu" transactions in block (%u bytes)\n", pblock->vtx.size(),
+        LogPrintf("Running RiecoinMiner with %"PRIszu" transactions in block (%u bytes)\n", pblock->vtx.size(),
                ::GetSerializeSize(*pblock, SER_NETWORK, PROTOCOL_VERSION));
-
-        //
-        // Pre-build hash buffers
-        //
-        char pmidstatebuf[32+16]; char* pmidstate = alignup<16>(pmidstatebuf);
-        char pdatabuf[128+16];    char* pdata     = alignup<16>(pdatabuf);
-        char phash1buf[64+16];    char* phash1    = alignup<16>(phash1buf);
-
-        FormatHashBuffers(pblock, pmidstate, pdata, phash1);
-
-        unsigned int& nBlockTime = *(unsigned int*)(pdata + 64 + 4);
-        unsigned int& nBlockBits = *(unsigned int*)(pdata + 64 + 8);
-        unsigned int& nBlockNonce = *(unsigned int*)(pdata + 64 + 12);
-
 
         //
         // Search
         //
         int64_t nStart = GetTime();
-        uint256 hashTarget = CBigNum().SetCompact(pblock->nBits).getuint256();
-        uint256 hashbuf[2];
-        uint256& hash = *alignup<16>(hashbuf);
-        while (true)
+        static int64 nHashCounter;
+        if (nHPSTimerStart == 0)
         {
-            unsigned int nHashesDone = 0;
-            unsigned int nNonceFound;
+            nHPSTimerStart = GetTimeMillis();
+            nHashCounter = 0;
+        }
 
-            // Crypto++ SHA256
-            nNonceFound = ScanHash_CryptoPP(pmidstate, pdata + 64, phash1,
-                                            (char*)&hash, nHashesDone);
+        uint256 blockHash2 = pblock->GetHashForPoW();
+        CBigNum bnTarget, bnBase;
+        generatePrimeBase( bnBase, blockHash2, pblock->nBits );
 
-            // Check if something found
-            if (nNonceFound != (unsigned int) -1)
+        mySieve.init(bnBase);
+
+        candidateDelta = -1;
+        previousDelta = 0;
+        int64 accumulatedDelta = 0;
+
+        loop
+        {
+            int i, isPrimeResult = 0;
+            const int TRIES = 65536;
+
+            for ( i = 0; i < TRIES; i++ )
             {
-                for (unsigned int i = 0; i < sizeof(hash)/4; i++)
-                    ((unsigned int*)&hash)[i] = ByteReverse(((unsigned int*)&hash)[i]);
-
-                if (hash <= hashTarget)
+                candidateDelta = mySieve.getNext();
+                if( candidateDelta < 0 )
+                    break;
+                bnTarget = bnBase + candidateDelta;
+                isPrimeResult = BN_is_prime_fasttest( &bnTarget, 4, NULL, NULL, NULL, 1);
+                if ( isPrimeResult == 1 )
                 {
-                    // Found a solution
-                    pblock->nNonce = ByteReverse(nNonceFound);
-                    assert(hash == pblock->GetHash());
-
-                    SetThreadPriority(THREAD_PRIORITY_NORMAL);
-                    CheckWork(pblock, *pwallet, reservekey);
-                    SetThreadPriority(THREAD_PRIORITY_LOWEST);
-
-                    // In regression test mode, stop mining after a block is found. This
-                    // allows developers to controllably generate a block on demand.
-                    if (Params().NetworkID() == CChainParams::REGTEST)
-                        throw boost::thread_interrupted();
-
                     break;
                 }
             }
 
-            // Meter hashes/sec
-            static int64_t nHashCounter;
-            if (nHPSTimerStart == 0)
+            // Check if something found
+            if ( candidateDelta >= 0 && i != TRIES)
             {
-                nHPSTimerStart = GetTimeMillis();
-                nHashCounter = 0;
+                bnTarget += 4;
+                if( BN_is_prime_fasttest( &bnTarget, 4, NULL, NULL, NULL, 1) == 1 ) {
+                bnTarget += 2;
+                if( BN_is_prime_fasttest( &bnTarget, 4, NULL, NULL, NULL, 1) == 1 ) {
+                bnTarget += 4;
+                if( BN_is_prime_fasttest( &bnTarget, 4, NULL, NULL, NULL, 1) == 1 ) {
+                    bnTarget += 2;
+                    if( BN_is_prime_fasttest( &bnTarget, 4, NULL, NULL, NULL, 1) == 1 ) {
+                        bnTarget += 4;
+                        if( BN_is_prime_fasttest( &bnTarget, 4, NULL, NULL, NULL, 1) == 1 )
+                        {
+                            // Found a solution
+                            pblock->nOffset = candidateDelta + accumulatedDelta;
+
+                            assert(blockHash2 == pblock->GetHashForPoW());
+
+                            SetThreadPriority(THREAD_PRIORITY_NORMAL);
+                            bool bIsValid = CheckWork(pblock, *pwalletMain, reservekey);
+                            SetThreadPriority(THREAD_PRIORITY_LOWEST);
+                            if( !bIsValid )
+                            {
+                                //printf("CheckWork from miner failed %d\n", isPrimeResult);
+                                printf("CheckWork fail  target: %s  \n", bnTarget.GetHex().c_str());
+                            }
+                            break;
+                        }
+                    }
+                } } }
+            }
+
+            // Meter range/sec
+            if( candidateDelta == -1 )
+            {
+                nHashCounter += mySieve.sieveSize - previousDelta;
             }
             else
-                nHashCounter += nHashesDone;
+            {
+                nHashCounter += candidateDelta - previousDelta;
+                previousDelta = candidateDelta;
+            }
             if (GetTimeMillis() - nHPSTimerStart > 4000)
             {
                 static CCriticalSection cs;
@@ -605,46 +692,44 @@ void static BitcoinMiner(CWallet *pwallet)
                         dHashesPerSec = 1000.0 * nHashCounter / (GetTimeMillis() - nHPSTimerStart);
                         nHPSTimerStart = GetTimeMillis();
                         nHashCounter = 0;
-                        static int64_t nLogTime;
+                        static int64 nLogTime;
                         if (GetTime() - nLogTime > 30 * 60)
                         {
                             nLogTime = GetTime();
-                            LogPrintf("hashmeter %6.0f khash/s\n", dHashesPerSec/1000.0);
+                            printf("hashmeter %.0f N/s\n", dHashesPerSec);
                         }
                     }
                 }
+                break;
             }
 
             // Check for stop or if block needs to be rebuilt
             boost::this_thread::interruption_point();
-            if (vNodes.empty() && Params().NetworkID() != CChainParams::REGTEST)
+            if (vNodes.empty())
                 break;
-            if (nBlockNonce >= 0xffff0000)
+            if (nTransactionsUpdated != nTransactionsUpdatedLast && GetTime() - nStart > 60)
                 break;
-            if (mempool.GetTransactionsUpdated() != nTransactionsUpdatedLast && GetTime() - nStart > 60)
+            if (pindexPrev != pindexBest)
                 break;
-            if (pindexPrev != chainActive.Tip())
-                break;
-
-            // Update nTime every few seconds
-            UpdateTime(*pblock, pindexPrev);
-            nBlockTime = ByteReverse(pblock->nTime);
-            if (TestNet())
+            if( candidateDelta < 0 )
             {
-                // Changing pblock->nTime can change work required on testnet:
-                nBlockBits = ByteReverse(pblock->nBits);
-                hashTarget = CBigNum().SetCompact(pblock->nBits).getuint256();
+                bnBase += mySieve.sieveSize;
+                accumulatedDelta += mySieve.sieveSize;
+                mySieve.init(bnBase);
+
+                candidateDelta = -1;
+                previousDelta = 0;
             }
-        }
+        } // end infinite loop
     } }
     catch (boost::thread_interrupted)
     {
-        LogPrintf("BitcoinMiner terminated\n");
+        LogPrintf("RiecoinMiner terminated\n");
         throw;
     }
 }
 
-void GenerateBitcoins(bool fGenerate, CWallet* pwallet, int nThreads)
+void GenerateRiecoins(bool fGenerate, CWallet* pwallet, int nThreads)
 {
     static boost::thread_group* minerThreads = NULL;
 
@@ -667,7 +752,7 @@ void GenerateBitcoins(bool fGenerate, CWallet* pwallet, int nThreads)
 
     minerThreads = new boost::thread_group();
     for (int i = 0; i < nThreads; i++)
-        minerThreads->create_thread(boost::bind(&BitcoinMiner, pwallet));
+        minerThreads->create_thread(boost::bind(&RiecoinMiner, pwallet));
 }
 
 #endif

@@ -23,25 +23,24 @@ double GetDifficulty(const CBlockIndex* blockindex)
     if (blockindex == NULL)
     {
         if (chainActive.Tip() == NULL)
-            return 1.0;
+            return iMinPrimeSize;
         else
             blockindex = chainActive.Tip();
     }
 
     int nShift = (blockindex->nBits >> 24) & 0xff;
 
-    double dDiff =
-        (double)0x0000ffff / (double)(blockindex->nBits & 0x00ffffff);
+    double dDiff = (double)(blockindex->nBits & 0x00ffffff);
 
-    while (nShift < 29)
+    while (nShift > 3)
     {
         dDiff *= 256.0;
-        nShift++;
+        nShift--;
     }
-    while (nShift > 29)
+    while (nShift < 3)
     {
         dDiff /= 256.0;
-        nShift--;
+        nShift++;
     }
 
     return dDiff;
@@ -64,7 +63,7 @@ Object blockToJSON(const CBlock& block, const CBlockIndex* blockindex)
         txs.push_back(tx.GetHash().GetHex());
     result.push_back(Pair("tx", txs));
     result.push_back(Pair("time", (boost::int64_t)block.GetBlockTime()));
-    result.push_back(Pair("nonce", (boost::uint64_t)block.nNonce));
+    result.push_back(Pair("nOffset",block.nOffset.GetHex()));
     result.push_back(Pair("bits", HexBits(block.nBits)));
     result.push_back(Pair("difficulty", GetDifficulty(blockindex)));
     result.push_back(Pair("chainwork", blockindex->nChainWork.GetHex()));
@@ -250,8 +249,7 @@ Value getblock(const Array& params, bool fHelp)
             "     ,...\n"
             "  ],\n"
             "  \"time\" : ttt,          (numeric) The block time in seconds since epoch (Jan 1 1970 GMT)\n"
-            "  \"nonce\" : n,           (numeric) The nonce\n"
-            "  \"bits\" : \"1d00ffff\", (string) The bits\n"
+            "  \"noffset\" : n,         (numeric) The nonce (offset)\n"
             "  \"difficulty\" : x.xxx,  (numeric) The difficulty\n"
             "  \"previousblockhash\" : \"hash\",  (string) The hash of the previous block\n"
             "  \"nextblockhash\" : \"hash\"       (string) The hash of the next block\n"
@@ -411,7 +409,7 @@ Value verifychain(const Array& params, bool fHelp)
             "\nVerifies blockchain database.\n"
             "\nArguments:\n"
             "1. checklevel   (numeric, optional, 0-4, default=3) How thorough the block verification is.\n"
-            "2. numblocks    (numeric, optional, default=288, 0=all) The number of blocks to check.\n"
+            "2. numblocks    (numeric, optional, default=9, 0=all) The number of blocks to check.\n"
             "\nResult:\n"
             "true|false       (boolean) Verified or not\n"
             "\nExamples:\n"
@@ -420,7 +418,7 @@ Value verifychain(const Array& params, bool fHelp)
         );
 
     int nCheckLevel = GetArg("-checklevel", 3);
-    int nCheckDepth = GetArg("-checkblocks", 288);
+    int nCheckDepth = GetArg("-checkblocks", 9);
     if (params.size() > 0)
         nCheckLevel = params[0].get_int();
     if (params.size() > 1)

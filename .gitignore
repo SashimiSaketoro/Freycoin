@@ -1,9 +1,9 @@
 *.tar.gz
 
 *.exe
-src/bitcoin
-src/bitcoind
-src/bitcoin-cli
+src/riecoin
+src/riecoind
+src/riecoin-cli
 src/test/test_bitcoin
 src/qt/test/test_bitcoin-qt
 

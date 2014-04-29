@@ -1,5 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin developers
+// Copyright (c) 2014 The riecoin developers (gatra)
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -27,7 +28,7 @@ using namespace std;
 using namespace boost;
 
 #if defined(NDEBUG)
-# error "Bitcoin cannot be compiled without assertions."
+# error "Riecoin cannot be compiled without assertions."
 #endif
 
 //
@@ -41,13 +42,17 @@ CTxMemPool mempool;
 map<uint256, CBlockIndex*> mapBlockIndex;
 CChain chainActive;
 CChain chainMostWork;
+CBigNum bnBestChainLastDiff = iMinPrimeSize;
 int64_t nTimeBestReceived = 0;
+
 int nScriptCheckThreads = 0;
 bool fImporting = false;
 bool fReindex = false;
 bool fBenchmark = false;
 bool fTxIndex = false;
 unsigned int nCoinCacheSize = 5000;
+
+const CBigNum MinPrimeSize(iMinPrimeSize);
 
 /** Fees smaller than this (in satoshi) are considered zero fee (for transaction creation) */
 int64_t CTransaction::nMinTxFee = 10000;  // Override with -mintxfee
@@ -70,7 +75,7 @@ map<uint256, set<uint256> > mapOrphanTransactionsByPrev;
 // Constant stuff for coinbase transactions we create:
 CScript COINBASE_FLAGS;
 
-const string strMessageMagic = "Bitcoin Signed Message:\n";
+const string strMessageMagic = "Riecoin Signed Message:\n";
 
 // Internal stuff
 namespace {
@@ -1094,14 +1099,26 @@ int64_t GetBlockValue(int nHeight, int64_t nFees)
 {
     int64_t nSubsidy = 50 * COIN;
 
-    // Subsidy is cut in half every 210,000 blocks which will occur approximately every 4 years.
-    nSubsidy >>= (nHeight / Params().SubsidyHalvingInterval());
+    if( nHeight >= 1152)
+    {
+        // Subsidy is cut in half every 840000 blocks, which will occur approximately every 4 years
+        nSubsidy >>= (nHeight / Params().SubsidyHalvingInterval());
+    }
+    else if( nHeight > 576 ) // 576 blocks with linearly increasing subsidy
+    {
+        nSubsidy *= nHeight - 576;
+        nSubsidy /= 576;
+    }
+    else // first 576 blocks without subsidy
+    {
+        nSubsidy = 0;
+    }
 
     return nSubsidy + nFees;
 }
 
-static const int64_t nTargetTimespan = 14 * 24 * 60 * 60; // two weeks
-static const int64_t nTargetSpacing = 10 * 60;
+static const int64_t nTargetTimespan = 12 * 60 * 60; // 12 hour
+static const int64_t nTargetSpacing = 2.5 * 60;
 static const int64_t nInterval = nTargetTimespan / nTargetSpacing;
 
 //
@@ -1114,29 +1131,50 @@ unsigned int ComputeMinWork(unsigned int nBase, int64_t nTime)
     // Testnet has min-difficulty blocks
     // after nTargetSpacing*2 time between blocks:
     if (TestNet() && nTime > nTargetSpacing*2)
-        return bnLimit.GetCompact();
+        return MinPrimeSize.GetCompact();
 
     CBigNum bnResult;
     bnResult.SetCompact(nBase);
-    while (nTime > 0 && bnResult < bnLimit)
+    while (nTime > 0 && bnResult > MinPrimeSize)
     {
         // Maximum 400% adjustment...
-        bnResult *= 4;
+        bnResult *=  85724; // 0.85724 is (3+constellationSize)th root of 1/4   rounded down!
+        bnResult /= 100000;
         // ... in best-case exactly 4-times-normal target time
         nTime -= nTargetTimespan*4;
     }
-    if (bnResult > bnLimit)
-        bnResult = bnLimit;
+    if (bnResult < MinPrimeSize)
+        return MinPrimeSize.GetCompact();
     return bnResult.GetCompact();
+}
+
+CBigNum nthRoot( CBigNum const & n, int root, CBigNum const & lowerBound )
+{
+    CBigNum result = lowerBound;
+    CBigNum delta = lowerBound / 2;
+
+    while( delta >= 1 )
+    {
+        result += delta;
+        CBigNum aux = result;
+        for( int i = 1; i < root; i++ )
+            aux *= result;
+        if( aux > n )
+        {
+            result -= delta;
+            delta >>= 1;
+        }
+        else
+            delta <<= 1;
+    }
+    return result;
 }
 
 unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock)
 {
-    unsigned int nProofOfWorkLimit = Params().ProofOfWorkLimit().GetCompact();
-
     // Genesis block
     if (pindexLast == NULL)
-        return nProofOfWorkLimit;
+        return MinPrimeSize.GetCompact();
 
     // Only change once per interval
     if ((pindexLast->nHeight+1) % nInterval != 0)
@@ -1147,12 +1185,12 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
             // If the new block's timestamp is more than 2* 10 minutes
             // then allow mining of a min-difficulty block.
             if (pblock->nTime > pindexLast->nTime + nTargetSpacing*2)
-                return nProofOfWorkLimit;
+                return MinPrimeSize.GetCompact();
             else
             {
                 // Return the last non-special-min-difficulty-rules-block
                 const CBlockIndex* pindex = pindexLast;
-                while (pindex->pprev && pindex->nHeight % nInterval != 0 && pindex->nBits == nProofOfWorkLimit)
+                while (pindex->pprev && (pindex->nHeight % nInterval) != 0 && pindex->nBits == MinPrimeSize)
                     pindex = pindex->pprev;
                 return pindex->nBits;
             }
@@ -1160,28 +1198,41 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
         return pindexLast->nBits;
     }
 
-    // Go back by what we want to be 14 days worth of blocks
+    // Go back by what we want to be nTargetTimespan worth of blocks
     const CBlockIndex* pindexFirst = pindexLast;
-    for (int i = 0; pindexFirst && i < nInterval-1; i++)
+    int i = 0;
+    if( pindexLast->nHeight+1 == nInterval ) // do not include genesis block
+        i++;
+    for( ; pindexFirst && i < nInterval-1; i++)
         pindexFirst = pindexFirst->pprev;
     assert(pindexFirst);
 
     // Limit adjustment step
     int64_t nActualTimespan = pindexLast->GetBlockTime() - pindexFirst->GetBlockTime();
     LogPrintf("  nActualTimespan = %d  before bounds\n", nActualTimespan);
-    if (nActualTimespan < nTargetTimespan/4)
-        nActualTimespan = nTargetTimespan/4;
-    if (nActualTimespan > nTargetTimespan*4)
-        nActualTimespan = nTargetTimespan*4;
+    if( pindexLast->nHeight+1 >= nInterval * 2) // do not apply limit for first retargets: adjust faster to avoid instamining
+    {
+      if (nActualTimespan < nTargetTimespan/4)
+          nActualTimespan = nTargetTimespan/4;
+      if (nActualTimespan > nTargetTimespan*4)
+          nActualTimespan = nTargetTimespan*4;
+    }
 
     // Retarget
     CBigNum bnNew;
+    CBigNum bnNewPow;
     bnNew.SetCompact(pindexLast->nBits);
-    bnNew *= nActualTimespan;
-    bnNew /= nTargetTimespan;
+    // 9th power (3+constellationSize)
+    bnNewPow = pindexLast->GetBlockWork();
 
-    if (bnNew > Params().ProofOfWorkLimit())
-        bnNew = Params().ProofOfWorkLimit();
+    bnNewPow *= nTargetTimespan;
+    bnNewPow /= nActualTimespan;
+    bnNew = nthRoot( bnNewPow, 3+constellationSize, bnNew / 2 );
+
+    if (bnNew < MinPrimeSize)
+        bnNew = MinPrimeSize;
+    else if( bnNew > (unsigned long long)-1 )
+        bnNew = (unsigned long long)-1;
 
     /// debug print
     LogPrintf("GetNextWorkRequired RETARGET\n");
@@ -1192,19 +1243,110 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
     return bnNew.GetCompact();
 }
 
-bool CheckProofOfWork(uint256 hash, unsigned int nBits)
+unsigned int generatePrimeBase( CBigNum &bnTarget, uint256 hash, bitsType compactBits )
 {
+    bnTarget = 1;
+    bnTarget <<= zeroesBeforeHashInPrime;
+
+    for ( int i = 0; i < 256; i++ )
+    {
+        bnTarget = (bnTarget << 1) + (hash.GetLow32() & 1);
+        hash >>= 1;
+    }
+    CBigNum nBits;
+    nBits.SetCompact(compactBits);
+    if( nBits > nBits.getuint() ) // the protocol stores a compact big int so it supports larger values, but this version of the client does not
+    {
+        nBits = (unsigned int)-1; // saturate diff at (2**32) - 1, this should be enough for some years ;)
+    }
+    const unsigned int significativeDigits =  1 + zeroesBeforeHashInPrime + 256;
+    unsigned int trailingZeros = nBits.getuint();
+    if( trailingZeros < significativeDigits )
+        return 0;
+    trailingZeros -= significativeDigits;
+    bnTarget <<= trailingZeros;
+    return trailingZeros;
+}
+
+
+bool CheckProofOfWork(uint256 hash, bitsType compactBits, uint256 delta)
+{
+    if( hash == hashGenesisBlockForPoW )
+        return true;
     CBigNum bnTarget;
-    bnTarget.SetCompact(nBits);
+    unsigned int trailingZeros = generatePrimeBase( bnTarget, hash, compactBits );
 
-    // Check range
-    if (bnTarget <= 0 || bnTarget > Params().ProofOfWorkLimit())
-        return error("CheckProofOfWork() : nBits below minimum work");
+    if (trailingZeros < 256)
+    {
+        uint256 deltaLimit = 1;
+        deltaLimit <<= trailingZeros;
+        if( delta >= deltaLimit )
+            return error("CheckProofOfWork() : candidate larger than allowed %s of %s", delta.ToString().c_str(), deltaLimit.ToString().c_str() );
+    }
 
-    // Check proof of work matches claimed amount
-    if (hash > bnTarget.getuint256())
-        return error("CheckProofOfWork() : hash doesn't match nBits");
+    CBigNum bigDelta = CBigNum(delta);
+    bnTarget += bigDelta;
 
+    if( (bnTarget % 210) != 97 )
+        return error("CheckProofOfWork() : not valid pow");
+
+    // first we do a single test to quickly discard most of the bogus cases
+    if( BN_is_prime_fasttest( &bnTarget, 1, NULL, NULL, NULL, 1) != 1 )
+    {
+        //printf("CheckProofOfWork fail  hash: %s  \ntarget: %d nOffset: %s\n", hash2.GetHex().c_str(), nBits, delta.GetHex().c_str());
+        //printf("CheckProofOfWork fail  target: %s  \n", bnTarget.GetHex().c_str());
+        return error("CheckProofOfWork() : n not prime");
+    }
+    bnTarget += 4;
+    if( BN_is_prime_fasttest( &bnTarget, 1, NULL, NULL, NULL, 1) != 1 )
+    {
+        return error("CheckProofOfWork() : n+4 not prime");
+    }
+    bnTarget += 2;
+    if( BN_is_prime_fasttest( &bnTarget, 1, NULL, NULL, NULL, 1) != 1 )
+    {
+        return error("CheckProofOfWork() : n+6 not prime");
+    }
+    bnTarget += 4;
+    if( BN_is_prime_fasttest( &bnTarget, 1, NULL, NULL, NULL, 1) != 1 )
+    {
+        return error("CheckProofOfWork() : n+10 not prime");
+    }
+    bnTarget += 2;
+    if( BN_is_prime_fasttest( &bnTarget, 1, NULL, NULL, NULL, 1) != 1 )
+    {
+        return error("CheckProofOfWork() : n+12 not prime");
+    }
+    bnTarget += 4;
+    if( BN_is_prime_fasttest( &bnTarget, 10, NULL, NULL, NULL, 1) != 1 )
+    {
+        return error("CheckProofOfWork() : n+16 not prime");
+    }
+    bnTarget -= 4;
+    if( BN_is_prime_fasttest( &bnTarget, 9, NULL, NULL, NULL, 0) != 1 )
+    {
+        return error("CheckProofOfWork() : n+12 not prime");
+    }
+    bnTarget -= 2;
+    if( BN_is_prime_fasttest( &bnTarget, 9, NULL, NULL, NULL, 0) != 1 )
+    {
+        return error("CheckProofOfWork() : n+10 not prime");
+    }
+    bnTarget -= 4;
+    if( BN_is_prime_fasttest( &bnTarget, 9, NULL, NULL, NULL, 0) != 1 )
+    {
+        return error("CheckProofOfWork() : n+6 not prime");
+    }
+    bnTarget -= 2;
+    if( BN_is_prime_fasttest( &bnTarget, 9, NULL, NULL, NULL, 0) != 1 )
+    {
+        return error("CheckProofOfWork() : n+4 not prime");
+    }
+    bnTarget -= 4;
+    if( BN_is_prime_fasttest( &bnTarget, 9, NULL, NULL, NULL, 0) != 1 )
+    {
+        return error("CheckProofOfWork() : n not prime");
+    }
     return true;
 }
 
@@ -1245,7 +1387,7 @@ void CheckForkWarningConditions()
     if (pindexBestForkTip && chainActive.Height() - pindexBestForkTip->nHeight >= 72)
         pindexBestForkTip = NULL;
 
-    if (pindexBestForkTip || (pindexBestInvalid && pindexBestInvalid->nChainWork > chainActive.Tip()->nChainWork + (chainActive.Tip()->GetBlockWork() * 6).getuint256()))
+    if (pindexBestForkTip || (pindexBestInvalid && pindexBestInvalid->nChainWork > chainActive.Tip()->nChainWork + (chainActive.Tip()->GetBlockWork() * 6)))
     {
         if (!fLargeWorkForkFound)
         {
@@ -1336,15 +1478,15 @@ void static InvalidChainFound(CBlockIndex* pindexNew)
         // The current code doesn't actually read the BestInvalidWork entry in
         // the block database anymore, as it is derived from the flags in block
         // index entry. We only write it for backward compatibility.
-        pblocktree->WriteBestInvalidWork(CBigNum(pindexBestInvalid->nChainWork));
+        pblocktree->WriteBestInvalidWork(pindexBestInvalid->nChainWork);
         uiInterface.NotifyBlocksChanged();
     }
-    LogPrintf("InvalidChainFound: invalid block=%s  height=%d  log2_work=%.8g  date=%s\n",
-      pindexNew->GetBlockHash().ToString(), pindexNew->nHeight,
-      log(pindexNew->nChainWork.getdouble())/log(2.0), DateTimeStrFormat("%Y-%m-%d %H:%M:%S",
+    LogPrintf("InvalidChainFound: invalid block=%s  height=%d  work=%s  date=%s\n",
+      pindexNew->GetBlockHash().ToStrtoing(), pindexNew->nHeight,
+      pindexNew->nChainWork.ToString().c_str(), DateTimeStrFormat("%Y-%m-%d %H:%M:%S",
       pindexNew->GetBlockTime()));
-    LogPrintf("InvalidChainFound:  current best=%s  height=%d  log2_work=%.8g  date=%s\n",
-      chainActive.Tip()->GetBlockHash().ToString(), chainActive.Height(), log(chainActive.Tip()->nChainWork.getdouble())/log(2.0),
+    LogPrintf("InvalidChainFound:  current best=%s  height=%d  work=%s  date=%s\n",
+      chainActive.Tip()->GetBlockHash().ToString(), chainActive.Height(), chainActive.Tip()->nChainWork.ToStrinc().c_str(),
       DateTimeStrFormat("%Y-%m-%d %H:%M:%S", chainActive.Tip()->GetBlockTime()));
     CheckForkWarningConditions();
 }
@@ -1623,7 +1765,7 @@ bool FindUndoPos(CValidationState &state, int nFile, CDiskBlockPos &pos, unsigne
 static CCheckQueue<CScriptCheck> scriptcheckqueue(128);
 
 void ThreadScriptCheck() {
-    RenameThread("bitcoin-scriptch");
+    RenameThread("riecoin-scriptch");
     scriptcheckqueue.Thread();
 }
 
@@ -1658,9 +1800,9 @@ bool ConnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex, C
     // Now that the whole chain is irreversibly beyond that time it is applied to all blocks except the
     // two in the chain that violate it. This prevents exploiting the issue against nodes in their
     // initial block download.
-    bool fEnforceBIP30 = (!pindex->phashBlock) || // Enforce on CreateNewBlock invocations which don't have a hash.
-                          !((pindex->nHeight==91842 && pindex->GetBlockHash() == uint256("0x00000000000a4d0a398161ffc163c503763b1f4360639393e0e4c8e300e0caec")) ||
-                           (pindex->nHeight==91880 && pindex->GetBlockHash() == uint256("0x00000000000743f190a18c5577a3c2d2a1f610ae9601ac046a38084ccb7cd721")));
+
+    // this was bitcoin blockchain stuff, we alway enforce
+    const bool fEnforceBIP30 = true;
     if (fEnforceBIP30) {
         for (unsigned int i = 0; i < block.vtx.size(); i++) {
             uint256 hash = block.GetTxHash(i);
@@ -1671,8 +1813,8 @@ bool ConnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex, C
     }
 
     // BIP16 didn't become active until Apr 1 2012
-    int64_t nBIP16SwitchTime = 1333238400;
-    bool fStrictPayToScriptHash = (pindex->nTime >= nBIP16SwitchTime);
+    //int64 nBIP16SwitchTime = 1333238400;
+    bool fStrictPayToScriptHash = true; // (pindex->nTime >= nBIP16SwitchTime);
 
     unsigned int flags = SCRIPT_VERIFY_NOCACHE |
                          (fStrictPayToScriptHash ? SCRIPT_VERIFY_P2SH : SCRIPT_VERIFY_NONE);
@@ -1818,10 +1960,11 @@ void static UpdateTip(CBlockIndex *pindexNew) {
         g_signals.SetBestChain(chainActive.GetLocator());
 
     // New best block
+    bnBestChainWork = pindexNew->bnChainWork;
     nTimeBestReceived = GetTime();
     mempool.AddTransactionsUpdated(1);
-    LogPrintf("UpdateTip: new best=%s  height=%d  log2_work=%.8g  tx=%lu  date=%s progress=%f\n",
-      chainActive.Tip()->GetBlockHash().ToString(), chainActive.Height(), log(chainActive.Tip()->nChainWork.getdouble())/log(2.0), (unsigned long)chainActive.Tip()->nChainTx,
+    LogPrintf("UpdateTip: new best=%s  height=%d  work=%s  tx=%lu  date=%s progress=%f\n",
+      chainActive.Tip()->GetBlockHash().ToString(), chainActive.Height(), chainActive.Tip()->nChainWork.ToStrinc().c_str(), (unsigned long)chainActive.Tip()->nChainTx,
       DateTimeStrFormat("%Y-%m-%d %H:%M:%S", chainActive.Tip()->GetBlockTime()),
       Checkpoints::GuessVerificationProgress(chainActive.Tip()));
 
@@ -2059,7 +2202,7 @@ bool AddToBlockIndex(CBlock& block, CValidationState& state, const CDiskBlockPos
         pindexNew->nHeight = pindexNew->pprev->nHeight + 1;
     }
     pindexNew->nTx = block.vtx.size();
-    pindexNew->nChainWork = (pindexNew->pprev ? pindexNew->pprev->nChainWork : 0) + pindexNew->GetBlockWork().getuint256();
+    pindexNew->nChainWork = (pindexNew->pprev ? pindexNew->pprev->nChainWork : 0) + pindexNew->GetBlockWork();
     pindexNew->nChainTx = (pindexNew->pprev ? pindexNew->pprev->nChainTx : 0) + pindexNew->nTx;
     pindexNew->nFile = pos.nFile;
     pindexNew->nDataPos = pos.nPos;
@@ -2199,7 +2342,7 @@ bool CheckBlock(const CBlock& block, CValidationState& state, bool fCheckPOW, bo
                          REJECT_INVALID, "bad-blk-length");
 
     // Check proof of work matches claimed amount
-    if (fCheckPOW && !CheckProofOfWork(block.GetHash(), block.nBits))
+    if (fCheckPOW && !CheckProofOfWork(block.GetHash(), block.nBits, block.nOffset))
         return state.DoS(50, error("CheckBlock() : proof of work failed"),
                          REJECT_INVALID, "high-hash");
 
@@ -2300,27 +2443,15 @@ bool AcceptBlock(CBlock& block, CValidationState& state, CDiskBlockPos* dbp)
         // Reject block.nVersion=1 blocks when 95% (75% on testnet) of the network has upgraded:
         if (block.nVersion < 2)
         {
-            if ((!TestNet() && CBlockIndex::IsSuperMajority(2, pindexPrev, 950, 1000)) ||
-                (TestNet() && CBlockIndex::IsSuperMajority(2, pindexPrev, 75, 100)))
-            {
-                return state.Invalid(error("AcceptBlock() : rejected nVersion=1 block"),
+            return state.Invalid(error("AcceptBlock() : rejected nVersion=1 block"),
                                      REJECT_OBSOLETE, "bad-version");
-            }
         }
         // Enforce block.nVersion=2 rule that the coinbase starts with serialized block height
-        if (block.nVersion >= 2)
-        {
-            // if 750 of the last 1,000 blocks are version 2 or greater (51/100 if testnet):
-            if ((!TestNet() && CBlockIndex::IsSuperMajority(2, pindexPrev, 750, 1000)) ||
-                (TestNet() && CBlockIndex::IsSuperMajority(2, pindexPrev, 51, 100)))
-            {
                 CScript expect = CScript() << nHeight;
                 if (block.vtx[0].vin[0].scriptSig.size() < expect.size() ||
                     !std::equal(expect.begin(), expect.end(), block.vtx[0].vin[0].scriptSig.begin()))
                     return state.DoS(100, error("AcceptBlock() : block height mismatch in coinbase"),
                                      REJECT_INVALID, "bad-cb-height");
-            }
-        }
     }
 
     // Write block to history file
@@ -2399,6 +2530,40 @@ bool ProcessBlock(CValidationState &state, CNode* pfrom, CBlock* pblock, CDiskBl
     if (mapOrphanBlocks.count(hash))
         return state.Invalid(error("ProcessBlock() : already have block (orphan) %s", hash.ToString()), 0, "duplicate");
 
+    CBigNum bnNewBlock;
+    bnNewBlock.SetCompact(pblock->nBits);
+
+    CBlockIndex* pcheckpoint = Checkpoints::GetLastCheckpoint(mapBlockIndex);
+
+    // if it's too difficult, we don't want it. This avoids flooding attacks and limits memory allocated for primeBase used for PoW calculation
+    if( pblock->hashPrevBlock == hashBestChain )
+    {
+        if( bnNewBlock > bnBestChainLastDiff * 2 )
+        {
+            return state.DoS(100, error("ProcessBlock() : block with too much proof-of-work"));
+        }
+    }
+    else
+    {
+        CBigNum bnLastDiff;
+        if( pcheckpoint )
+        {
+            bnLastDiff.SetCompact(pcheckpoint->nBits);
+        }
+        else
+        {
+            bnLastDiff = iMinPrimeSize;
+        }
+        if( bnBestChainLastDiff > bnLastDiff )
+        {
+            bnLastDiff = bnBestChainLastDiff;
+        }
+        if( bnNewBlock > (bnBestChainLastDiff << 10) )
+        {
+            return error("ProcessBlock() : block with too much proof-of-work");
+        }
+    }
+
     // Preliminary checks
     if (!CheckBlock(*pblock, state)) {
         if (state.CorruptionPossible())
@@ -2406,7 +2571,6 @@ bool ProcessBlock(CValidationState &state, CNode* pfrom, CBlock* pblock, CDiskBl
         return error("ProcessBlock() : CheckBlock FAILED");
     }
 
-    CBlockIndex* pcheckpoint = Checkpoints::GetLastCheckpoint(mapBlockIndex);
     if (pcheckpoint && pblock->hashPrevBlock != (chainActive.Tip() ? chainActive.Tip()->GetBlockHash() : uint256(0)))
     {
         // Extra checks to prevent "fill up memory by spamming with bogus blocks"
@@ -2416,11 +2580,9 @@ bool ProcessBlock(CValidationState &state, CNode* pfrom, CBlock* pblock, CDiskBl
             return state.DoS(100, error("ProcessBlock() : block with timestamp before last checkpoint"),
                              REJECT_CHECKPOINT, "time-too-old");
         }
-        CBigNum bnNewBlock;
-        bnNewBlock.SetCompact(pblock->nBits);
         CBigNum bnRequired;
         bnRequired.SetCompact(ComputeMinWork(pcheckpoint->nBits, deltaTime));
-        if (bnNewBlock > bnRequired)
+        if (bnNewBlock < bnRequired)
         {
             return state.DoS(100, error("ProcessBlock() : block with too little proof-of-work"),
                              REJECT_INVALID, "bad-diffbits");
@@ -2736,7 +2898,7 @@ bool static LoadBlockIndexDB()
     BOOST_FOREACH(const PAIRTYPE(int, CBlockIndex*)& item, vSortedByHeight)
     {
         CBlockIndex* pindex = item.second;
-        pindex->nChainWork = (pindex->pprev ? pindex->pprev->nChainWork : 0) + pindex->GetBlockWork().getuint256();
+        pindex->nChainWork = (pindex->pprev ? pindex->pprev->nChainWork : 0) + pindex->GetBlockWork();
         pindex->nChainTx = (pindex->pprev ? pindex->pprev->nChainTx : 0) + pindex->nTx;
         if ((pindex->nStatus & BLOCK_VALID_MASK) >= BLOCK_VALID_TRANSACTIONS && !(pindex->nStatus & BLOCK_FAILED_MASK))
             setBlockIndexValid.insert(pindex);
@@ -2764,6 +2926,8 @@ bool static LoadBlockIndexDB()
     if (it == mapBlockIndex.end())
         return true;
     chainActive.SetTip(it->second);
+    bnBestChainLastDiff.SetCompact(it->second->nBits);
+
     LogPrintf("LoadBlockIndexDB(): hashBestChain=%s height=%d date=%s progress=%f\n",
         chainActive.Tip()->GetBlockHash().ToString(), chainActive.Height(),
         DateTimeStrFormat("%Y-%m-%d %H:%M:%S", chainActive.Tip()->GetBlockTime()),

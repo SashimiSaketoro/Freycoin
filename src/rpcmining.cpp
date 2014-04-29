@@ -119,7 +119,7 @@ Value getgenerate(const Array& params, bool fHelp)
         throw runtime_error(
             "getgenerate\n"
             "\nReturn if the server is set to generate coins or not. The default is false.\n"
-            "It is set with the command line argument -gen (or bitcoin.conf setting gen)\n"
+            "It is set with the command line argument -gen (or riecoin.conf setting gen)\n"
             "It can also be set with the setgenerate call.\n"
             "\nResult\n"
             "true|false      (boolean) If the server is set to generate coins or not\n"
@@ -192,7 +192,7 @@ Value setgenerate(const Array& params, bool fHelp)
             if (nHeightLast != nHeight)
             {
                 nHeightLast = nHeight;
-                GenerateBitcoins(fGenerate, pwalletMain, 1);
+                GenerateRiecoins(fGenerate, pwalletMain, 1);
             }
             MilliSleep(1);
             {   // Don't keep cs_main locked
@@ -204,7 +204,7 @@ Value setgenerate(const Array& params, bool fHelp)
     else // Not -regtest: start generate thread, return immediately
     {
         mapArgs["-gen"] = (fGenerate ? "1" : "0");
-        GenerateBitcoins(fGenerate, pwalletMain, nGenProcLimit);
+        GenerateRiecoins(fGenerate, pwalletMain, nGenProcLimit);
     }
 
     return Value::null;
@@ -215,10 +215,10 @@ Value gethashespersec(const Array& params, bool fHelp)
     if (fHelp || params.size() != 0)
         throw runtime_error(
             "gethashespersec\n"
-            "\nReturns a recent hashes per second performance measurement while generating.\n"
+            "\nReturns a recent range explored (Numbers) per second performance measurement while generating.\n"
             "See the getgenerate and setgenerate calls to turn generation on and off.\n"
             "\nResult:\n"
-            "n            (numeric) The recent hashes per second when generation is on (will return 0 if generation is off)\n"
+            "n            (numeric) The recent range per second when generation is on (will return 0 if generation is off)\n"
             "\nExamples:\n"
             + HelpExampleCli("gethashespersec", "")
             + HelpExampleRpc("gethashespersec", "")
@@ -259,7 +259,7 @@ Value getmininginfo(const Array& params, bool fHelp)
     obj.push_back(Pair("blocks",           (int)chainActive.Height()));
     obj.push_back(Pair("currentblocksize", (uint64_t)nLastBlockSize));
     obj.push_back(Pair("currentblocktx",   (uint64_t)nLastBlockTx));
-    obj.push_back(Pair("difficulty",       (double)GetDifficulty()));
+    obj.push_back(Pair("difficulty",    GetDifficulty()));
     obj.push_back(Pair("errors",           GetWarnings("statusbar")));
     obj.push_back(Pair("genproclimit",     (int)GetArg("-genproclimit", -1)));
     obj.push_back(Pair("networkhashps",    getnetworkhashps(params, false)));
@@ -278,30 +278,18 @@ Value getwork(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() > 1)
         throw runtime_error(
-            "getwork ( \"data\" )\n"
-            "\nIf 'data' is not specified, it returns the formatted hash data to work on.\n"
-            "If 'data' is specified, tries to solve the block and returns true if it was successful.\n"
-            "\nArguments:\n"
-            "1. \"data\"       (string, optional) The hex encoded data to solve\n"
-            "\nResult (when 'data' is not specified):\n"
-            "{\n"
-            "  \"midstate\" : \"xxxx\",   (string) The precomputed hash state after hashing the first half of the data (DEPRECATED)\n" // deprecated
-            "  \"data\" : \"xxxxx\",      (string) The block data\n"
-            "  \"hash1\" : \"xxxxx\",     (string) The formatted hash buffer for second hash (DEPRECATED)\n" // deprecated
-            "  \"target\" : \"xxxx\"      (string) The little endian hash target\n"
-            "}\n"
-            "\nResult (when 'data' is specified):\n"
-            "true|false       (boolean) If solving the block specified in the 'data' was successfull\n"
-            "\nExamples:\n"
-            + HelpExampleCli("getwork", "")
-            + HelpExampleRpc("getwork", "")
-        );
+            "getwork [data]\n"
+            "If [data] is not specified, returns formatted hash data to work on:\n"
+            "  \"data\" : block data\n"
+            "  \"diff\" : size of primes in bits (difficulty)\n"
+            "  \"primes\" : number of primes required (constellation size)\n"
+            "If [data] is specified, tries to solve the block and returns true if it was successful.");
 
     if (vNodes.empty())
-        throw JSONRPCError(RPC_CLIENT_NOT_CONNECTED, "Bitcoin is not connected!");
+        throw JSONRPCError(RPC_CLIENT_NOT_CONNECTED, "Riecoin is not connected!");
 
     if (IsInitialBlockDownload())
-        throw JSONRPCError(RPC_CLIENT_IN_INITIAL_DOWNLOAD, "Bitcoin is downloading blocks...");
+        throw JSONRPCError(RPC_CLIENT_IN_INITIAL_DOWNLOAD, "Riecoin is downloading blocks...");
 
     typedef map<uint256, pair<CBlock*, CScript> > mapNewBlock_t;
     static mapNewBlock_t mapNewBlock;    // FIXME: thread safety
@@ -347,7 +335,7 @@ Value getwork(const Array& params, bool fHelp)
 
         // Update nTime
         UpdateTime(*pblock, pindexPrev);
-        pblock->nNonce = 0;
+        pblock->nOffset = 0;
 
         // Update nExtraNonce
         static unsigned int nExtraNonce = 0;
@@ -356,19 +344,16 @@ Value getwork(const Array& params, bool fHelp)
         // Save
         mapNewBlock[pblock->hashMerkleRoot] = make_pair(pblock, pblock->vtx[0].vin[0].scriptSig);
 
-        // Pre-build hash buffers
-        char pmidstate[32];
-        char pdata[128];
-        char phash1[64];
-        FormatHashBuffers(pblock, pmidstate, pdata, phash1);
+        CBigNum diff;
+        diff.SetCompact(pblock->nBits);
 
-        uint256 hashTarget = CBigNum().SetCompact(pblock->nBits).getuint256();
+        char pdata[128];
+        FormatHashBuffers(pblock,  pdata);
 
         Object result;
-        result.push_back(Pair("midstate", HexStr(BEGIN(pmidstate), END(pmidstate)))); // deprecated
         result.push_back(Pair("data",     HexStr(BEGIN(pdata), END(pdata))));
-        result.push_back(Pair("hash1",    HexStr(BEGIN(phash1), END(phash1)))); // deprecated
-        result.push_back(Pair("target",   HexStr(BEGIN(hashTarget), END(hashTarget))));
+        result.push_back(Pair("diff",  diff.ToString() ));
+        result.push_back(Pair("primes", constellationSize));
         return result;
     }
     else
@@ -389,7 +374,7 @@ Value getwork(const Array& params, bool fHelp)
         CBlock* pblock = mapNewBlock[pdata->hashMerkleRoot].first;
 
         pblock->nTime = pdata->nTime;
-        pblock->nNonce = pdata->nNonce;
+        pblock->nOffset = pdata->nOffset;
         pblock->vtx[0].vin[0].scriptSig = mapNewBlock[pdata->hashMerkleRoot].second;
         pblock->hashMerkleRoot = pblock->BuildMerkleTree();
 
@@ -442,18 +427,17 @@ Value getblocktemplate(const Array& params, bool fHelp)
             "  },\n"
             "  \"coinbasevalue\" : n,               (numeric) maximum allowable input to coinbase transaction, including the generation award and transaction fees (in Satoshis)\n"
             "  \"coinbasetxn\" : { ... },           (json object) information for coinbase transaction\n"
-            "  \"target\" : \"xxxx\",               (string) The hash target\n"
             "  \"mintime\" : xxx,                   (numeric) The minimum timestamp appropriate for next block time in seconds since epoch (Jan 1 1970 GMT)\n"
             "  \"mutable\" : [                      (array of string) list of ways the block template may be changed \n"
             "     \"value\"                         (string) A way the block template may be changed, e.g. 'time', 'transactions', 'prevblock'\n"
             "     ,...\n"
             "  ],\n"
-            "  \"noncerange\" : \"00000000ffffffff\",   (string) A range of valid nonces\n"
             "  \"sigoplimit\" : n,                 (numeric) limit of sigops in blocks\n"
             "  \"sizelimit\" : n,                  (numeric) limit of block size\n"
             "  \"curtime\" : ttt,                  (numeric) current timestamp in seconds since epoch (Jan 1 1970 GMT)\n"
-            "  \"bits\" : \"xxx\",                 (string) compressed target of next block\n"
+            "  \"bits\" : compressed difficulty of next block\n"
             "  \"height\" : n                      (numeric) The height of the next block\n"
+            "  \"primes\" : number of primes required (constellation size)\n"
             "}\n"
 
             "\nExamples:\n"
@@ -480,10 +464,10 @@ Value getblocktemplate(const Array& params, bool fHelp)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid mode");
 
     if (vNodes.empty())
-        throw JSONRPCError(RPC_CLIENT_NOT_CONNECTED, "Bitcoin is not connected!");
+        throw JSONRPCError(RPC_CLIENT_NOT_CONNECTED, "Riecoin is not connected!");
 
     if (IsInitialBlockDownload())
-        throw JSONRPCError(RPC_CLIENT_IN_INITIAL_DOWNLOAD, "Bitcoin is downloading blocks...");
+        throw JSONRPCError(RPC_CLIENT_IN_INITIAL_DOWNLOAD, "Riecoin is downloading blocks...");
 
     // Update block
     static unsigned int nTransactionsUpdatedLast;
@@ -519,7 +503,7 @@ Value getblocktemplate(const Array& params, bool fHelp)
 
     // Update nTime
     UpdateTime(*pblock, pindexPrev);
-    pblock->nNonce = 0;
+    pblock->nOffset = 0;
 
     Array transactions;
     map<uint256, int64_t> setTxIndex;
@@ -558,7 +542,6 @@ Value getblocktemplate(const Array& params, bool fHelp)
     Object aux;
     aux.push_back(Pair("flags", HexStr(COINBASE_FLAGS.begin(), COINBASE_FLAGS.end())));
 
-    uint256 hashTarget = CBigNum().SetCompact(pblock->nBits).getuint256();
 
     static Array aMutable;
     if (aMutable.empty())
@@ -567,6 +550,8 @@ Value getblocktemplate(const Array& params, bool fHelp)
         aMutable.push_back("transactions");
         aMutable.push_back("prevblock");
     }
+    CBigNum diff;
+    diff.SetCompact(pblock->nBits);
 
     Object result;
     result.push_back(Pair("version", pblock->nVersion));
@@ -574,15 +559,15 @@ Value getblocktemplate(const Array& params, bool fHelp)
     result.push_back(Pair("transactions", transactions));
     result.push_back(Pair("coinbaseaux", aux));
     result.push_back(Pair("coinbasevalue", (int64_t)pblock->vtx[0].vout[0].nValue));
-    result.push_back(Pair("target", hashTarget.GetHex()));
     result.push_back(Pair("mintime", (int64_t)pindexPrev->GetMedianTimePast()+1));
     result.push_back(Pair("mutable", aMutable));
-    result.push_back(Pair("noncerange", "00000000ffffffff"));
     result.push_back(Pair("sigoplimit", (int64_t)MAX_BLOCK_SIGOPS));
     result.push_back(Pair("sizelimit", (int64_t)MAX_BLOCK_SIZE));
     result.push_back(Pair("curtime", (int64_t)pblock->nTime));
+    result.push_back(Pair("diff",  diff.ToString()));
     result.push_back(Pair("bits", HexBits(pblock->nBits)));
     result.push_back(Pair("height", (int64_t)(pindexPrev->nHeight+1)));
+    result.push_back(Pair("primes", constellationSize));
 
     return result;
 }
@@ -594,7 +579,7 @@ Value submitblock(const Array& params, bool fHelp)
             "submitblock \"hexdata\" ( \"jsonparametersobject\" )\n"
             "\nAttempts to submit new block to network.\n"
             "The 'jsonparametersobject' parameter is currently ignored.\n"
-            "See https://en.bitcoin.it/wiki/BIP_0022 for full specification.\n"
+            "See https://en.bitcoin.it/wiki/BIP_0022 for full specification. Riecoin is similar.\n"
 
             "\nArguments\n"
             "1. \"hexdata\"    (string, required) the hex-encoded block data to submit\n"
@@ -609,6 +594,13 @@ Value submitblock(const Array& params, bool fHelp)
         );
 
     vector<unsigned char> blockData(ParseHex(params[0].get_str()));
+
+    if (blockData.size() < 80)
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter");
+    int32_t bitsAux = *(int32_t *)&blockData[68];
+    memcpy( &blockData[68], &blockData[72], 8 );
+    *(int32_t *)&blockData[76] = bitsAux;
+
     CDataStream ssBlock(blockData, SER_NETWORK, PROTOCOL_VERSION);
     CBlock pblock;
     try {

@@ -1,5 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2013 The Bitcoin developers
+// Copyright (c) 2014 The riecoin developers (gatra)
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -15,7 +16,7 @@
 class CTransaction;
 
 /** No amount larger than this (in satoshi) is valid */
-static const int64_t MAX_MONEY = 21000000 * COIN;
+static const int64_t MAX_MONEY = 84000000 * COIN;
 inline bool MoneyRange(int64_t nValue) { return (nValue >= 0 && nValue <= MAX_MONEY); }
 
 /** An outpoint - a combination of a transaction hash and an index n into its vout */
@@ -349,9 +350,9 @@ public:
     int nVersion;
     uint256 hashPrevBlock;
     uint256 hashMerkleRoot;
-    unsigned int nTime;
-    unsigned int nBits;
-    unsigned int nNonce;
+    bitsType nBits;
+    int64 nTime;
+    offsetType nOffset;
 
     CBlockHeader()
     {
@@ -366,7 +367,7 @@ public:
         READWRITE(hashMerkleRoot);
         READWRITE(nTime);
         READWRITE(nBits);
-        READWRITE(nNonce);
+        READWRITE(nOffset);
     )
 
     void SetNull()
@@ -376,7 +377,7 @@ public:
         hashMerkleRoot = 0;
         nTime = 0;
         nBits = 0;
-        nNonce = 0;
+        nOffset = 0;
     }
 
     bool IsNull() const
@@ -385,7 +386,7 @@ public:
     }
 
     uint256 GetHash() const;
-
+    uint256 GetHashForPoW() const;
     int64_t GetBlockTime() const
     {
         return (int64_t)nTime;
@@ -434,7 +435,7 @@ public:
         block.hashMerkleRoot = hashMerkleRoot;
         block.nTime          = nTime;
         block.nBits          = nBits;
-        block.nNonce         = nNonce;
+        block.nOffset        = nOffset;
         return block;
     }
 

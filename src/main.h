@@ -29,12 +29,16 @@
 #include <utility>
 #include <vector>
 
+typedef unsigned int bitsType;
+typedef uint256 offsetType;
+
 class CBlockIndex;
 class CBloomFilter;
 class CInv;
 
+static const int constellationSize = 6;
 /** The maximum allowed size for a serialized block, in bytes (network rule) */
-static const unsigned int MAX_BLOCK_SIZE = 1000000;
+static const unsigned int MAX_BLOCK_SIZE = 2000000;
 /** Default for -blockmaxsize and -blockminsize, which control the range of sizes the mining code will create **/
 static const unsigned int DEFAULT_BLOCK_MAX_SIZE = 750000;
 static const unsigned int DEFAULT_BLOCK_MIN_SIZE = 0;
@@ -43,7 +47,7 @@ static const unsigned int DEFAULT_BLOCK_PRIORITY_SIZE = 50000;
 /** The maximum size for transactions we're willing to relay/mine */
 static const unsigned int MAX_STANDARD_TX_SIZE = 100000;
 /** The maximum allowed number of signature check operations in a block (network rule) */
-static const unsigned int MAX_BLOCK_SIGOPS = MAX_BLOCK_SIZE/50;
+static const unsigned int MAX_BLOCK_SIGOPS = MAX_BLOCK_SIZE/25;
 /** The maximum number of orphan transactions kept in memory */
 static const unsigned int MAX_ORPHAN_TRANSACTIONS = MAX_BLOCK_SIZE/100;
 /** The maximum number of orphan blocks kept in memory */
@@ -65,6 +69,9 @@ static const int fHaveUPnP = true;
 #else
 static const int fHaveUPnP = false;
 #endif
+
+const int zeroesBeforeHashInPrime = 8;
+const int iMinPrimeSize = 304; // this results in primes of size 1+8 (zeroesBeforeHashInPrime)+256 (hash)+39 = 304 bits
 
 /** "reject" message codes **/
 static const unsigned char REJECT_MALFORMED = 0x01;
@@ -150,7 +157,7 @@ bool SendMessages(CNode* pto, bool fSendTrickle);
 /** Run an instance of the script checking thread */
 void ThreadScriptCheck();
 /** Check whether a block hash satisfies the proof-of-work requirement specified by nBits */
-bool CheckProofOfWork(uint256 hash, unsigned int nBits);
+bool CheckProofOfWork(uint256 hash, bitsType nBits, uint256 delta);
 /** Calculate the minimum amount of work a received block needs, without knowing its direct parent */
 unsigned int ComputeMinWork(unsigned int nBase, int64_t nTime);
 /** Get the number of active peers */
@@ -292,7 +299,7 @@ inline bool AllowFree(double dPriority)
 {
     // Large (in bytes) low-priority (new, small-coin) transactions
     // need a fee.
-    return dPriority > COIN * 144 / 250;
+        return dPriority > COIN * 576 / 250;
 }
 
 // Check whether all inputs of this transaction are valid (no double spends, scripts & sigs, amounts)
@@ -698,7 +705,7 @@ public:
     unsigned int nUndoPos;
 
     // (memory only) Total amount of work (expected number of hashes) in the chain up to and including this block
-    uint256 nChainWork;
+    CBigNum nChainWork;
 
     // Number of transactions in this block.
     // Note: in a potential headers-first mode, this number cannot be relied upon
@@ -713,9 +720,9 @@ public:
     // block header
     int nVersion;
     uint256 hashMerkleRoot;
-    unsigned int nTime;
-    unsigned int nBits;
-    unsigned int nNonce;
+    bitsType nBits;
+    int64 nTime;
+    offsetType nOffset;
 
     // (memory only) Sequencial id assigned to distinguish order in which blocks are received.
     uint32_t nSequenceId;
@@ -738,7 +745,7 @@ public:
         hashMerkleRoot = 0;
         nTime          = 0;
         nBits          = 0;
-        nNonce         = 0;
+        nOffset         = 0;
     }
 
     CBlockIndex(CBlockHeader& block)
@@ -759,7 +766,7 @@ public:
         hashMerkleRoot = block.hashMerkleRoot;
         nTime          = block.nTime;
         nBits          = block.nBits;
-        nNonce         = block.nNonce;
+        nOffset         = block.nOffset;
     }
 
     CDiskBlockPos GetBlockPos() const {
@@ -789,7 +796,7 @@ public:
         block.hashMerkleRoot = hashMerkleRoot;
         block.nTime          = nTime;
         block.nBits          = nBits;
-        block.nNonce         = nNonce;
+        block.nOffset         = nOffset;
         return block;
     }
 
@@ -805,16 +812,13 @@ public:
 
     CBigNum GetBlockWork() const
     {
-        CBigNum bnTarget;
-        bnTarget.SetCompact(nBits);
-        if (bnTarget <= 0)
-            return 0;
-        return (CBigNum(1)<<256) / (bnTarget+1);
-    }
-
-    bool CheckIndex() const
-    {
-        return CheckProofOfWork(GetBlockHash(), nBits);
+        CBigNum bnWork;
+        CBigNum bnWork2;
+        bnWork.SetCompact(nBits);
+        bnWork2 = bnWork * bnWork;
+        bnWork2 *= bnWork2;
+        bnWork2 *= bnWork2;
+        return bnWork2*bnWork; // work^(constellationSize+3)
     }
 
     enum { nMedianTimeSpan=11 };
@@ -893,7 +897,7 @@ public:
         READWRITE(hashMerkleRoot);
         READWRITE(nTime);
         READWRITE(nBits);
-        READWRITE(nNonce);
+        READWRITE(nOffset);
     )
 
     uint256 GetBlockHash() const
@@ -904,7 +908,7 @@ public:
         block.hashMerkleRoot  = hashMerkleRoot;
         block.nTime           = nTime;
         block.nBits           = nBits;
-        block.nNonce          = nNonce;
+        block.nOffset         = nOffset;
         return block.GetHash();
     }
 

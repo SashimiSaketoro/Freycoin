@@ -373,6 +373,11 @@ public:
         return pn[0] | (uint64_t)pn[1] << 32;
     }
 
+    unsigned int GetLow32() const
+    {
+        return pn[0];
+    }
+
 //    unsigned int GetSerializeSize(int nType=0, int nVersion=PROTOCOL_VERSION) const
     unsigned int GetSerializeSize(int nType, int nVersion) const
     {
