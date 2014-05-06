@@ -8,6 +8,8 @@
 
 #include "util.h"
 
+
+
 std::string COutPoint::ToString() const
 {
     return strprintf("COutPoint(%s, %u)", hash.ToString().substr(0,10), n);
@@ -275,11 +277,11 @@ uint256 CBlock::CheckMerkleBranch(uint256 hash, const std::vector<uint256>& vMer
 
 void CBlock::print() const
 {
-    LogPrintf("CBlock(hash=%s, ver=%d, hashPrevBlock=%s, hashMerkleRoot=%s, nTime=%"PRI64u", nBitsCompact=0x%08x, nOffset=%s, vtx=%"PRIszu")\n",
-        GetHash().ToString(),
+    LogPrintf("CBlock(hash=%s, ver=%d, hashPrevBlock=%s, hashMerkleRoot=%s, nTime=%d, nBitsCompact=0x%08x, nOffset=%s, vtx=%"PRIszu")\n",
+        GetHash().ToString().c_str(),
         nVersion,
-        hashPrevBlock.ToString(),
-        hashMerkleRoot.ToString(),
+        hashPrevBlock.ToString().c_str(),
+        hashMerkleRoot.ToString().c_str(),
             nTime, nBits, nOffset.ToString().c_str(),
         vtx.size());
     for (unsigned int i = 0; i < vtx.size(); i++)

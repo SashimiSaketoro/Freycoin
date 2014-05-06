@@ -85,7 +85,7 @@ Value GetNetworkHashPS(int lookup, int height) {
     if (minTime == maxTime)
         return 0;
 
-    uint256 workDiff = pb->nChainWork - pb0->nChainWork;
+    uint256 workDiff = (pb->nChainWork - pb0->nChainWork).getuint256();
     int64_t timeDiff = maxTime - minTime;
 
     return (boost::int64_t)(workDiff.getdouble() / timeDiff);

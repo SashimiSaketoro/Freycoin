@@ -473,7 +473,7 @@ void FormatHashBuffers(CBlock* pblock, char* pdata)
             uint256 hashPrevBlock;
             uint256 hashMerkleRoot;
             bitsType nBits;
-            int64 nTime;
+            int64_t nTime;
         }
         block;
         unsigned char pchPadding0[64];
@@ -576,7 +576,7 @@ void static RiecoinMiner(CWallet *pwallet)
 
     try {
 
-        loop {
+        while(true) {
 
         if (Params().NetworkID() != CChainParams::REGTEST) {
             // Busy-wait for the network to come online so we don't waste time mining
@@ -604,7 +604,7 @@ void static RiecoinMiner(CWallet *pwallet)
         // Search
         //
         int64_t nStart = GetTime();
-        static int64 nHashCounter;
+        static int64_t nHashCounter;
         if (nHPSTimerStart == 0)
         {
             nHPSTimerStart = GetTimeMillis();
@@ -619,9 +619,9 @@ void static RiecoinMiner(CWallet *pwallet)
 
         candidateDelta = -1;
         previousDelta = 0;
-        int64 accumulatedDelta = 0;
+        int64_t accumulatedDelta = 0;
 
-        loop
+        while(true)
         {
             int i, isPrimeResult = 0;
             const int TRIES = 65536;
@@ -659,7 +659,7 @@ void static RiecoinMiner(CWallet *pwallet)
                             assert(blockHash2 == pblock->GetHashForPoW());
 
                             SetThreadPriority(THREAD_PRIORITY_NORMAL);
-                            bool bIsValid = CheckWork(pblock, *pwalletMain, reservekey);
+                            bool bIsValid = CheckWork(pblock, *pwallet, reservekey);
                             SetThreadPriority(THREAD_PRIORITY_LOWEST);
                             if( !bIsValid )
                             {
@@ -692,7 +692,7 @@ void static RiecoinMiner(CWallet *pwallet)
                         dHashesPerSec = 1000.0 * nHashCounter / (GetTimeMillis() - nHPSTimerStart);
                         nHPSTimerStart = GetTimeMillis();
                         nHashCounter = 0;
-                        static int64 nLogTime;
+                        static int64_t nLogTime;
                         if (GetTime() - nLogTime > 30 * 60)
                         {
                             nLogTime = GetTime();
@@ -707,9 +707,9 @@ void static RiecoinMiner(CWallet *pwallet)
             boost::this_thread::interruption_point();
             if (vNodes.empty())
                 break;
-            if (nTransactionsUpdated != nTransactionsUpdatedLast && GetTime() - nStart > 60)
+            if (mempool.GetTransactionsUpdated() != nTransactionsUpdatedLast && GetTime() - nStart > 60)
                 break;
-            if (pindexPrev != pindexBest)
+            if (pindexPrev != chainActive.Tip())
                 break;
             if( candidateDelta < 0 )
             {

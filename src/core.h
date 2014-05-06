@@ -13,6 +13,12 @@
 
 #include <stdint.h>
 
+typedef unsigned int bitsType;
+typedef uint256 offsetType;
+
+static const bitsType iMinPrimeSize = 304; // this results in primes of size 1+8 (zeroesBeforeHashInPrime)+256 (hash)+39 = 304 bits
+static const u_int32_t MinPrimeSizeCompacted = 0x02013000UL;
+
 class CTransaction;
 
 /** No amount larger than this (in satoshi) is valid */
@@ -351,7 +357,7 @@ public:
     uint256 hashPrevBlock;
     uint256 hashMerkleRoot;
     bitsType nBits;
-    int64 nTime;
+    int64_t nTime;
     offsetType nOffset;
 
     CBlockHeader()

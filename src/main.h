@@ -29,8 +29,6 @@
 #include <utility>
 #include <vector>
 
-typedef unsigned int bitsType;
-typedef uint256 offsetType;
 
 class CBlockIndex;
 class CBloomFilter;
@@ -71,7 +69,6 @@ static const int fHaveUPnP = false;
 #endif
 
 const int zeroesBeforeHashInPrime = 8;
-const int iMinPrimeSize = 304; // this results in primes of size 1+8 (zeroesBeforeHashInPrime)+256 (hash)+39 = 304 bits
 
 /** "reject" message codes **/
 static const unsigned char REJECT_MALFORMED = 0x01;
@@ -113,6 +110,8 @@ class CWalletInterface;
 struct CNodeStateStats;
 
 struct CBlockTemplate;
+
+extern unsigned int generatePrimeBase( CBigNum &bnTarget, uint256 hash, bitsType compactBits );
 
 /** Register a wallet to receive updates from core */
 void RegisterWallet(CWalletInterface* pwalletIn);
@@ -721,7 +720,7 @@ public:
     int nVersion;
     uint256 hashMerkleRoot;
     bitsType nBits;
-    int64 nTime;
+    int64_t nTime;
     offsetType nOffset;
 
     // (memory only) Sequencial id assigned to distinguish order in which blocks are received.
@@ -1054,6 +1053,7 @@ extern CChain chainActive;
 
 /** The currently best known chain of headers (some of which may be invalid). */
 extern CChain chainMostWork;
+extern CBigNum bnBestChainLastDiff;
 
 /** Global variable that points to the active CCoinsView (protected by cs_main) */
 extern CCoinsViewCache *pcoinsTip;
