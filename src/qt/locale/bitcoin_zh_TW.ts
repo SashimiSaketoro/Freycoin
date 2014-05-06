@@ -3,13 +3,13 @@
     <name>AboutDialog</name>
     <message>
         <location filename="../forms/aboutdialog.ui" line="+14"/>
-        <source>About Bitcoin Core</source>
-        <translation>關於位元幣核心</translation>
+        <source>About Riecoin Core</source>
+        <translation>關於黎曼幣核心</translation>
     </message>
     <message>
         <location line="+39"/>
-        <source>&lt;b&gt;Bitcoin Core&lt;/b&gt; version</source>
-        <translation>&lt;b&gt;位元幣核心&lt;/b&gt;版本</translation>
+        <source>&lt;b&gt;Riecoin Core&lt;/b&gt; version</source>
+        <translation>&lt;b&gt;黎曼幣核心&lt;/b&gt;版本</translation>
     </message>
     <message>
         <location line="+57"/>
@@ -20,7 +20,7 @@ Distributed under the MIT/X11 software license, see the accompanying file COPYIN
 
 This product includes software developed by the OpenSSL Project for use in the OpenSSL Toolkit (http://www.openssl.org/) and cryptographic software written by Eric Young (eay@cryptsoft.com) and UPnP software written by Thomas Bernard.</source>
         <translation>
-位元幣，原名是 Bitcoin, 又叫做比特幣。
+黎曼幣，原名是 Riecoin, 又叫做比特幣。
 
 這是一套實驗性的軟體。
 
@@ -35,8 +35,8 @@ This product includes software developed by the OpenSSL Project for use in the O
     </message>
     <message>
         <location line="+0"/>
-        <source>The Bitcoin Core developers</source>
-        <translation>位元幣核心開發人員</translation>
+        <source>The Riecoin Core developers</source>
+        <translation>黎曼幣核心開發人員</translation>
     </message>
 </context>
 <context>
@@ -123,13 +123,13 @@ This product includes software developed by the OpenSSL Project for use in the O
     </message>
     <message>
         <location line="+7"/>
-        <source>These are your Bitcoin addresses for sending payments. Always check the amount and the receiving address before sending coins.</source>
-        <translation>這些是你要付款過去的位元幣位址。在付錢之前，務必要檢查金額和收款位址是否正確。</translation>
+        <source>These are your Riecoin addresses for sending payments. Always check the amount and the receiving address before sending coins.</source>
+        <translation>這些是你要付款過去的黎曼幣位址。在付錢之前，務必要檢查金額和收款位址是否正確。</translation>
     </message>
     <message>
         <location line="+4"/>
-        <source>These are your Bitcoin addresses for receiving payments. It is recommended to use a new receiving address for each transaction.</source>
-        <translation>這些是你用來收款的位元幣位址。建議在每次交易時，都使用一個新的收款位址。</translation>
+        <source>These are your Riecoin addresses for receiving payments. It is recommended to use a new receiving address for each transaction.</source>
+        <translation>這些是你用來收款的黎曼幣位址。建議在每次交易時，都使用一個新的收款位址。</translation>
     </message>
     <message>
         <location line="+7"/>
@@ -249,8 +249,8 @@ This product includes software developed by the OpenSSL Project for use in the O
     </message>
     <message>
         <location line="+1"/>
-        <source>Warning: If you encrypt your wallet and lose your passphrase, you will &lt;b&gt;LOSE ALL OF YOUR BITCOINS&lt;/b&gt;!</source>
-        <translation>警告: 如果把錢包加密後又忘記密碼，你就會從此&lt;b&gt;失去其中所有的位元幣了&lt;/b&gt;！</translation>
+        <source>Warning: If you encrypt your wallet and lose your passphrase, you will &lt;b&gt;LOSE ALL OF YOUR RIECOINSS&lt;/b&gt;!</source>
+        <translation>警告: 如果把錢包加密後又忘記密碼，你就會從此&lt;b&gt;失去其中所有的黎曼幣了&lt;/b&gt;！</translation>
     </message>
     <message>
         <location line="+0"/>
@@ -276,8 +276,8 @@ This product includes software developed by the OpenSSL Project for use in the O
     </message>
     <message>
         <location line="-56"/>
-        <source>Bitcoin will close now to finish the encryption process. Remember that encrypting your wallet cannot fully protect your bitcoins from being stolen by malware infecting your computer.</source>
-        <translation>位元幣軟體現在要關閉，好完成加密程序。請注意，加密錢包不能完全防止入侵你的電腦的惡意程式偷取位元幣。</translation>
+        <source>Riecoin will close now to finish the encryption process. Remember that encrypting your wallet cannot fully protect your riecoins from being stolen by malware infecting your computer.</source>
+        <translation>黎曼幣軟體現在要關閉，好完成加密程序。請注意，加密錢包不能完全防止入侵你的電腦的惡意程式偷取黎曼幣。</translation>
     </message>
     <message>
         <location line="+13"/>
@@ -370,8 +370,8 @@ This product includes software developed by the OpenSSL Project for use in the O
     </message>
     <message>
         <location line="+7"/>
-        <source>Show information about Bitcoin</source>
-        <translation>顯示位元幣軟體相關資訊</translation>
+        <source>Show information about Riecoin</source>
+        <translation>顯示黎曼幣軟體相關資訊</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -431,13 +431,13 @@ This product includes software developed by the OpenSSL Project for use in the O
     </message>
     <message>
         <location line="-405"/>
-        <source>Send coins to a Bitcoin address</source>
-        <translation>付錢給一個位元幣位址</translation>
+        <source>Send coins to a Riecoin address</source>
+        <translation>付錢給一個黎曼幣位址</translation>
     </message>
     <message>
         <location line="+49"/>
-        <source>Modify configuration options for Bitcoin</source>
-        <translation>修改位元幣軟體的設定選項</translation>
+        <source>Modify configuration options for Riecoin</source>
+        <translation>修改黎曼幣軟體的設定選項</translation>
     </message>
     <message>
         <location line="+12"/>
@@ -466,8 +466,8 @@ This product includes software developed by the OpenSSL Project for use in the O
     </message>
     <message>
         <location line="+430"/>
-        <source>Bitcoin</source>
-        <translation>位元幣</translation>
+        <source>Riecoin</source>
+        <translation>黎曼幣</translation>
     </message>
     <message>
         <location line="-643"/>
@@ -502,13 +502,13 @@ This product includes software developed by the OpenSSL Project for use in the O
     </message>
     <message>
         <location line="+7"/>
-        <source>Sign messages with your Bitcoin addresses to prove you own them</source>
-        <translation>用位元幣位址簽署訊息來證明位址是你的</translation>
+        <source>Sign messages with your Riecoin addresses to prove you own them</source>
+        <translation>用黎曼幣位址簽署訊息來證明位址是你的</translation>
     </message>
     <message>
         <location line="+2"/>
-        <source>Verify messages to ensure they were signed with specified Bitcoin addresses</source>
-        <translation>驗證訊息是用來確定訊息是用指定的位元幣位址簽署的</translation>
+        <source>Verify messages to ensure they were signed with specified Riecoin addresses</source>
+        <translation>驗證訊息是用來確定訊息是用指定的黎曼幣位址簽署的</translation>
     </message>
     <message>
         <location line="+48"/>
@@ -538,19 +538,19 @@ This product includes software developed by the OpenSSL Project for use in the O
     </message>
     <message>
         <location line="-401"/>
-        <source>Bitcoin Core</source>
-        <translation>位元幣核心</translation>
+        <source>Riecoin Core</source>
+        <translation>黎曼幣核心</translation>
     </message>
     <message>
         <location line="+163"/>
-        <source>Request payments (generates QR codes and bitcoin: URIs)</source>
-        <translation>要求付款(產生 QR Code 和位元幣付款協議的 URI)</translation>
+        <source>Request payments (generates QR codes and riecoin: URIs)</source>
+        <translation>要求付款(產生 QR Code 和黎曼幣付款協議的 URI)</translation>
     </message>
     <message>
         <location line="+29"/>
         <location line="+2"/>
-        <source>&amp;About Bitcoin Core</source>
-        <translation>關於位元幣核心</translation>
+        <source>&amp;About Riecoin Core</source>
+        <translation>關於黎曼幣核心</translation>
     </message>
     <message>
         <location line="+35"/>
@@ -564,8 +564,8 @@ This product includes software developed by the OpenSSL Project for use in the O
     </message>
     <message>
         <location line="+3"/>
-        <source>Open a bitcoin: URI or payment request</source>
-        <translation>開啓 bitcoin 協議的 URI 或付款要求</translation>
+        <source>Open a riecoin: URI or payment request</source>
+        <translation>開啓 riecoin 協議的 URI 或付款要求</translation>
     </message>
     <message>
         <location line="+2"/>
@@ -574,19 +574,19 @@ This product includes software developed by the OpenSSL Project for use in the O
     </message>
     <message>
         <location line="+1"/>
-        <source>Show the Bitcoin Core help message to get a list with possible Bitcoin command-line options</source>
-        <translation>顯示位元幣核心的說明訊息，來取得可用命令列選項的列表</translation>
+        <source>Show the Riecoin Core help message to get a list with possible Riecoin command-line options</source>
+        <translation>顯示黎曼幣核心的說明訊息，來取得可用命令列選項的列表</translation>
     </message>
     <message>
         <location line="+159"/>
         <location line="+5"/>
-        <source>Bitcoin client</source>
-        <translation>位元幣客戶端軟體</translation>
+        <source>Riecoin client</source>
+        <translation>黎曼幣客戶端軟體</translation>
     </message>
     <message numerus="yes">
         <location line="+142"/>
-        <source>%n active connection(s) to Bitcoin network</source>
-        <translation><numerusform>%n 個運作中的位元幣網路連線</numerusform></translation>
+        <source>%n active connection(s) to Riecoin network</source>
+        <translation><numerusform>%n 個運作中的黎曼幣網路連線</numerusform></translation>
     </message>
     <message>
         <location line="+22"/>
@@ -692,9 +692,9 @@ Address: %4
         <translation>錢包&lt;b&gt;已加密&lt;/b&gt;並且&lt;b&gt;上鎖中&lt;/b&gt;</translation>
     </message>
     <message>
-        <location filename="../bitcoin.cpp" line="+438"/>
-        <source>A fatal error occurred. Bitcoin can no longer continue safely and will quit.</source>
-        <translation>發生了致命的錯誤。位元幣軟體沒辦法再繼續安全執行，只好結束。</translation>
+        <location filename="../riecoin.cpp" line="+438"/>
+        <source>A fatal error occurred. Riecoin can no longer continue safely and will quit.</source>
+        <translation>發生了致命的錯誤。黎曼幣軟體沒辦法再繼續安全執行，只好結束。</translation>
     </message>
 </context>
 <context>
@@ -720,7 +720,7 @@ Address: %4
     <message>
         <location line="+29"/>
         <source>Bytes:</source>
-        <translation>位元組數:</translation>
+        <translation>黎曼組數:</translation>
     </message>
     <message>
         <location line="+45"/>
@@ -846,7 +846,7 @@ Address: %4
     <message>
         <location line="+1"/>
         <source>Copy bytes</source>
-        <translation>複製位元組數</translation>
+        <translation>複製黎曼組數</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -936,18 +936,18 @@ Address: %4
     <message>
         <location line="+10"/>
         <source>This label turns red, if the transaction size is greater than 1000 bytes.</source>
-        <translation>當交易大小大於 1000 位元組時，文字會變紅色。</translation>
+        <translation>當交易大小大於 1000 黎曼組時，文字會變紅色。</translation>
     </message>
     <message>
         <location line="+1"/>
         <location line="+5"/>
         <source>This means a fee of at least %1 per kB is required.</source>
-        <translation>表示每一千位元組(kB)需要至少 %1 的手續費。</translation>
+        <translation>表示每一千黎曼組(kB)需要至少 %1 的手續費。</translation>
     </message>
     <message>
         <location line="-4"/>
         <source>Can vary +/- 1 byte per input.</source>
-        <translation>每組輸入可能會誤差多或少 1 個位元組。</translation>
+        <translation>每組輸入可能會誤差多或少 1 個黎曼組。</translation>
     </message>
     <message>
         <location line="+2"/>
@@ -1051,8 +1051,8 @@ Address: %4
     </message>
     <message>
         <location line="-5"/>
-        <source>The entered address &quot;%1&quot; is not a valid Bitcoin address.</source>
-        <translation>輸入的位址 %1 並不是有效的位元幣位址。</translation>
+        <source>The entered address &quot;%1&quot; is not a valid Riecoin address.</source>
+        <translation>輸入的位址 %1 並不是有效的黎曼幣位址。</translation>
     </message>
     <message>
         <location line="+10"/>
@@ -1097,13 +1097,13 @@ Address: %4
     <name>HelpMessageDialog</name>
     <message>
         <location filename="../forms/helpmessagedialog.ui" line="+19"/>
-        <source>Bitcoin Core - Command-line options</source>
-        <translation>位元幣核心 - 命令列選項</translation>
+        <source>Riecoin Core - Command-line options</source>
+        <translation>黎曼幣核心 - 命令列選項</translation>
     </message>
     <message>
         <location filename="../utilitydialog.cpp" line="+38"/>
-        <source>Bitcoin Core</source>
-        <translation>位元幣核心</translation>
+        <source>Riecoin Core</source>
+        <translation>黎曼幣核心</translation>
     </message>
     <message>
         <location line="+0"/>
@@ -1155,18 +1155,18 @@ Address: %4
     </message>
     <message>
         <location line="+9"/>
-        <source>Welcome to Bitcoin Core.</source>
-        <translation>歡迎使用位元幣核心</translation>
+        <source>Welcome to Riecoin Core.</source>
+        <translation>歡迎使用黎曼幣核心</translation>
     </message>
     <message>
         <location line="+26"/>
-        <source>As this is the first time the program is launched, you can choose where Bitcoin Core will store its data.</source>
-        <translation>因為這是程式第一次啓動，你可以選擇位元幣核心儲存資料的地方。</translation>
+        <source>As this is the first time the program is launched, you can choose where Riecoin Core will store its data.</source>
+        <translation>因為這是程式第一次啓動，你可以選擇黎曼幣核心儲存資料的地方。</translation>
     </message>
     <message>
         <location line="+10"/>
-        <source>Bitcoin Core will download and store a copy of the Bitcoin block chain. At least %1GB of data will be stored in this directory, and it will grow over time. The wallet will also be stored in this directory.</source>
-        <translation>位元幣核心會下載並儲存一份位元幣區塊鏈的拷貝。至少有 %1GB 的資料會儲存到這個目錄中，並且還會持續增長。另外錢包資料也會儲存在這個目錄。</translation>
+        <source>Riecoin Core will download and store a copy of the Riecoin block chain. At least %1GB of data will be stored in this directory, and it will grow over time. The wallet will also be stored in this directory.</source>
+        <translation>黎曼幣核心會下載並儲存一份黎曼幣區塊鏈的拷貝。至少有 %1GB 的資料會儲存到這個目錄中，並且還會持續增長。另外錢包資料也會儲存在這個目錄。</translation>
     </message>
     <message>
         <location line="+10"/>
@@ -1180,8 +1180,8 @@ Address: %4
     </message>
     <message>
         <location filename="../intro.cpp" line="+85"/>
-        <source>Bitcoin</source>
-        <translation>位元幣</translation>
+        <source>Riecoin</source>
+        <translation>黎曼幣</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -1247,7 +1247,7 @@ Address: %4
     <message>
         <location line="+6"/>
         <source>Optional transaction fee per kB that helps make sure your transactions are processed quickly. Most transactions are 1 kB.</source>
-        <translation>每一千位元組(kB)要付的交易手續費，如果有付可以加速網路處理你的交易。大部份交易資料的大小是 1 kB.</translation>
+        <translation>每一千黎曼組(kB)要付的交易手續費，如果有付可以加速網路處理你的交易。大部份交易資料的大小是 1 kB.</translation>
     </message>
     <message>
         <location line="+15"/>
@@ -1256,13 +1256,13 @@ Address: %4
     </message>
     <message>
         <location line="+31"/>
-        <source>Automatically start Bitcoin after logging in to the system.</source>
-        <translation>在登入系統後自動啓動位元幣軟體。</translation>
+        <source>Automatically start Riecoin after logging in to the system.</source>
+        <translation>在登入系統後自動啓動黎曼幣軟體。</translation>
     </message>
     <message>
         <location line="+3"/>
-        <source>&amp;Start Bitcoin on system login</source>
-        <translation>系統登入時啟動位元幣</translation>
+        <source>&amp;Start Riecoin on system login</source>
+        <translation>系統登入時啟動黎曼幣</translation>
     </message>
     <message>
         <location line="+9"/>
@@ -1272,12 +1272,12 @@ Address: %4
     <message>
         <location line="+13"/>
         <source>Set database cache size in megabytes (default: 25)</source>
-        <translation>設定資料庫快取的大小是多少百萬位元組(預設值: 25)</translation>
+        <translation>設定資料庫快取的大小是多少百萬黎曼組(預設值: 25)</translation>
     </message>
     <message>
         <location line="+13"/>
         <source>MB</source>
-        <translation>MB (百萬位元組)</translation>
+        <translation>MB (百萬黎曼組)</translation>
     </message>
     <message>
         <location line="+27"/>
@@ -1291,8 +1291,8 @@ Address: %4
     </message>
     <message>
         <location line="+58"/>
-        <source>Connect to the Bitcoin network through a SOCKS proxy.</source>
-        <translation>透過 SOCKS 代理伺服器來連線到位元幣網路。</translation>
+        <source>Connect to the Riecoin network through a SOCKS proxy.</source>
+        <translation>透過 SOCKS 代理伺服器來連線到黎曼幣網路。</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -1326,8 +1326,8 @@ Address: %4
     </message>
     <message>
         <location line="+6"/>
-        <source>Automatically open the Bitcoin client port on the router. This only works when your router supports UPnP and it is enabled.</source>
-        <translation>自動在路由器上開放位元幣的客戶端通訊埠。只有在你的路由器支援且開啓通用即插即用(UPnP)協定時才有作用。</translation>
+        <source>Automatically open the Riecoin client port on the router. This only works when your router supports UPnP and it is enabled.</source>
+        <translation>自動在路由器上開放黎曼幣的客戶端通訊埠。只有在你的路由器支援且開啓通用即插即用(UPnP)協定時才有作用。</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -1396,8 +1396,8 @@ Address: %4
     </message>
     <message>
         <location line="+13"/>
-        <source>The user interface language can be set here. This setting will take effect after restarting Bitcoin.</source>
-        <translation>可以在這裡設定使用者介面的語言。這個設定在重啓位元幣軟體後才會生效。</translation>
+        <source>The user interface language can be set here. This setting will take effect after restarting Riecoin.</source>
+        <translation>可以在這裡設定使用者介面的語言。這個設定在重啓黎曼幣軟體後才會生效。</translation>
     </message>
     <message>
         <location line="+11"/>
@@ -1411,8 +1411,8 @@ Address: %4
     </message>
     <message>
         <location line="+9"/>
-        <source>Whether to show Bitcoin addresses in the transaction list or not.</source>
-        <translation>是否要在交易列表中顯示位元幣位址。</translation>
+        <source>Whether to show Riecoin addresses in the transaction list or not.</source>
+        <translation>是否要在交易列表中顯示黎曼幣位址。</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -1486,8 +1486,8 @@ Address: %4
     <message>
         <location line="+50"/>
         <location line="+231"/>
-        <source>The displayed information may be out of date. Your wallet automatically synchronizes with the Bitcoin network after a connection is established, but this process has not completed yet.</source>
-        <translation>顯示的資訊可能是過期的。跟位元幣網路的連線建立後，你的錢包會自動和網路同步，但是這個步驟還沒完成。</translation>
+        <source>The displayed information may be out of date. Your wallet automatically synchronizes with the Riecoin network after a connection is established, but this process has not completed yet.</source>
+        <translation>顯示的資訊可能是過期的。跟黎曼幣網路的連線建立後，你的錢包會自動和網路同步，但是這個步驟還沒完成。</translation>
     </message>
     <message>
         <location line="-155"/>
@@ -1556,8 +1556,8 @@ Address: %4
     </message>
     <message>
         <location line="+1"/>
-        <source>URI can not be parsed! This can be caused by an invalid Bitcoin address or malformed URI parameters.</source>
-        <translation>沒辦法解析 URI 位址！可能是因為位元幣位址無效，或是 URI 參數格式錯誤。</translation>
+        <source>URI can not be parsed! This can be caused by an invalid Riecoin address or malformed URI parameters.</source>
+        <translation>沒辦法解析 URI 位址！可能是因為黎曼幣位址無效，或是 URI 參數格式錯誤。</translation>
     </message>
     <message>
         <location line="+96"/>
@@ -1576,8 +1576,8 @@ Address: %4
     </message>
     <message>
         <location line="-353"/>
-        <source>Cannot start bitcoin: click-to-pay handler</source>
-        <translation>沒辦法啟動 bitcoin 協議的按就付處理器</translation>
+        <source>Cannot start riecoin: click-to-pay handler</source>
+        <translation>沒辦法啟動 riecoin 協議的按就付處理器</translation>
     </message>
     <message>
         <location line="+58"/>
@@ -1643,10 +1643,10 @@ Address: %4
 <context>
     <name>QObject</name>
     <message>
-        <location filename="../bitcoin.cpp" line="+71"/>
+        <location filename="../riecoin.cpp" line="+71"/>
         <location line="+11"/>
-        <source>Bitcoin</source>
-        <translation>位元幣</translation>
+        <source>Riecoin</source>
+        <translation>黎曼幣</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -1660,8 +1660,8 @@ Address: %4
     </message>
     <message>
         <location filename="../guiutil.cpp" line="+82"/>
-        <source>Enter a Bitcoin address (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
-        <translation>請輸入位元幣位址(像是 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</translation>
+        <source>Enter a Riecoin address (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
+        <translation>請輸入黎曼幣位址(像是 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</translation>
     </message>
 </context>
 <context>
@@ -1821,8 +1821,8 @@ Address: %4
     </message>
     <message>
         <location line="+7"/>
-        <source>Open the Bitcoin debug log file from the current data directory. This can take a few seconds for large log files.</source>
-        <translation>從目前的資料目錄下開啓位元幣軟體的除錯紀錄檔。當紀錄檔很大時，可能會花好幾秒的時間。</translation>
+        <source>Open the Riecoin debug log file from the current data directory. This can take a few seconds for large log files.</source>
+        <translation>從目前的資料目錄下開啓黎曼幣軟體的除錯紀錄檔。當紀錄檔很大時，可能會花好幾秒的時間。</translation>
     </message>
     <message>
         <location line="+76"/>
@@ -1831,8 +1831,8 @@ Address: %4
     </message>
     <message>
         <location filename="../rpcconsole.cpp" line="-30"/>
-        <source>Welcome to the Bitcoin RPC console.</source>
-        <translation>歡迎使用位元幣 RPC 主控台。</translation>
+        <source>Welcome to the Riecoin RPC console.</source>
+        <translation>歡迎使用黎曼幣 RPC 主控台。</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -1847,22 +1847,22 @@ Address: %4
     <message>
         <location line="+122"/>
         <source>%1 B</source>
-        <translation>%1 B (位元組)</translation>
+        <translation>%1 B (黎曼組)</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>%1 KB</source>
-        <translation>%1 KB (千位元組)</translation>
+        <translation>%1 KB (千黎曼組)</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>%1 MB</source>
-        <translation>%1 MB (百萬位元組)</translation>
+        <translation>%1 MB (百萬黎曼組)</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>%1 GB</source>
-        <translation>%1 GB (十億位元組)</translation>
+        <translation>%1 GB (十億黎曼組)</translation>
     </message>
     <message>
         <location line="+7"/>
@@ -1910,8 +1910,8 @@ Address: %4
     <message>
         <location line="+14"/>
         <location line="+23"/>
-        <source>An optional message to attach to the payment request, which will be displayed when the request is opened. Note: The message will not be sent with the payment over the Bitcoin network.</source>
-        <translation>附加在付款要求中的訊息，可以不填，打開要求內容時會顯示。注意: 這個訊息不會隨著付款送到位元幣網路上。</translation>
+        <source>An optional message to attach to the payment request, which will be displayed when the request is opened. Note: The message will not be sent with the payment over the Riecoin network.</source>
+        <translation>附加在付款要求中的訊息，可以不填，打開要求內容時會顯示。注意: 這個訊息不會隨著付款送到黎曼幣網路上。</translation>
     </message>
     <message>
         <location line="-7"/>
@@ -2129,7 +2129,7 @@ Address: %4
     <message>
         <location line="+35"/>
         <source>Bytes:</source>
-        <translation>位元組數:</translation>
+        <translation>黎曼組數:</translation>
     </message>
     <message>
         <location line="+48"/>
@@ -2242,7 +2242,7 @@ Address: %4
     <message>
         <location line="+1"/>
         <source>Copy bytes</source>
-        <translation>複製位元組數</translation>
+        <translation>複製黎曼組數</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -2306,8 +2306,8 @@ Address: %4
     </message>
     <message>
         <location line="+113"/>
-        <source>Warning: Invalid Bitcoin address</source>
-        <translation>警告: 位元幣位址無效</translation>
+        <source>Warning: Invalid Riecoin address</source>
+        <translation>警告: 黎曼幣位址無效</translation>
     </message>
     <message>
         <location line="+20"/>
@@ -2418,8 +2418,8 @@ Address: %4
     </message>
     <message>
         <location line="+33"/>
-        <source>A message that was attached to the bitcoin: URI which will be stored with the transaction for your reference. Note: This message will not be sent over the Bitcoin network.</source>
-        <translation>附加在位元幣付款協議 URI 中的訊息，會和交易內容一起存起來，給你自己做參考。注意: 這個訊息不會送到位元幣網路上。</translation>
+        <source>A message that was attached to the riecoin: URI which will be stored with the transaction for your reference. Note: This message will not be sent over the Riecoin network.</source>
+        <translation>附加在黎曼幣付款協議 URI 中的訊息，會和交易內容一起存起來，給你自己做參考。注意: 這個訊息不會送到黎曼幣網路上。</translation>
     </message>
     <message>
         <location line="+426"/>
@@ -2443,8 +2443,8 @@ Address: %4
     <name>ShutdownWindow</name>
     <message>
         <location filename="../utilitydialog.cpp" line="+48"/>
-        <source>Bitcoin Core is shutting down...</source>
-        <translation>位元幣核心正在關閉中...</translation>
+        <source>Riecoin Core is shutting down...</source>
+        <translation>黎曼幣核心正在關閉中...</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -2513,8 +2513,8 @@ Address: %4
     </message>
     <message>
         <location line="+21"/>
-        <source>Sign the message to prove you own this Bitcoin address</source>
-        <translation>簽署這個訊息來證明這個位元幣位址是你的</translation>
+        <source>Sign the message to prove you own this Riecoin address</source>
+        <translation>簽署這個訊息來證明這個黎曼幣位址是你的</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -2549,8 +2549,8 @@ Address: %4
     </message>
     <message>
         <location line="+37"/>
-        <source>Verify the message to ensure it was signed with the specified Bitcoin address</source>
-        <translation>驗證這個訊息來確定是用指定的位元幣位址簽署的</translation>
+        <source>Verify the message to ensure it was signed with the specified Riecoin address</source>
+        <translation>驗證這個訊息來確定是用指定的黎曼幣位址簽署的</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -2564,8 +2564,8 @@ Address: %4
     </message>
     <message>
         <location filename="../signverifymessagedialog.cpp" line="+30"/>
-        <source>Enter a Bitcoin address (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
-        <translation>請輸入位元幣位址(像是 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</translation>
+        <source>Enter a Riecoin address (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
+        <translation>請輸入黎曼幣位址(像是 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</translation>
     </message>
     <message>
         <location line="-1"/>
@@ -2643,13 +2643,13 @@ Address: %4
     <name>SplashScreen</name>
     <message>
         <location filename="../splashscreen.cpp" line="+28"/>
-        <source>Bitcoin Core</source>
-        <translation>位元幣核心</translation>
+        <source>Riecoin Core</source>
+        <translation>黎曼幣核心</translation>
     </message>
     <message>
         <location line="+2"/>
-        <source>The Bitcoin Core developers</source>
-        <translation>位元幣核心開發人員</translation>
+        <source>The Riecoin Core developers</source>
+        <translation>黎曼幣核心開發人員</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -3216,7 +3216,7 @@ Address: %4
     </message>
 </context>
 <context>
-    <name>bitcoin-core</name>
+    <name>riecoin-core</name>
     <message>
         <location filename="../bitcoinstrings.cpp" line="+221"/>
         <source>Usage:</source>
@@ -3239,13 +3239,13 @@ Address: %4
     </message>
     <message>
         <location line="+22"/>
-        <source>Specify configuration file (default: bitcoin.conf)</source>
-        <translation>指定設定檔(預設值: bitcoin.conf)</translation>
+        <source>Specify configuration file (default: riecoin.conf)</source>
+        <translation>指定設定檔(預設值: riecoin.conf)</translation>
     </message>
     <message>
         <location line="+3"/>
-        <source>Specify pid file (default: bitcoind.pid)</source>
-        <translation>指定行程識別碼(PID)檔(預設值:  bitcoind.pid)</translation>
+        <source>Specify pid file (default: riecoind.pid)</source>
+        <translation>指定行程識別碼(PID)檔(預設值:  riecoind.pid)</translation>
     </message>
     <message>
         <location line="-1"/>
@@ -3255,7 +3255,7 @@ Address: %4
     <message>
         <location line="-9"/>
         <source>Set database cache size in megabytes (default: 25)</source>
-        <translation>設定資料庫快取大小成多少百萬位元組(MB；預設值: 25)</translation>
+        <translation>設定資料庫快取大小成多少百萬黎曼組(MB；預設值: 25)</translation>
     </message>
     <message>
         <location line="-26"/>
@@ -3323,25 +3323,25 @@ Address: %4
         <source>%s, you must set a rpcpassword in the configuration file:
 %s
 It is recommended you use the following random password:
-rpcuser=bitcoinrpc
+rpcuser=riecoinrpc
 rpcpassword=%s
 (you do not need to remember this password)
 The username and password MUST NOT be the same.
 If the file does not exist, create it with owner-readable-only file permissions.
 It is also recommended to set alertnotify so you are notified of problems;
-for example: alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo.com
+for example: alertnotify=echo %%s | mail -s &quot;Riecoin Alert&quot; admin@foo.com
 </source>
         <translation>%s, 你必須要在以下設定檔中設定 RPC 密碼(rpcpassword):
 %s
 建議你使用以下隨機產生的密碼:
-rpcuser=bitcoinrpc
+rpcuser=riecoinrpc
 rpcpassword=%s
 (你不用記住這個密碼)
 使用者名稱(rpcuser)和密碼(rpcpassword)不可以相同！
 如果還沒有這個設定檔，請在造出來的時候，設定檔案權限成「只有主人才能讀取」。
 也建議你設定警示通知，發生問題時你才會被通知到；
 比如說設定成:
-alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo.com</translation>
+alertnotify=echo %%s | mail -s &quot;Riecoin Alert&quot; admin@foo.com</translation>
     </message>
     <message>
         <location line="+12"/>
@@ -3360,8 +3360,8 @@ alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo.com</translat
     </message>
     <message>
         <location line="+3"/>
-        <source>Cannot obtain a lock on data directory %s. Bitcoin is probably already running.</source>
-        <translation>沒辦法鎖定 %s 這個資料目錄。也許位元幣軟體已經在執行了。</translation>
+        <source>Cannot obtain a lock on data directory %s. Riecoin is probably already running.</source>
+        <translation>沒辦法鎖定 %s 這個資料目錄。也許黎曼幣軟體已經在執行了。</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -3405,13 +3405,13 @@ alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo.com</translat
     </message>
     <message>
         <location line="+3"/>
-        <source>Warning: Please check that your computer&apos;s date and time are correct! If your clock is wrong Bitcoin will not work properly.</source>
-        <translation>警告: 請檢查電腦日期和時間是否正確！位元幣軟體沒辦法在時鐘不準的情況下正常運作。</translation>
+        <source>Warning: Please check that your computer&apos;s date and time are correct! If your clock is wrong Riecoin will not work properly.</source>
+        <translation>警告: 請檢查電腦日期和時間是否正確！黎曼幣軟體沒辦法在時鐘不準的情況下正常運作。</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>Warning: The network does not appear to fully agree! Some miners appear to be experiencing issues.</source>
-        <translation>警告: 位元幣網路對於區塊鏈結的決定目前有分歧！看來有些礦工會有問題。</translation>
+        <translation>警告: 黎曼幣網路對於區塊鏈結的決定目前有分歧！看來有些礦工會有問題。</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -3440,13 +3440,13 @@ alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo.com</translat
     </message>
     <message>
         <location line="+1"/>
-        <source>Bitcoin Core Daemon</source>
-        <translation>位元幣核心護靈</translation>
+        <source>Riecoin Core Daemon</source>
+        <translation>黎曼幣核心護靈</translation>
     </message>
     <message>
         <location line="+1"/>
-        <source>Bitcoin RPC client version</source>
-        <translation>位元幣 RPC 客戶端軟體版本</translation>
+        <source>Riecoin RPC client version</source>
+        <translation>黎曼幣 RPC 客戶端軟體版本</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -3581,7 +3581,7 @@ alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo.com</translat
     <message>
         <location line="+1"/>
         <source>Fee per kB to add to transactions you send</source>
-        <translation>交易時每一千位元組(kB)加付的交易手續費</translation>
+        <translation>交易時每一千黎曼組(kB)加付的交易手續費</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -3591,7 +3591,7 @@ alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo.com</translat
     <message>
         <location line="+1"/>
         <source>Generate coins (default: 0)</source>
-        <translation>生產位元幣(預設值: 0)</translation>
+        <translation>生產黎曼幣(預設值: 0)</translation>
     </message>
     <message>
         <location line="+2"/>
@@ -3645,13 +3645,13 @@ alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo.com</translat
     </message>
     <message>
         <location line="+1"/>
-        <source>Send command to Bitcoin server</source>
-        <translation>傳送指令給位元幣伺服器</translation>
+        <source>Send command to Riecoin server</source>
+        <translation>傳送指令給黎曼幣伺服器</translation>
     </message>
     <message>
         <location line="+7"/>
         <source>Set maximum block size in bytes (default: %d)</source>
-        <translation>設定區塊大小上限成多少位元組(預設值: %d)</translation>
+        <translation>設定區塊大小上限成多少黎曼組(預設值: %d)</translation>
     </message>
     <message>
         <location line="+2"/>
@@ -3665,8 +3665,8 @@ alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo.com</translat
     </message>
     <message>
         <location line="+2"/>
-        <source>Start Bitcoin server</source>
-        <translation>啟動位元幣伺服器</translation>
+        <source>Start Riecoin server</source>
+        <translation>啟動黎曼幣伺服器</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -3675,8 +3675,8 @@ alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo.com</translat
     </message>
     <message>
         <location line="+10"/>
-        <source>Usage (deprecated, use bitcoin-cli):</source>
-        <translation>用法(已過時，請改用 bitcoin-cli):</translation>
+        <source>Usage (deprecated, use riecoin-cli):</source>
+        <translation>用法(已過時，請改用 riecoin-cli):</translation>
     </message>
     <message>
         <location line="+7"/>
@@ -3731,7 +3731,7 @@ alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo.com</translat
     <message>
         <location line="+2"/>
         <source>Set maximum size of high-priority/low-fee transactions in bytes (default: %d)</source>
-        <translation>設定高優先度或低手續費的交易資料大小上限成多少位元組(預設值: %d)</translation>
+        <translation>設定高優先度或低手續費的交易資料大小上限成多少黎曼組(預設值: %d)</translation>
     </message>
     <message>
         <location line="+2"/>
@@ -3761,12 +3761,12 @@ alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo.com</translat
     <message>
         <location line="+2"/>
         <source>Maximum per-connection receive buffer, &lt;n&gt;*1000 bytes (default: 5000)</source>
-        <translation>每個連線的接收緩衝區大小上限為 &lt;n&gt;*1000 個位元組(預設值: 5000)</translation>
+        <translation>每個連線的接收緩衝區大小上限為 &lt;n&gt;*1000 個黎曼組(預設值: 5000)</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Maximum per-connection send buffer, &lt;n&gt;*1000 bytes (default: 1000)</source>
-        <translation>每個連線的傳送緩衝區大小上限為 &lt;n&gt;*1000 位元組(預設值: 1000)</translation>
+        <translation>每個連線的傳送緩衝區大小上限為 &lt;n&gt;*1000 黎曼組(預設值: 1000)</translation>
     </message>
     <message>
         <location line="+2"/>
@@ -3780,8 +3780,8 @@ alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo.com</translat
     </message>
     <message>
         <location line="+9"/>
-        <source>SSL options: (see the Bitcoin Wiki for SSL setup instructions)</source>
-        <translation>SSL 選項: (SSL 設定程序請見 Bitcoin Wiki)</translation>
+        <source>SSL options: (see the Riecoin Wiki for SSL setup instructions)</source>
+        <translation>SSL 選項: (SSL 設定程序請見 Riecoin Wiki)</translation>
     </message>
     <message>
         <location line="+4"/>
@@ -3791,7 +3791,7 @@ alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo.com</translat
     <message>
         <location line="+6"/>
         <source>Set minimum block size in bytes (default: 0)</source>
-        <translation>設定區塊大小下限成多少位元組(預設值: 0)</translation>
+        <translation>設定區塊大小下限成多少黎曼組(預設值: 0)</translation>
     </message>
     <message>
         <location line="+2"/>
@@ -3826,7 +3826,7 @@ alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo.com</translat
     <message>
         <location line="+1"/>
         <source>Transaction too large</source>
-        <translation>交易位元量太大</translation>
+        <translation>交易黎曼量太大</translation>
     </message>
     <message>
         <location line="+8"/>
@@ -3940,13 +3940,13 @@ alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo.com</translat
     </message>
     <message>
         <location line="+1"/>
-        <source>Error loading wallet.dat: Wallet requires newer version of Bitcoin</source>
-        <translation>載入 wallet.dat 檔案時發生錯誤: 這個錢包需要新版的位元幣軟體</translation>
+        <source>Error loading wallet.dat: Wallet requires newer version of Riecoin</source>
+        <translation>載入 wallet.dat 檔案時發生錯誤: 這個錢包需要新版的黎曼幣軟體</translation>
     </message>
     <message>
         <location line="+98"/>
-        <source>Wallet needed to be rewritten: restart Bitcoin to complete</source>
-        <translation>錢包需要重寫: 請重新啓動位元幣軟體來完成</translation>
+        <source>Wallet needed to be rewritten: restart Riecoin to complete</source>
+        <translation>錢包需要重寫: 請重新啓動黎曼幣軟體來完成</translation>
     </message>
     <message>
         <location line="-100"/>
@@ -4005,8 +4005,8 @@ alertnotify=echo %%s | mail -s &quot;Bitcoin Alert&quot; admin@foo.com</translat
     </message>
     <message>
         <location line="-32"/>
-        <source>Unable to bind to %s on this computer. Bitcoin is probably already running.</source>
-        <translation>沒辦法和這台電腦上的 %s 繫結。也許位元幣軟體已經在執行了。</translation>
+        <source>Unable to bind to %s on this computer. Riecoin is probably already running.</source>
+        <translation>沒辦法和這台電腦上的 %s 繫結。也許黎曼幣軟體已經在執行了。</translation>
     </message>
     <message>
         <location line="+95"/>

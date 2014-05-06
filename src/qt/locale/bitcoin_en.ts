@@ -710,7 +710,7 @@ Address: %4
         <translation>Wallet is &lt;b&gt;encrypted&lt;/b&gt; and currently &lt;b&gt;locked&lt;/b&gt;</translation>
     </message>
     <message>
-        <location filename="../bitcoin.cpp" line="+441"/>
+        <location filename="../riecoin.cpp" line="+441"/>
         <source>A fatal error occurred. Riecoin can no longer continue safely and will quit.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1671,7 +1671,7 @@ Address: %4
 <context>
     <name>QObject</name>
     <message>
-        <location filename="../bitcoin.cpp" line="+63"/>
+        <location filename="../riecoin.cpp" line="+63"/>
         <location line="+14"/>
         <source>Riecoin</source>
         <translation type="unfinished"></translation>
@@ -3270,7 +3270,7 @@ Address: %4
     </message>
 </context>
 <context>
-    <name>bitcoin-core</name>
+    <name>riecoin-core</name>
     <message>
         <location filename="../bitcoinstrings.cpp" line="+226"/>
         <source>Usage:</source>
@@ -3818,8 +3818,8 @@ for example: alertnotify=echo %%s | mail -s &quot;Riecoin Alert&quot; admin@foo.
     </message>
     <message>
         <location line="+2"/>
-        <source>SSL options: (see the Bitcoin Wiki for SSL setup instructions)</source>
-        <translation>SSL options: (see the Bitcoin Wiki for SSL setup instructions)</translation>
+        <source>SSL options: (see the Riecoin Wiki for SSL setup instructions)</source>
+        <translation>SSL options: (see the Riecoin Wiki for SSL setup instructions)</translation>
     </message>
     <message>
         <location line="+2"/>
