@@ -8,6 +8,7 @@ src/test/test_bitcoin
 src/qt/test/test_bitcoin-qt
 
 Makefile.in
+Makefile.am.user
 aclocal.m4
 autom4te.cache/
 config.log
@@ -50,7 +51,7 @@ src/qt/test/moc*.cpp
 # Compilation and Qt preprocessor part
 *.qm
 Makefile
-bitcoin-qt
+riecoin-qt
 Bitcoin-Qt.app
 
 # Unit-tests
