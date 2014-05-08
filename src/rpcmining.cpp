@@ -51,11 +51,15 @@ void ShutdownRPCMining()
 }
 #endif
 
+
 // Return average network hashes per second based on the last 'lookup' blocks,
 // or from the last difficulty change if 'lookup' is nonpositive.
 // If 'height' is nonnegative, compute the estimate at the time when a given block was found.
-Value GetNetworkHashPS() {
+Value GetNetworkHashPS(int lookup, int height) {
     CBlockIndex *pb = chainActive.Tip();
+
+    if (height >= 0 && height < chainActive.Height())
+        pb = chainActive[height];
 
     if (pb == NULL || !pb->nHeight)
         return 0;
@@ -69,16 +73,24 @@ Value GetNetworkHashPS() {
 
 Value getnetworkhashps(const Array& params, bool fHelp)
 {
-    if (fHelp || params.size() > 0)
+    if (fHelp || params.size() > 2)
         throw runtime_error(
-            "getnetworkhashps\n"
-            "\nReturns the estimated network range scanned per second (in millions) based on the current difficulty.\n"
+            "getnetworkhashps ( blocks height )\n"
+            "\nReturns the estimated network range explored per second based on the difficulty of the last block.\n"
+            "Pass in [height] to estimate the network speed at the time when a certain block was found.\n"
+            "\nArguments:\n"
+            "1. blocks     Not used, just for compatibility.\n"
+            "2. height     (numeric, optional, default=-1) To estimate at the time of the given height.\n"
             "\nResult:\n"
-            "x             (numeric) Millions of numbers (of current difficulty size) per second estimated\n"
+            "x             (numeric) Millions of numbers per second estimated\n"
+            "\nExamples:\n"
+            + HelpExampleCli("getnetworkhashps", "")
+            + HelpExampleRpc("getnetworkhashps", "")
        );
 
-    return GetNetworkHashPS();
+    return GetNetworkHashPS(params.size() > 0 ? params[0].get_int() : 120, params.size() > 1 ? params[1].get_int() : -1);
 }
+
 
 #ifdef ENABLE_WALLET
 Value getgenerate(const Array& params, bool fHelp)
