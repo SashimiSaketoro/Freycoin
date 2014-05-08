@@ -427,3 +427,43 @@ Value verifychain(const Array& params, bool fHelp)
     return VerifyDB(nCheckLevel, nCheckDepth);
 }
 
+Value getPrimes(const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() != 1)
+        throw runtime_error(
+            "getprimes hash\n"
+            "\nReturns prime numbers of provided block.\n"
+            "\nArguments:\n"
+                "1. \"hash\"          (string, required) The block hash\n"
+        );
+
+    std::string strHash = params[0].get_str();
+    uint256 hash(strHash);
+
+    if( (mapBlockIndex.count(hash) == 0) || (hash == Params().HashGenesisBlock()) )
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Block not found");
+
+    CBlock block;
+    CBlockIndex* pblockindex = mapBlockIndex[hash];
+    ReadBlockFromDisk(block, pblockindex);
+
+    CBigNum p, q;
+    generatePrimeBase( p, block.GetHashForPoW(), block.nBits );
+    const string s = block.nOffset.GetHex();
+    q.SetHex(s);
+    p += q;
+
+    Object ret;
+    ret.push_back(Pair("p0", p.ToString()));
+    p += 4;
+    ret.push_back(Pair("p1", p.ToString()));
+    p += 2;
+    ret.push_back(Pair("p2", p.ToString()));
+    p += 4;
+    ret.push_back(Pair("p3", p.ToString()));
+    p += 2;
+    ret.push_back(Pair("p4", p.ToString()));
+    p += 4;
+    ret.push_back(Pair("p5", p.ToString()));
+    return ret;
+}

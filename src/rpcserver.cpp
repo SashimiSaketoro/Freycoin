@@ -247,6 +247,7 @@ static const CRPCCommand vRPCCommands[] =
     { "gettxoutsetinfo",        &gettxoutsetinfo,        true,      false,      false },
     { "gettxout",               &gettxout,               true,      false,      false },
     { "verifychain",            &verifychain,            true,      false,      false },
+    { "getprimes",              &getPrimes,              false,     false,      false },
 
     /* Mining */
     { "getnetworkhashps",       &getnetworkhashps,       true,      false,      false },

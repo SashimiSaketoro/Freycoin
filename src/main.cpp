@@ -1,4 +1,4 @@
-// Copyright (c) 2009-2010 Satoshi Nakamoto
+    // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin developers
 // Copyright (c) 2014 The riecoin developers (gatra)
 // Distributed under the MIT/X11 software license, see the accompanying
@@ -2563,7 +2563,16 @@ bool ProcessBlock(CValidationState &state, CNode* pfrom, CBlock* pblock, CDiskBl
     }
 
     // Preliminary checks
-    if (!CheckBlock(*pblock, state)) {
+    bool checkPoW = true;
+    if( mapBlockIndex.count(pblock->hashPrevBlock) )
+    {
+        if( mapBlockIndex[pblock->hashPrevBlock]->nHeight < Checkpoints::GetHeightOfLastCheckPoint() - 2 )
+        {
+            checkPoW = (GetRand(5) == 0);
+        }
+    }
+
+    if (!CheckBlock(*pblock, state, checkPoW)) {
         if (state.CorruptionPossible())
             mapAlreadyAskedFor.erase(CInv(MSG_BLOCK, hash));
         return error("ProcessBlock() : CheckBlock FAILED");
