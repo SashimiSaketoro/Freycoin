@@ -17,7 +17,7 @@ typedef unsigned int bitsType;
 typedef uint256 offsetType;
 
 static const bitsType iMinPrimeSize = 304; // this results in primes of size 1+8 (zeroesBeforeHashInPrime)+256 (hash)+39 = 304 bits
-static const u_int32_t MinPrimeSizeCompacted = 0x02013000UL;
+static const uint32_t MinPrimeSizeCompacted = 0x02013000UL;
 
 class CTransaction;
 
