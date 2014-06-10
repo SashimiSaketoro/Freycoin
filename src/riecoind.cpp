@@ -70,7 +70,13 @@ bool AppInit(int argc, char* argv[])
             fprintf(stderr, "Error: Specified data directory \"%s\" does not exist.\n", mapArgs["-datadir"].c_str());
             return false;
         }
-        ReadConfigFile(mapArgs, mapMultiArgs);
+        try
+        {
+            ReadConfigFile(mapArgs, mapMultiArgs);
+        } catch(std::exception &e) {
+            fprintf(stderr,"Error reading configuration file: %s\n", e.what());
+            return false;
+        }
         // Check for -testnet or -regtest parameter (TestNet() calls are only valid after this clause)
         if (!SelectParamsFromCommandLine()) {
             fprintf(stderr, "Error: Invalid combination of -regtest and -testnet.\n");
@@ -82,9 +88,9 @@ bool AppInit(int argc, char* argv[])
             // First part of help message is specific to riecoind / RPC client
             std::string strUsage = _("Riecoin Core Daemon") + " " + _("version") + " " + FormatFullVersion() + "\n\n" +
                 _("Usage:") + "\n" +
-                  "  riecoind [options]                     " + _("Start Riecoin server") + "\n" +
+                  "  riecoind [options]                     " + _("Start Riecoin Core Daemon") + "\n" +
                 _("Usage (deprecated, use riecoin-cli):") + "\n" +
-                  "  riecoind [options] <command> [params]  " + _("Send command to Riecoin server") + "\n" +
+                  "  riecoind [options] <command> [params]  " + _("Send command to Riecoin Core") + "\n" +
                   "  riecoind [options] help                " + _("List commands") + "\n" +
                   "  riecoind [options] help <command>      " + _("Get help for a command") + "\n";
 
@@ -166,6 +172,8 @@ bool AppInit(int argc, char* argv[])
 
 int main(int argc, char* argv[])
 {
+    SetupEnvironment();
+
     bool fRet = false;
 
     // Connect riecoind signal handlers

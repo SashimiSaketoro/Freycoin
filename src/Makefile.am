@@ -90,9 +90,7 @@ version.o: obj/build.h
 libriecoin_server_a_SOURCES = \
   addrman.cpp \
   alert.cpp \
-  rpcserver.cpp \
   bloom.cpp \
-  chainparams.cpp \
   checkpoints.cpp \
   coins.cpp \
   init.cpp \
@@ -107,6 +105,7 @@ libriecoin_server_a_SOURCES = \
   rpcmisc.cpp \
   rpcnet.cpp \
   rpcrawtransaction.cpp \
+  rpcserver.cpp \
   txdb.cpp \
   txmempool.cpp \
   $(JSON_H) \
@@ -122,6 +121,7 @@ libriecoin_wallet_a_SOURCES = \
   $(BITCOIN_CORE_H)
 
 libriecoin_common_a_SOURCES = \
+  base58.cpp \
   allocators.cpp \
   chainparams.cpp \
   core.cpp \
@@ -135,6 +135,11 @@ libriecoin_common_a_SOURCES = \
   util.cpp \
   version.cpp \
   $(BITCOIN_CORE_H)
+
+if GLIBC_BACK_COMPAT
+libriecoin_common_a_SOURCES += compat/glibc_compat.cpp
+libriecoin_common_a_SOURCES += compat/glibcxx_compat.cpp
+endif
 
 libriecoin_cli_a_SOURCES = \
   rpcclient.cpp \

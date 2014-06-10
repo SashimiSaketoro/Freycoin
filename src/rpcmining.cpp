@@ -68,7 +68,7 @@ Value GetNetworkHashPS(int lookup, int height) {
     double d2 = d * d;
     d = d2 * d2 * d2; // d = d ^ constellationSize
 
-    return (boost::uint64_t)(d / (150 * 1000 * 1000));
+    return (uint64_t)(d / (150 * 1000 * 1000));
 }
 
 Value getnetworkhashps(const Array& params, bool fHelp)
@@ -184,6 +184,7 @@ Value setgenerate(const Array& params, bool fHelp)
     else // Not -regtest: start generate thread, return immediately
     {
         mapArgs["-gen"] = (fGenerate ? "1" : "0");
+        mapArgs ["-genproclimit"] = itostr(nGenProcLimit);
         GenerateRiecoins(fGenerate, pwalletMain, nGenProcLimit);
     }
 
@@ -205,8 +206,8 @@ Value gethashespersec(const Array& params, bool fHelp)
         );
 
     if (GetTimeMillis() - nHPSTimerStart > 8000)
-        return (boost::int64_t)0;
-    return (boost::int64_t)dHashesPerSec;
+        return (int64_t)0;
+    return (int64_t)dHashesPerSec;
 }
 #endif
 
