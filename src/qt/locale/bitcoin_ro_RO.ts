@@ -2,12 +2,12 @@
 <context>
     <name>AboutDialog</name>
     <message>
-        <source>About Bitcoin Core</source>
-        <translation>Despre Nucleul Bitcoin</translation>
+        <source>About Riecoin Core</source>
+        <translation>Despre Nucleul Riecoin</translation>
     </message>
     <message>
-        <source>&lt;b&gt;Bitcoin Core&lt;/b&gt; version</source>
-        <translation>&lt;b&gt;Nucleul Bitcoin &lt;/b&gt; versiune</translation>
+        <source>&lt;b&gt;Riecoin Core&lt;/b&gt; version</source>
+        <translation>&lt;b&gt;Nucleul Riecoin &lt;/b&gt; versiune</translation>
     </message>
     <message>
         <source>
@@ -28,8 +28,8 @@ Acest produs include programe dezvoltate de către OpenSSL Project pentru a fi f
         <translation>Drepturi de autor</translation>
     </message>
     <message>
-        <source>The Bitcoin Core developers</source>
-        <translation>Dezvoltatorii Bitcoin Core</translation>
+        <source>The Riecoin Core developers</source>
+        <translation>Dezvoltatorii Riecoin Core</translation>
     </message>
     <message>
         <source>(%1-bit)</source>
@@ -103,12 +103,12 @@ Acest produs include programe dezvoltate de către OpenSSL Project pentru a fi f
         <translation>Adresa pe care primiti</translation>
     </message>
     <message>
-        <source>These are your Bitcoin addresses for sending payments. Always check the amount and the receiving address before sending coins.</source>
-        <translation>Acestea sunt adresele dumneavoastra Bitcoin care pot fi folosite la trimiterea platilor. Verificati totdeauna cantitatea si adresa de primire inainte de a trimite monezi.</translation>
+        <source>These are your Riecoin addresses for sending payments. Always check the amount and the receiving address before sending coins.</source>
+        <translation>Acestea sunt adresele dumneavoastra Riecoin care pot fi folosite la trimiterea platilor. Verificati totdeauna cantitatea si adresa de primire inainte de a trimite monezi.</translation>
     </message>
     <message>
-        <source>These are your Bitcoin addresses for receiving payments. It is recommended to use a new receiving address for each transaction.</source>
-        <translation>Acestea sunt adresele dumneavoastra Bitcoin folosite pentru a primi plati. Este recomandat sa folositi cate o adresa noua de primire pentru fiecare tranzactie in parte.</translation>
+        <source>These are your Riecoin addresses for receiving payments. It is recommended to use a new receiving address for each transaction.</source>
+        <translation>Acestea sunt adresele dumneavoastra Riecoin folosite pentru a primi plati. Este recomandat sa folositi cate o adresa noua de primire pentru fiecare tranzactie in parte.</translation>
     </message>
     <message>
         <source>Copy &amp;Label</source>
@@ -205,8 +205,8 @@ Acest produs include programe dezvoltate de către OpenSSL Project pentru a fi f
         <translation>Confirmă criptarea portofelului</translation>
     </message>
     <message>
-        <source>Warning: If you encrypt your wallet and lose your passphrase, you will &lt;b&gt;LOSE ALL OF YOUR BITCOINS&lt;/b&gt;!</source>
-        <translation>Atenție: Dacă pierdeţi parola portofelului electronic dupa criptare, &lt;b&gt;VEŢI PIERDE ÎNTREAGA SUMĂ DE BITCOIN ACUMULATĂ&lt;/b&gt;!</translation>
+        <source>Warning: If you encrypt your wallet and lose your passphrase, you will &lt;b&gt;LOSE ALL OF YOUR RIECOINS&lt;/b&gt;!</source>
+        <translation>Atenție: Dacă pierdeţi parola portofelului electronic dupa criptare, &lt;b&gt;VEŢI PIERDE ÎNTREAGA SUMĂ DE RIECOIN ACUMULATĂ&lt;/b&gt;!</translation>
     </message>
     <message>
         <source>Are you sure you wish to encrypt your wallet?</source>
@@ -225,8 +225,8 @@ Acest produs include programe dezvoltate de către OpenSSL Project pentru a fi f
         <translation>Portofel criptat</translation>
     </message>
     <message>
-        <source>Bitcoin will close now to finish the encryption process. Remember that encrypting your wallet cannot fully protect your bitcoins from being stolen by malware infecting your computer.</source>
-        <translation>Bitcoin se va închide acum pentru a termina procesul de criptare. Ține minte că criptarea portofelului nu te poate proteja în totalitate de furtul monedelor de către programe dăunătoare care îți infectează calculatorul.</translation>
+        <source>Riecoin will close now to finish the encryption process. Remember that encrypting your wallet cannot fully protect your riecoins from being stolen by malware infecting your computer.</source>
+        <translation>Riecoin se va închide acum pentru a termina procesul de criptare. Ține minte că criptarea portofelului nu te poate proteja în totalitate de furtul monedelor de către programe dăunătoare care îți infectează calculatorul.</translation>
     </message>
     <message>
         <source>Wallet encryption failed</source>
@@ -258,7 +258,7 @@ Acest produs include programe dezvoltate de către OpenSSL Project pentru a fi f
     </message>
 </context>
 <context>
-    <name>BitcoinGUI</name>
+    <name>RiecoinGUI</name>
     <message>
         <source>Sign &amp;message...</source>
         <translation>Semnează &amp;mesaj...</translation>
@@ -296,8 +296,8 @@ Acest produs include programe dezvoltate de către OpenSSL Project pentru a fi f
         <translation>Închide aplicația</translation>
     </message>
     <message>
-        <source>Show information about Bitcoin</source>
-        <translation>Arată informații despre Bitcoin</translation>
+        <source>Show information about Riecoin</source>
+        <translation>Arată informații despre Riecoin</translation>
     </message>
     <message>
         <source>About &amp;Qt</source>
@@ -344,12 +344,12 @@ Acest produs include programe dezvoltate de către OpenSSL Project pentru a fi f
         <translation>Se reindexează blocurile pe disc...</translation>
     </message>
     <message>
-        <source>Send coins to a Bitcoin address</source>
-        <translation>Trimite monede către o adresă Bitcoin</translation>
+        <source>Send coins to a Riecoin address</source>
+        <translation>Trimite monede către o adresă Riecoin</translation>
     </message>
     <message>
-        <source>Modify configuration options for Bitcoin</source>
-        <translation>Modifică opțiunile de configurare pentru Bitcoin</translation>
+        <source>Modify configuration options for Riecoin</source>
+        <translation>Modifică opțiunile de configurare pentru Riecoin</translation>
     </message>
     <message>
         <source>Backup wallet to another location</source>
@@ -372,8 +372,8 @@ Acest produs include programe dezvoltate de către OpenSSL Project pentru a fi f
         <translation>&amp;Verifică mesajul...</translation>
     </message>
     <message>
-        <source>Bitcoin</source>
-        <translation>Bitcoin</translation>
+        <source>Riecoin</source>
+        <translation>Riecoin</translation>
     </message>
     <message>
         <source>Wallet</source>
@@ -400,12 +400,12 @@ Acest produs include programe dezvoltate de către OpenSSL Project pentru a fi f
         <translation>Criptează cheile private ale portofelului tău</translation>
     </message>
     <message>
-        <source>Sign messages with your Bitcoin addresses to prove you own them</source>
-        <translation>Semnează mesaje cu adresa ta Bitcoin pentru a dovedi că îți aparțin</translation>
+        <source>Sign messages with your Riecoin addresses to prove you own them</source>
+        <translation>Semnează mesaje cu adresa ta Riecoin pentru a dovedi că îți aparțin</translation>
     </message>
     <message>
-        <source>Verify messages to ensure they were signed with specified Bitcoin addresses</source>
-        <translation>Verifică mesaje pentru a te asigura că au fost semnate cu adresa Bitcoin specificată</translation>
+        <source>Verify messages to ensure they were signed with specified Riecoin addresses</source>
+        <translation>Verifică mesaje pentru a te asigura că au fost semnate cu adresa Riecoin specificată</translation>
     </message>
     <message>
         <source>&amp;File</source>
@@ -428,16 +428,16 @@ Acest produs include programe dezvoltate de către OpenSSL Project pentru a fi f
         <translation>[testnet]</translation>
     </message>
     <message>
-        <source>Bitcoin Core</source>
-        <translation>Bitcoin Core</translation>
+        <source>Riecoin Core</source>
+        <translation>Riecoin Core</translation>
     </message>
     <message>
-        <source>Request payments (generates QR codes and bitcoin: URIs)</source>
-        <translation>Cereti plati (genereaza coduri QR si bitcoin-uri: URls)</translation>
+        <source>Request payments (generates QR codes and riecoin: URIs)</source>
+        <translation>Cereti plati (genereaza coduri QR si riecoin-uri: URls)</translation>
     </message>
     <message>
-        <source>&amp;About Bitcoin Core</source>
-        <translation>&amp;Despre Nucleul Bitcoin</translation>
+        <source>&amp;About Riecoin Core</source>
+        <translation>&amp;Despre Nucleul Riecoin</translation>
     </message>
     <message>
         <source>Show the list of used sending addresses and labels</source>
@@ -448,24 +448,24 @@ Acest produs include programe dezvoltate de către OpenSSL Project pentru a fi f
         <translation>Aratati lista de adrese pentru primire si etichete </translation>
     </message>
     <message>
-        <source>Open a bitcoin: URI or payment request</source>
-        <translation>Deschideti un bitcoin: o adresa URI sau o cerere de plata</translation>
+        <source>Open a riecoin: URI or payment request</source>
+        <translation>Deschideti un riecoin: o adresa URI sau o cerere de plata</translation>
     </message>
     <message>
         <source>&amp;Command-line options</source>
         <translation>Command-line setări</translation>
     </message>
     <message>
-        <source>Show the Bitcoin Core help message to get a list with possible Bitcoin command-line options</source>
+        <source>Show the Riecoin Core help message to get a list with possible Riecoin command-line options</source>
         <translation type="unfinished"/>
     </message>
     <message>
-        <source>Bitcoin client</source>
-        <translation>Client Bitcoin</translation>
+        <source>Riecoin client</source>
+        <translation>Client Riecoin</translation>
     </message>
     <message numerus="yes">
-        <source>%n active connection(s) to Bitcoin network</source>
-        <translation><numerusform>%n conexiune activă către rețeaua Bitcoin</numerusform><numerusform>%n conexiuni active către rețeaua Bitcoin</numerusform><numerusform>%n de conexiuni active către rețeaua Bitcoin</numerusform></translation>
+        <source>%n active connection(s) to Riecoin network</source>
+        <translation><numerusform>%n conexiune activă către rețeaua Riecoin</numerusform><numerusform>%n conexiuni active către rețeaua Riecoin</numerusform><numerusform>%n de conexiuni active către rețeaua Riecoin</numerusform></translation>
     </message>
     <message>
         <source>No block source available...</source>
@@ -560,8 +560,8 @@ Adresa: %4
         <translation>Portofelul este &lt;b&gt;criptat&lt;/b&gt; iar în momentul de față este &lt;b&gt;blocat&lt;/b&gt;</translation>
     </message>
     <message>
-        <source>A fatal error occurred. Bitcoin can no longer continue safely and will quit.</source>
-        <translation>A survenit o eroare fatala. Bitcoin nu mai poate continua in siguranta si se va opri.</translation>
+        <source>A fatal error occurred. Riecoin can no longer continue safely and will quit.</source>
+        <translation>A survenit o eroare fatala. Riecoin nu mai poate continua in siguranta si se va opri.</translation>
     </message>
 </context>
 <context>
@@ -845,8 +845,8 @@ Adresa: %4
         <translation>Adresa introdusă &quot;%1&quot; se află deja în lista de adrese.</translation>
     </message>
     <message>
-        <source>The entered address &quot;%1&quot; is not a valid Bitcoin address.</source>
-        <translation>Adresa introdusă &quot;%1&quot; nu este o adresă bitcoin validă.</translation>
+        <source>The entered address &quot;%1&quot; is not a valid Riecoin address.</source>
+        <translation>Adresa introdusă &quot;%1&quot; nu este o adresă riecoin validă.</translation>
     </message>
     <message>
         <source>Could not unlock wallet.</source>
@@ -883,12 +883,12 @@ Adresa: %4
 <context>
     <name>HelpMessageDialog</name>
     <message>
-        <source>Bitcoin Core - Command-line options</source>
-        <translation>Bitcoin Core - Opţiuni Linie de comandă</translation>
+        <source>Riecoin Core - Command-line options</source>
+        <translation>Riecoin Core - Opţiuni Linie de comandă</translation>
     </message>
     <message>
-        <source>Bitcoin Core</source>
-        <translation>Bitcoin Core</translation>
+        <source>Riecoin Core</source>
+        <translation>Riecoin Core</translation>
     </message>
     <message>
         <source>version</source>
@@ -934,16 +934,16 @@ Adresa: %4
         <translation>Bun venit</translation>
     </message>
     <message>
-        <source>Welcome to Bitcoin Core.</source>
-        <translation>Bine Aţi Venit la Nucleul Bitcoin.</translation>
+        <source>Welcome to Riecoin Core.</source>
+        <translation>Bine Aţi Venit la Nucleul Riecoin.</translation>
     </message>
     <message>
-        <source>As this is the first time the program is launched, you can choose where Bitcoin Core will store its data.</source>
-        <translation>Dacă aceasta este prima dată când programul este lansat, puteţi alege unde Nucleul Bitcoin va stoca datele. </translation>
+        <source>As this is the first time the program is launched, you can choose where Riecoin Core will store its data.</source>
+        <translation>Dacă aceasta este prima dată când programul este lansat, puteţi alege unde Nucleul Riecoin va stoca datele. </translation>
     </message>
     <message>
-        <source>Bitcoin Core will download and store a copy of the Bitcoin block chain. At least %1GB of data will be stored in this directory, and it will grow over time. The wallet will also be stored in this directory.</source>
-        <translation>Nucleul Bitcoin Core se va descărca şi va stoca o copie a lanţului blocului Bitcoin. Cel puţin 1GB de date vor fi stocate in acest dosar şi se va dezvolta în timp. Portofelul va fi, de asemenea, stocat în acest dosar.</translation>
+        <source>Riecoin Core will download and store a copy of the Riecoin block chain. At least %1GB of data will be stored in this directory, and it will grow over time. The wallet will also be stored in this directory.</source>
+        <translation>Nucleul Riecoin Core se va descărca şi va stoca o copie a lanţului blocului Riecoin. Cel puţin 1GB de date vor fi stocate in acest dosar şi se va dezvolta în timp. Portofelul va fi, de asemenea, stocat în acest dosar.</translation>
     </message>
     <message>
         <source>Use the default data directory</source>
@@ -954,8 +954,8 @@ Adresa: %4
         <translation>Folosește un dosar de date personalizat:</translation>
     </message>
     <message>
-        <source>Bitcoin</source>
-        <translation>Bitcoin</translation>
+        <source>Riecoin</source>
+        <translation>Riecoin</translation>
     </message>
     <message>
         <source>Error: Specified data directory &quot;%1&quot; can not be created.</source>
@@ -1016,12 +1016,12 @@ Adresa: %4
         <translation>Plăteşte comision pentru tranzacţie &amp;f</translation>
     </message>
     <message>
-        <source>Automatically start Bitcoin after logging in to the system.</source>
-        <translation>Porneşte automat programul Bitcoin la pornirea computerului.</translation>
+        <source>Automatically start Riecoin after logging in to the system.</source>
+        <translation>Porneşte automat programul Riecoin la pornirea computerului.</translation>
     </message>
     <message>
-        <source>&amp;Start Bitcoin on system login</source>
-        <translation>&amp;S Porneşte Bitcoin la pornirea sistemului</translation>
+        <source>&amp;Start Riecoin on system login</source>
+        <translation>&amp;S Porneşte Riecoin la pornirea sistemului</translation>
     </message>
     <message>
         <source>Size of &amp;database cache</source>
@@ -1036,8 +1036,8 @@ Adresa: %4
         <translation type="unfinished"/>
     </message>
     <message>
-        <source>Connect to the Bitcoin network through a SOCKS proxy.</source>
-        <translation>Conecteaza-te la reteaua Bitcoin printr-un proxy SOCKS</translation>
+        <source>Connect to the Riecoin network through a SOCKS proxy.</source>
+        <translation>Conecteaza-te la reteaua Riecoin printr-un proxy SOCKS</translation>
     </message>
     <message>
         <source>&amp;Connect through SOCKS proxy (default proxy):</source>
@@ -1096,8 +1096,8 @@ Adresa: %4
         <translation type="unfinished"/>
     </message>
     <message>
-        <source>Automatically open the Bitcoin client port on the router. This only works when your router supports UPnP and it is enabled.</source>
-        <translation>Deschide automat în router portul aferent clientului Bitcoin. Funcţionează doar în cazul în care routerul e compatibil UPnP şi opţiunea e activată.</translation>
+        <source>Automatically open the Riecoin client port on the router. This only works when your router supports UPnP and it is enabled.</source>
+        <translation>Deschide automat în router portul aferent clientului Riecoin. Funcţionează doar în cazul în care routerul e compatibil UPnP şi opţiunea e activată.</translation>
     </message>
     <message>
         <source>Map port using &amp;UPnP</source>
@@ -1152,8 +1152,8 @@ Adresa: %4
         <translation>Interfata &amp; limba userului</translation>
     </message>
     <message>
-        <source>The user interface language can be set here. This setting will take effect after restarting Bitcoin.</source>
-        <translation>Limba interfeței utilizatorului poate fi setat aici. Această setare va avea efect după repornirea Bitcoin.</translation>
+        <source>The user interface language can be set here. This setting will take effect after restarting Riecoin.</source>
+        <translation>Limba interfeței utilizatorului poate fi setat aici. Această setare va avea efect după repornirea Riecoin.</translation>
     </message>
     <message>
         <source>&amp;Unit to show amounts in:</source>
@@ -1164,8 +1164,8 @@ Adresa: %4
         <translation>Alege subdiviziunea folosită la afişarea interfeţei şi la trimiterea de riecoin.</translation>
     </message>
     <message>
-        <source>Whether to show Bitcoin addresses in the transaction list or not.</source>
-        <translation>Vezi dacă adresele Bitcoin sunt în lista de tranzacție sau nu</translation>
+        <source>Whether to show Riecoin addresses in the transaction list or not.</source>
+        <translation>Vezi dacă adresele Riecoin sunt în lista de tranzacție sau nu</translation>
     </message>
     <message>
         <source>&amp;Display addresses in transaction list</source>
@@ -1219,8 +1219,8 @@ Adresa: %4
         <translation>Form</translation>
     </message>
     <message>
-        <source>The displayed information may be out of date. Your wallet automatically synchronizes with the Bitcoin network after a connection is established, but this process has not completed yet.</source>
-        <translation>Informațiile afișate pot neactualizate. Portofelul tău se sincronizează automat cu rețeaua Bitcoin după ce o conexiune este stabilită, dar acest proces nu a fost finalizat încă.</translation>
+        <source>The displayed information may be out of date. Your wallet automatically synchronizes with the Riecoin network after a connection is established, but this process has not completed yet.</source>
+        <translation>Informațiile afișate pot neactualizate. Portofelul tău se sincronizează automat cu rețeaua Riecoin după ce o conexiune este stabilită, dar acest proces nu a fost finalizat încă.</translation>
     </message>
     <message>
         <source>Wallet</source>
@@ -1274,8 +1274,8 @@ Adresa: %4
         <translation>Gestionare URI</translation>
     </message>
     <message>
-        <source>URI can not be parsed! This can be caused by an invalid Bitcoin address or malformed URI parameters.</source>
-        <translation>URI nu poate fi analizat! Acest lucru poate fi cauzat de o adresa Bitcoin invalida sau parametri deformati URI.</translation>
+        <source>URI can not be parsed! This can be caused by an invalid Riecoin address or malformed URI parameters.</source>
+        <translation>URI nu poate fi analizat! Acest lucru poate fi cauzat de o adresa Riecoin invalida sau parametri deformati URI.</translation>
     </message>
     <message>
         <source>Requested payment amount of %1 is too small (considered dust).</source>
@@ -1286,8 +1286,8 @@ Adresa: %4
         <translation>Eroare la cererea de plată</translation>
     </message>
     <message>
-        <source>Cannot start bitcoin: click-to-pay handler</source>
-        <translation>Nu poate porni bitcoin: regula clic-pentru-plata</translation>
+        <source>Cannot start riecoin: click-to-pay handler</source>
+        <translation>Nu poate porni riecoin: regula clic-pentru-plata</translation>
     </message>
     <message>
         <source>Net manager warning</source>
@@ -1341,8 +1341,8 @@ Adresa: %4
 <context>
     <name>QObject</name>
     <message>
-        <source>Bitcoin</source>
-        <translation>Bitcoin</translation>
+        <source>Riecoin</source>
+        <translation>Riecoin</translation>
     </message>
     <message>
         <source>Error: Specified data directory &quot;%1&quot; does not exist.</source>
@@ -1357,12 +1357,12 @@ Adresa: %4
         <translation>Eroare: combinație nevalidă de -regtest și -testnet.</translation>
     </message>
     <message>
-        <source>Bitcoin Core didn&apos;t yet exit safely...</source>
+        <source>Riecoin Core didn&apos;t yet exit safely...</source>
         <translation type="unfinished"/>
     </message>
     <message>
-        <source>Enter a Bitcoin address (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
-        <translation>Introdu o adresă Bitcoin (de exemplu: 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</translation>
+        <source>Enter a Riecoin address (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
+        <translation>Introdu o adresă Riecoin (de exemplu: 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</translation>
     </message>
 </context>
 <context>
@@ -1483,7 +1483,7 @@ Adresa: %4
         <translation>Loguri debug</translation>
     </message>
     <message>
-        <source>Open the Bitcoin debug log file from the current data directory. This can take a few seconds for large log files.</source>
+        <source>Open the Riecoin debug log file from the current data directory. This can take a few seconds for large log files.</source>
         <translation>Deschide logurile debug din directorul curent. Aceasta poate dura cateva secunde pentru fisierele mai mari</translation>
     </message>
     <message>
@@ -1491,8 +1491,8 @@ Adresa: %4
         <translation>Curăță consola</translation>
     </message>
     <message>
-        <source>Welcome to the Bitcoin RPC console.</source>
-        <translation>Bun venit la consola bitcoin RPC</translation>
+        <source>Welcome to the Riecoin RPC console.</source>
+        <translation>Bun venit la consola riecoin RPC</translation>
     </message>
     <message>
         <source>Use up and down arrows to navigate history, and &lt;b&gt;Ctrl-L&lt;/b&gt; to clear screen.</source>
@@ -1554,7 +1554,7 @@ Adresa: %4
         <translation>&amp;Refolosirea unei adrese de primire (nu este recomandat)</translation>
     </message>
     <message>
-        <source>An optional message to attach to the payment request, which will be displayed when the request is opened. Note: The message will not be sent with the payment over the Bitcoin network.</source>
+        <source>An optional message to attach to the payment request, which will be displayed when the request is opened. Note: The message will not be sent with the payment over the Riecoin network.</source>
         <translation type="unfinished"/>
     </message>
     <message>
@@ -1867,8 +1867,8 @@ Adresa: %4
         <translation>Tranzactia a fost respinsa! Acest lucru se poate intampla daca o parte din monedele tale din portofel au fost deja cheltuite, la fel ca si cum ai fi folosit o copie a wallet.dat si monedele au fost cheltuite in copie, dar nu au fost marcate si si cheltuite si aici.</translation>
     </message>
     <message>
-        <source>Warning: Invalid Bitcoin address</source>
-        <translation>Atentie: Adresa Bitcoin invalida!</translation>
+        <source>Warning: Invalid Riecoin address</source>
+        <translation>Atentie: Adresa Riecoin invalida!</translation>
     </message>
     <message>
         <source>(no label)</source>
@@ -1954,7 +1954,7 @@ Adresa: %4
         <translation>Introduceti eticheta pentru ca aceasta adresa sa fie introdusa in lista de adrese folosite</translation>
     </message>
     <message>
-        <source>A message that was attached to the bitcoin: URI which will be stored with the transaction for your reference. Note: This message will not be sent over the Bitcoin network.</source>
+        <source>A message that was attached to the riecoin: URI which will be stored with the transaction for your reference. Note: This message will not be sent over the Riecoin network.</source>
         <translation type="unfinished"/>
     </message>
     <message>
@@ -1973,8 +1973,8 @@ Adresa: %4
 <context>
     <name>ShutdownWindow</name>
     <message>
-        <source>Bitcoin Core is shutting down...</source>
-        <translation>Bitcoin Core se închide...</translation>
+        <source>Riecoin Core is shutting down...</source>
+        <translation>Riecoin Core se închide...</translation>
     </message>
     <message>
         <source>Do not shut down the computer until this window disappears.</source>
@@ -2028,8 +2028,8 @@ Adresa: %4
         <translation>Copiaza semnatura curenta in clipboard-ul sistemului</translation>
     </message>
     <message>
-        <source>Sign the message to prove you own this Bitcoin address</source>
-        <translation>Semneaza mesajul pentru a dovedi ca detii acesta adresa Bitcoin</translation>
+        <source>Sign the message to prove you own this Riecoin address</source>
+        <translation>Semneaza mesajul pentru a dovedi ca detii acesta adresa Riecoin</translation>
     </message>
     <message>
         <source>Sign &amp;Message</source>
@@ -2056,8 +2056,8 @@ Adresa: %4
         <translation>Introduceţi o adresă Riecoin (de exemplu: 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</translation>
     </message>
     <message>
-        <source>Verify the message to ensure it was signed with the specified Bitcoin address</source>
-        <translation>Verifica mesajul pentru a fi sigur ca a fost semnat cu adresa Bitcoin specifica</translation>
+        <source>Verify the message to ensure it was signed with the specified Riecoin address</source>
+        <translation>Verifica mesajul pentru a fi sigur ca a fost semnat cu adresa Riecoin specifica</translation>
     </message>
     <message>
         <source>Verify &amp;Message</source>
@@ -2068,8 +2068,8 @@ Adresa: %4
         <translation>Reseteaza toate spatiile mesajelor semnate.</translation>
     </message>
     <message>
-        <source>Enter a Bitcoin address (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
-        <translation>Introduceţi o adresă Bitcoin (de exemplu: 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</translation>
+        <source>Enter a Riecoin address (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
+        <translation>Introduceţi o adresă Riecoin (de exemplu: 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</translation>
     </message>
     <message>
         <source>Click &quot;Sign Message&quot; to generate signature</source>
@@ -2127,12 +2127,12 @@ Adresa: %4
 <context>
     <name>SplashScreen</name>
     <message>
-        <source>Bitcoin Core</source>
-        <translation>Bitcoin Core</translation>
+        <source>Riecoin Core</source>
+        <translation>Riecoin Core</translation>
     </message>
     <message>
-        <source>The Bitcoin Core developers</source>
-        <translation>Dezvoltatorii Bitcoin Core</translation>
+        <source>The Riecoin Core developers</source>
+        <translation>Dezvoltatorii Riecoin Core</translation>
     </message>
     <message>
         <source>[testnet]</source>
@@ -2610,12 +2610,12 @@ Adresa: %4
         <translation>Setări:</translation>
     </message>
     <message>
-        <source>Specify configuration file (default: bitcoin.conf)</source>
-        <translation>Specifică fișierul de configurare (implicit: bitcoin.conf)</translation>
+        <source>Specify configuration file (default: riecoin.conf)</source>
+        <translation>Specifică fișierul de configurare (implicit: riecoin.conf)</translation>
     </message>
     <message>
-        <source>Specify pid file (default: bitcoind.pid)</source>
-        <translation>Specifică fișierul pid (implicit bitcoind.pid)</translation>
+        <source>Specify pid file (default: riecoind.pid)</source>
+        <translation>Specifică fișierul pid (implicit riecoind.pid)</translation>
     </message>
     <message>
         <source>Specify data directory</source>
@@ -2658,7 +2658,7 @@ Adresa: %4
         <translation>Se acceptă comenzi din linia de comandă și comenzi JSON-RPC</translation>
     </message>
     <message>
-        <source>Bitcoin Core RPC client version</source>
+        <source>Riecoin Core RPC client version</source>
         <translation type="unfinished"/>
     </message>
     <message>
@@ -2688,13 +2688,13 @@ for example: alertnotify=echo %%s | mail -s &quot;Riecoin Alert&quot; admin@foo.
         <translation>%s trebuie sa setezi o parola rpc in fisierul de configurare
 %s
 Este recomandat sa folosesti aceasta parola aleatorie:
-rpcuser=bitcoinrpc
+rpcuser=riecoinrpc
 parola rpc=%s
 (nu este necesar ca sa iti amintesti aceasta parola)
 Numele de utilizator si parola NU trebuie sa fie la fel.
 Daca fisierul nu exista, creaza-l cu fisier de citit permis doar proprietarului.
 Este de asemenea recomandat sa setezi alerta de notificare ca sa primesti notificari ale problemelor;
-spre exemplu: alertnotify=echo %%s | mail -s &quot;Alerta Bitcoin&quot; admin@foo.com
+spre exemplu: alertnotify=echo %%s | mail -s &quot;Alerta Riecoin&quot; admin@foo.com
 
 </translation>
     </message>
@@ -2767,7 +2767,7 @@ spre exemplu: alertnotify=echo %%s | mail -s &quot;Alerta Bitcoin&quot; admin@fo
         <translation>Aceasta este o versiune de test preliminara - va asumati riscul folosind-o - nu folositi pentru minerit sau aplicatiile comerciantilor.</translation>
     </message>
     <message>
-        <source>Unable to bind to %s on this computer. Bitcoin Core is probably already running.</source>
+        <source>Unable to bind to %s on this computer. Riecoin Core is probably already running.</source>
         <translation type="unfinished"/>
     </message>
     <message>
@@ -2779,8 +2779,8 @@ spre exemplu: alertnotify=echo %%s | mail -s &quot;Alerta Bitcoin&quot; admin@fo
         <translation>Atentie: setarea -paytxfee este foarte ridicata! Aceasta este taxa tranzactiei pe care o vei plati daca trimiti o tranzactie.</translation>
     </message>
     <message>
-        <source>Warning: Please check that your computer&apos;s date and time are correct! If your clock is wrong Bitcoin will not work properly.</source>
-        <translation>Atentie: Va rugam verificati daca data/timpul computerului dumneavoastra sunt corecte! Daca ceasul computerului este decalat, Bitcoin nu va functiona corect.</translation>
+        <source>Warning: Please check that your computer&apos;s date and time are correct! If your clock is wrong Riecoin will not work properly.</source>
+        <translation>Atentie: Va rugam verificati daca data/timpul computerului dumneavoastra sunt corecte! Daca ceasul computerului este decalat, Riecoin nu va functiona corect.</translation>
     </message>
     <message>
         <source>Warning: The network does not appear to fully agree! Some miners appear to be experiencing issues.</source>
@@ -2815,8 +2815,8 @@ spre exemplu: alertnotify=echo %%s | mail -s &quot;Alerta Bitcoin&quot; admin@fo
         <translation>Încearcă recuperarea cheilor private dintr-un wallet.dat corupt</translation>
     </message>
     <message>
-        <source>Bitcoin Core Daemon</source>
-        <translation>Daemon-ul Bitcoin Core</translation>
+        <source>Riecoin Core Daemon</source>
+        <translation>Daemon-ul Riecoin Core</translation>
     </message>
     <message>
         <source>Block creation options:</source>
@@ -3023,8 +3023,8 @@ spre exemplu: alertnotify=echo %%s | mail -s &quot;Alerta Bitcoin&quot; admin@fo
         <translation>Este folosita pentru programe de testare a regresiei in algoritmi si  dezvoltare de alte aplicatii. </translation>
     </message>
     <message>
-        <source>Usage (deprecated, use bitcoin-cli):</source>
-        <translation>Utilizare (învechită, folositi bitcoin-cli):</translation>
+        <source>Usage (deprecated, use riecoin-cli):</source>
+        <translation>Utilizare (învechită, folositi riecoin-cli):</translation>
     </message>
     <message>
         <source>Verifying blocks...</source>
@@ -3059,7 +3059,7 @@ spre exemplu: alertnotify=echo %%s | mail -s &quot;Alerta Bitcoin&quot; admin@fo
         <translation>Importă blocuri dintr-un fișier extern blk000??.dat</translation>
     </message>
     <message>
-        <source>Cannot obtain a lock on data directory %s. Bitcoin Core is probably already running.</source>
+        <source>Cannot obtain a lock on data directory %s. Riecoin Core is probably already running.</source>
         <translation type="unfinished"/>
     </message>
     <message>
@@ -3123,7 +3123,7 @@ spre exemplu: alertnotify=echo %%s | mail -s &quot;Alerta Bitcoin&quot; admin@fo
         <translation>Publicare arbore blocuri la pornire (prestabilit: 0)</translation>
     </message>
     <message>
-        <source>RPC SSL options: (see the Bitcoin Wiki for SSL setup instructions)</source>
+        <source>RPC SSL options: (see the Riecoin Wiki for SSL setup instructions)</source>
         <translation type="unfinished"/>
     </message>
     <message>
@@ -3143,12 +3143,12 @@ spre exemplu: alertnotify=echo %%s | mail -s &quot;Alerta Bitcoin&quot; admin@fo
         <translation type="unfinished"/>
     </message>
     <message>
-        <source>SSL options: (see the Bitcoin Wiki for SSL setup instructions)</source>
-        <translation>Optiuni SSl (vezi Bitcoin wiki pentru intructiunile de instalare)</translation>
+        <source>SSL options: (see the Riecoin Wiki for SSL setup instructions)</source>
+        <translation>Optiuni SSl (vezi Riecoin wiki pentru intructiunile de instalare)</translation>
     </message>
     <message>
-        <source>Send command to Bitcoin Core</source>
-        <translation>Trimitere comenzi catre Bitcoin Core</translation>
+        <source>Send command to Riecoin Core</source>
+        <translation>Trimitere comenzi catre Riecoin Core</translation>
     </message>
     <message>
         <source>Send trace/debug info to console instead of debug.log file</source>
@@ -3183,7 +3183,7 @@ spre exemplu: alertnotify=echo %%s | mail -s &quot;Alerta Bitcoin&quot; admin@fo
         <translation>Specifică intervalul maxim de conectare în milisecunde (implicit: 5000)</translation>
     </message>
     <message>
-        <source>Start Bitcoin Core Daemon</source>
+        <source>Start Riecoin Core Daemon</source>
         <translation type="unfinished"/>
     </message>
     <message>
@@ -3299,12 +3299,12 @@ spre exemplu: alertnotify=echo %%s | mail -s &quot;Alerta Bitcoin&quot; admin@fo
         <translation>Eroare la încărcarea wallet.dat: Portofel corupt</translation>
     </message>
     <message>
-        <source>Error loading wallet.dat: Wallet requires newer version of Bitcoin</source>
-        <translation>Eroare la încărcarea wallet.dat: Portofelul are nevoie de o versiune Bitcoin mai nouă</translation>
+        <source>Error loading wallet.dat: Wallet requires newer version of Riecoin</source>
+        <translation>Eroare la încărcarea wallet.dat: Portofelul are nevoie de o versiune Riecoin mai nouă</translation>
     </message>
     <message>
-        <source>Wallet needed to be rewritten: restart Bitcoin to complete</source>
-        <translation>Portofelul trebuie rescris: repornește Bitcoin pentru finalizare</translation>
+        <source>Wallet needed to be rewritten: restart Riecoin to complete</source>
+        <translation>Portofelul trebuie rescris: repornește Riecoin pentru finalizare</translation>
     </message>
     <message>
         <source>Error loading wallet.dat</source>
