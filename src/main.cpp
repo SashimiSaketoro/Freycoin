@@ -1183,6 +1183,31 @@ void static PruneOrphanBlocks()
     mapOrphanBlocks.erase(hash);
 }
 
+bool isAfterFork1( int nHeight )
+{
+	if( TestNet() )
+	{
+        return ( nHeight > 3000 );
+	}
+	
+    return ( nHeight > 159000 );
+}
+
+static const int64_t nTargetTimespan = 12 * 60 * 60; // 12 hour
+static const int64_t nTargetSpacing = 2.5 * 60;
+static const int64_t nInterval = nTargetTimespan / nTargetSpacing;
+
+bool isInSuperblockInterval( int nHeight )
+{
+    return (  ( (nHeight / nInterval) % 14) == 12 ); // once per week
+}
+
+bool isSuperblock( int nHeight )
+{
+	return ( ( nHeight % nInterval ) == 144 ) && isInSuperblockInterval(nHeight);
+}
+
+
 int64_t GetBlockValue(int nHeight, int64_t nFees)
 {
     int64_t nSubsidy = 50 * COIN;
@@ -1196,6 +1221,23 @@ int64_t GetBlockValue(int nHeight, int64_t nFees)
     {
         // Subsidy is cut in half every 840000 blocks, which will occur approximately every 4 years
 	    nSubsidy >>= halvings;
+
+        if( isAfterFork1( nHeight ) )
+        {
+    		if( isInSuperblockInterval(nHeight) )
+    		{
+		    	if( isSuperblock(nHeight) )
+	    		{
+                    nSubsidy *= 2084; // 4168/150
+                    nSubsidy /= 75;
+	    		}
+	    		else
+	    		{
+		    		nSubsidy *= 68; // 136/150
+	    			nSubsidy /= 75;
+	    		}
+    		}
+    	}
     }
     else if( nHeight > 576 ) // 576 blocks with linearly increasing subsidy
     {
@@ -1210,10 +1252,6 @@ int64_t GetBlockValue(int nHeight, int64_t nFees)
 
     return nSubsidy + nFees;
 }
-
-static const int64_t nTargetTimespan = 12 * 60 * 60; // 12 hour
-static const int64_t nTargetSpacing = 2.5 * 60;
-static const int64_t nInterval = nTargetTimespan / nTargetSpacing;
 
 //
 // minimum amount of work that could possibly be required nTime after
@@ -1231,8 +1269,8 @@ unsigned int ComputeMinWork(unsigned int nBase, int64_t nTime)
     while (nTime > 0 && bnResult > iMinPrimeSize)
     {
         // Maximum 400% adjustment...
-        bnResult *=  85724; // 0.85724 is (3+constellationSize)th root of 1/4   rounded down!
-        bnResult /= 100000;
+        bnResult *=  55572; // 55572/65536 is (3+constellationSize)th root of (1/4)*(136/150)   rounded down!
+        bnResult >>= 16;
         // ... in best-case exactly 4-times-normal target time
         nTime -= nTargetTimespan*4;
     }
@@ -1272,6 +1310,24 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
     // Only change once per interval
     if ((pindexLast->nHeight+1) % nInterval != 0)
     {
+    	if( isAfterFork1( pindexLast->nHeight+1 ) )
+    	{
+    		if( isSuperblock(pindexLast->nHeight+1) )
+    		{
+    			CBigNum bnNewPow;
+    			bnNewPow.SetCompact(pindexLast->nBits);
+                bnNewPow *= 95859; // superblock is 4168/136 times more difficult
+                bnNewPow >>= 16; // 95859/65536 ~= (4168/136) ^ 1/9
+                LogPrintf("GetNextWorkRequired superblock difficulty:  %08x  %s\n", bnNewPow.GetCompact(), bnNewPow.getuint256().ToString());
+				return bnNewPow.GetCompact();
+    		}
+    		else if( isSuperblock(pindexLast->nHeight+1-1) ) // right after superblock, go back to previous diff
+            {
+                LogPrintf("GetNextWorkRequired after superblock difficulty:  %08x\n", pindexLast->pprev->nBits);
+                return pindexLast->pprev->nBits;
+            }
+        }
+
         if (TestNet())
         {
             // Special difficulty rule for testnet:
@@ -1320,6 +1376,23 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
 
     bnNewPow *= nTargetTimespan;
     bnNewPow /= nActualTimespan;
+    
+    if( isAfterFork1( pindexLast->nHeight+1 ) )
+    {
+        if( isInSuperblockInterval(pindexLast->nHeight+1) ) // once per week, our interval contains a superblock
+        {
+            bnNewPow *= 68; // * 136/150 to compensate for difficult superblock
+            bnNewPow /= 75;
+            LogPrintf("Adjusted because has superblock\n");
+        }
+        else if( isInSuperblockInterval(pindexLast->nHeight) )
+        {
+            bnNewPow *= 75; // * 150/136 to compensate for previous adj
+            bnNewPow /= 68;
+            LogPrintf("Adjusted because had superblock\n");
+        }
+    }
+
     bnNew = nthRoot( bnNewPow, 3+constellationSize, bnNew / 2 );
 
     if (bnNew < iMinPrimeSize)
