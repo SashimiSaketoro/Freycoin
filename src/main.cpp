@@ -1323,7 +1323,6 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
     		}
     		else if( isSuperblock(pindexLast->nHeight+1-1) ) // right after superblock, go back to previous diff
             {
-                LogPrintf("GetNextWorkRequired after superblock difficulty:  %08x\n", pindexLast->pprev->nBits);
                 return pindexLast->pprev->nBits;
             }
         }
