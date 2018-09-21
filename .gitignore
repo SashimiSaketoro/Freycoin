@@ -1,13 +1,14 @@
 *.tar.gz
 
 *.exe
-src/bitcoin
-src/bitcoind
-src/bitcoin-cli
-src/bitcoin-tx
-src/test/test_bitcoin
-src/test/test_bitcoin_fuzzy
-src/qt/test/test_bitcoin-qt
+src/riecoin
+src/riecoind
+src/riecoin-cli
+src/riecoin-tx
+src/test/test_riecoin
+src/test/test_riecoin_fuzzy
+src/qt/test/test_riecoin-qt
+src/bench/bench_riecoin
 
 # autoreconf
 Makefile.in
@@ -80,7 +81,7 @@ src/qt/bitcoin-qt.includes
 # Compilation and Qt preprocessor part
 *.qm
 Makefile
-bitcoin-qt
+riecoin-qt
 Bitcoin-Qt.app
 background.tiff*
 
