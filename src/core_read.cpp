@@ -149,6 +149,11 @@ bool DecodeHexBlk(CBlock& block, const std::string& strHexBlk)
         return false;
 
     std::vector<unsigned char> blockData(ParseHex(strHexBlk));
+
+    int32_t bitsAux = *(int32_t *)&blockData[68];
+    memcpy( &blockData[68], &blockData[72], 8 );
+    *(int32_t *)&blockData[76] = bitsAux;
+
     CDataStream ssBlock(blockData, SER_NETWORK, PROTOCOL_VERSION);
     try {
         ssBlock >> block;

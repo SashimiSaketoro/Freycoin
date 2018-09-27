@@ -1,9 +1,24 @@
-Bitcoin Core integration/staging tree
+Riecoin Core integration/staging tree
 =====================================
 
-[![Build Status](https://travis-ci.org/bitcoin/bitcoin.svg?branch=master)](https://travis-ci.org/bitcoin/bitcoin)
+http://www.riecoin.org
 
-https://bitcoincore.org
+Copyright (c) 2009-2018 Bitcoin Core Developers
+
+Copyright (c) 2013-2018 Riecoin Developers
+
+What is riecoin?
+----------------
+Riecoin is a decentralized (p2p), open source digital currency. It allows to transfer money to anywhere in the world with only minimum transaction fees, sometimes even for free (depending on many factors like the amount to transfer and the network load at the moment of the transaction). It is a fork of the Bitcoin project.
+
+So, what is new about riecoin?
+
+The process of money creation in Bitcoin - referred to as mining - involves executing software that utilizes your hardware running sha256 hashes until a certain criterion is met. This part of the mining process is called generating a "Proof of work". The whole mining process also has a critical role in processing transactions and providing security to the network. It is estimated that all the processing power devoted to Bitcoin mining represents more computing power than several of the largest supercomputers in the world combined. Wouldn't it be great to be able to use all that massive power for something else?
+
+Even special purpose hardware was designed for Bitcoin mining. Some consider this a waste of resources, while others argue that supporting a decentralized currency is hardly a waste. We believe that the mining process required for currency to work does not need to include hashing functions as a Proof of Work, and that a "more useful" calculation can be done instead.
+
+That's the point of riecoin: the mining process, besides fulfilling its function to the operation of the network, generates series of prime numbers as a by-product. This prime numbers are of interest to mathematicians and the scientific community. Riecoin is proof that it is possible to effectively harness all that massive computing power to something useful other than hashing functions.
+
 
 What is Bitcoin?
 ----------------
@@ -21,7 +36,7 @@ the Bitcoin Core software, see https://bitcoin.org/en/download, or read the
 License
 -------
 
-Bitcoin Core is released under the terms of the MIT license. See [COPYING](COPYING) for more
+Riecoin Core is released under the terms of the MIT license. See [COPYING](COPYING) for more
 information or see https://opensource.org/licenses/MIT.
 
 Development Process

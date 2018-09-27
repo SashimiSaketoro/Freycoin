@@ -308,7 +308,7 @@ public:
     mapValue_t mapValue;
     std::vector<std::pair<std::string, std::string> > vOrderForm;
     unsigned int fTimeReceivedIsTxTime;
-    unsigned int nTimeReceived; //!< time received by this node
+    int64_t nTimeReceived; //!< time received by this node
     /**
      * Stable timestamp that never changes, and reflects the order a transaction
      * was added to the wallet. Timestamp is based on the block time for a
@@ -318,7 +318,7 @@ public:
      * were added to the wallet. More details can be found in
      * CWallet::ComputeTimeSmart().
      */
-    unsigned int nTimeSmart;
+    int64_t nTimeSmart;
     /**
      * From me flag is set to 1 for transactions that were created by the wallet
      * on this bitcoin node, and set to 0 for transactions that were created
@@ -426,7 +426,7 @@ public:
 
             ReadOrderPos(nOrderPos, mapValue);
 
-            nTimeSmart = mapValue.count("timesmart") ? (unsigned int)atoi64(mapValue["timesmart"]) : 0;
+            nTimeSmart = mapValue.count("timesmart") ? atoi64(mapValue["timesmart"]) : 0;
         }
 
         mapValue.erase("fromaccount");

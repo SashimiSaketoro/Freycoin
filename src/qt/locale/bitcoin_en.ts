@@ -4106,7 +4106,7 @@
     </message>
     <message>
         <location line="+1"/>
-        <source>The %s developers</source>
+        <source>The %s developers.  Logo by Mick Bruce</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

@@ -26,6 +26,7 @@
 #include <hash.h>
 #include <validationinterface.h>
 #include <warnings.h>
+#include <pow.h>
 
 #include <stdint.h>
 
@@ -36,6 +37,8 @@
 #include <memory>
 #include <mutex>
 #include <condition_variable>
+
+#include "bignum.h"
 
 struct CUpdatedBlock
 {
@@ -57,24 +60,24 @@ double GetDifficulty(const CChain& chain, const CBlockIndex* blockindex)
     if (blockindex == nullptr)
     {
         if (chain.Tip() == nullptr)
-            return 1.0;
+            return RIECOIN_MIN_PRIME_SIZE;
         else
             blockindex = chain.Tip();
     }
 
     int nShift = (blockindex->nBits >> 24) & 0xff;
-    double dDiff =
-        (double)0x0000ffff / (double)(blockindex->nBits & 0x00ffffff);
 
-    while (nShift < 29)
+    double dDiff = (double)(blockindex->nBits & 0x00ffffff);
+
+    while (nShift > 3)
     {
         dDiff *= 256.0;
-        nShift++;
+        nShift--;
     }
-    while (nShift > 29)
+    while (nShift < 3)
     {
         dDiff /= 256.0;
-        nShift--;
+        nShift++;
     }
 
     return dDiff;
@@ -101,7 +104,7 @@ UniValue blockheaderToJSON(const CBlockIndex* blockindex)
     result.push_back(Pair("merkleroot", blockindex->hashMerkleRoot.GetHex()));
     result.push_back(Pair("time", (int64_t)blockindex->nTime));
     result.push_back(Pair("mediantime", (int64_t)blockindex->GetMedianTimePast()));
-    result.push_back(Pair("nonce", (uint64_t)blockindex->nNonce));
+    result.push_back(Pair("nOffset", blockindex->nOffset.GetHex()));
     result.push_back(Pair("bits", strprintf("%08x", blockindex->nBits)));
     result.push_back(Pair("difficulty", GetDifficulty(blockindex)));
     result.push_back(Pair("chainwork", blockindex->nChainWork.GetHex()));
@@ -147,7 +150,7 @@ UniValue blockToJSON(const CBlock& block, const CBlockIndex* blockindex, bool tx
     result.push_back(Pair("tx", txs));
     result.push_back(Pair("time", block.GetBlockTime()));
     result.push_back(Pair("mediantime", (int64_t)blockindex->GetMedianTimePast()));
-    result.push_back(Pair("nonce", (uint64_t)block.nNonce));
+    result.push_back(Pair("nOffset", block.nOffset.GetHex()));
     result.push_back(Pair("bits", strprintf("%08x", block.nBits)));
     result.push_back(Pair("difficulty", GetDifficulty(blockindex)));
     result.push_back(Pair("chainwork", blockindex->nChainWork.GetHex()));
@@ -677,8 +680,7 @@ UniValue getblockheader(const JSONRPCRequest& request)
             "  \"merkleroot\" : \"xxxx\", (string) The merkle root\n"
             "  \"time\" : ttt,          (numeric) The block time in seconds since epoch (Jan 1 1970 GMT)\n"
             "  \"mediantime\" : ttt,    (numeric) The median block time in seconds since epoch (Jan 1 1970 GMT)\n"
-            "  \"nonce\" : n,           (numeric) The nonce\n"
-            "  \"bits\" : \"1d00ffff\", (string) The bits\n"
+            "  \"noffset\" : n,         (numeric) The nonce (offset)\n"
             "  \"difficulty\" : x.xxx,  (numeric) The difficulty\n"
             "  \"chainwork\" : \"0000...1f3\"     (string) Expected number of hashes required to produce the current chain (in hex)\n"
             "  \"nTx\" : n,             (numeric) The number of transactions in the block.\n"
@@ -747,8 +749,7 @@ UniValue getblock(const JSONRPCRequest& request)
             "  ],\n"
             "  \"time\" : ttt,          (numeric) The block time in seconds since epoch (Jan 1 1970 GMT)\n"
             "  \"mediantime\" : ttt,    (numeric) The median block time in seconds since epoch (Jan 1 1970 GMT)\n"
-            "  \"nonce\" : n,           (numeric) The nonce\n"
-            "  \"bits\" : \"1d00ffff\", (string) The bits\n"
+            "  \"noffset\" : n,         (numeric) The nonce (offset)\n"
             "  \"difficulty\" : x.xxx,  (numeric) The difficulty\n"
             "  \"chainwork\" : \"xxxx\",  (string) Expected number of hashes required to produce the chain up to this block (in hex)\n"
             "  \"nTx\" : n,             (numeric) The number of transactions in the block.\n"
@@ -992,8 +993,8 @@ UniValue gettxout(const JSONRPCRequest& request)
             "     \"hex\" : \"hex\",        (string) \n"
             "     \"reqSigs\" : n,          (numeric) Number of required signatures\n"
             "     \"type\" : \"pubkeyhash\", (string) The type, eg pubkeyhash\n"
-            "     \"addresses\" : [          (array of string) array of bitcoin addresses\n"
-            "        \"address\"     (string) bitcoin address\n"
+            "     \"addresses\" : [          (array of string) array of riecoin addresses\n"
+            "        \"address\"     (string) riecoin address\n"
             "        ,...\n"
             "     ]\n"
             "  },\n"
@@ -1077,6 +1078,53 @@ UniValue verifychain(const JSONRPCRequest& request)
         nCheckDepth = request.params[1].get_int();
 
     return CVerifyDB().VerifyDB(Params(), pcoinsTip.get(), nCheckLevel, nCheckDepth);
+}
+
+UniValue getprimes(const JSONRPCRequest& request)
+{
+    if (request.fHelp || request.params.size() != 1)
+        throw std::runtime_error(
+            "getprimes hash\n"
+            "\nReturns prime numbers of provided block.\n"
+            "\nArguments:\n"
+                "1. \"hash\"          (string, required) The block hash\n"
+        );
+
+    std::string strHash = request.params[0].get_str();
+    uint256 hash;
+    hash.SetHex(strHash);
+
+    const Consensus::Params& consensusParams = Params().GetConsensus();
+
+    if( (mapBlockIndex.count(hash) == 0) || (hash == consensusParams.hashGenesisBlock) )
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Block not found");
+
+    CBlock block;
+    CBlockIndex* pblockindex = mapBlockIndex[hash];
+    ReadBlockFromDisk(block, pblockindex, consensusParams);
+
+    CBigNum p;
+    generatePrimeBase(p, block.GetHashForPoW(), block.nBits);
+    const std::string s = block.nOffset.GetHex();
+    arith_uint256 arq;
+    arq.SetHex(s);
+    
+    CBigNum q(arq);
+    p += q;
+
+    UniValue ret(UniValue::VOBJ);
+    ret.push_back(Pair("p0", p.ToString()));
+    p += 4;
+    ret.push_back(Pair("p1", p.ToString()));
+    p += 2;
+    ret.push_back(Pair("p2", p.ToString()));
+    p += 4;
+    ret.push_back(Pair("p3", p.ToString()));
+    p += 2;
+    ret.push_back(Pair("p4", p.ToString()));
+    p += 4;
+    ret.push_back(Pair("p5", p.ToString()));
+    return ret;
 }
 
 /** Implementation of IsSuperMajority with better feedback */
@@ -1640,7 +1688,7 @@ static const CRPCCommand commands[] =
     { "blockchain",         "pruneblockchain",        &pruneblockchain,        {"height"} },
     { "blockchain",         "savemempool",            &savemempool,            {} },
     { "blockchain",         "verifychain",            &verifychain,            {"checklevel","nblocks"} },
-
+    { "blockchain",         "getprimes",              &getprimes,              {"hash"} },
     { "blockchain",         "preciousblock",          &preciousblock,          {"blockhash"} },
 
     /* Not shown in help */
