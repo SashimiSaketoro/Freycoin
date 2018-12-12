@@ -7,7 +7,7 @@ src/riecoin-cli
 src/riecoin-tx
 src/test/test_riecoin
 src/test/test_riecoin_fuzzy
-src/qt/test/test_riecoin-qt
+src/qt/test/test_bitcoin-qt
 src/bench/bench_riecoin
 
 # autoreconf

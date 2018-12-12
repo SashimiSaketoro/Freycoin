@@ -117,13 +117,17 @@ BOOST_AUTO_TEST_CASE(findearliestatleast_test)
             int64_t medianTimePast = vBlocksMain[i].GetMedianTimePast();
             int r = InsecureRandRange(medianTimePast);
             vBlocksMain[i].nTime = r + medianTimePast;
-            vBlocksMain[i].nTimeMax = std::max(vBlocksMain[i].nTime, vBlocksMain[i-1].nTimeMax);
+            //TODO: Riecoin, getmax:
+            //vBlocksMain[i].nTimeMax = std::max(vBlocksMain[i].nTime, vBlocksMain[i-1].nTimeMax);
+            vBlocksMain[i].nTimeMax = vBlocksMain[i-1].nTimeMax;
         }
     }
     // Check that we set nTimeMax up correctly.
     unsigned int curTimeMax = 0;
     for (unsigned int i=0; i<vBlocksMain.size(); ++i) {
-        curTimeMax = std::max(curTimeMax, vBlocksMain[i].nTime);
+        //TODO: Riecoin, getmax:
+        //curTimeMax = std::max(curTimeMax, vBlocksMain[i].nTime);
+        curTimeMax = vBlocksMain[i].nTime;
         BOOST_CHECK(curTimeMax == vBlocksMain[i].nTimeMax);
     }
 
