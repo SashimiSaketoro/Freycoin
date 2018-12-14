@@ -22,7 +22,7 @@ packages:
 - "ca-certificates"
 - "python"
 remotes:
-- "url": "https://github.com/cryptapus/bitcoin.git"
+- "url": "https://github.com/riecointeam/riecoin.git"
   "dir": "riecoin"
 files: []
 script: |

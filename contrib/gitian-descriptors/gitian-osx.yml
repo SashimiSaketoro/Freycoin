@@ -28,7 +28,7 @@ packages:
 - "python-setuptools"
 - "fonts-tuffy"
 remotes:
-- "url": "https://github.com/cryptapus/bitcoin.git"
+- "url": "https://github.com/riecointeam/riecoin.git"
   "dir": "riecoin"
 files:
 - "MacOSX10.11.sdk.tar.gz"
