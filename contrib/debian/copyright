@@ -86,9 +86,9 @@ License: Expat
 Comment: Modifications of Stephan Hutchings Typicons
 
 Files: src/qt/res/icons/about.png
-       src/qt/res/icons/riecoin.*
-       share/pixmaps/riecoin*
-       src/qt/res/src/riecoin.svg
+       src/qt/res/icons/bitcoin.*
+       share/pixmaps/bitcoin*
+       src/qt/res/src/bitcoin.svg
 Copyright: Mick Bruce
 License: public-domain
 Comment:
