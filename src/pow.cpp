@@ -277,7 +277,7 @@ bool CheckProofOfWork(uint256 hash, bitsType compactBits, offsetType delta, cons
     {
         return error("CheckProofOfWork() : n not prime");
     }
-//    bnBestChainLastDiff.SetCompact(compactBits); // clo1
+
     return true;
 }
 
