@@ -1798,12 +1798,16 @@ static unsigned int GetBlockScriptFlags(const CBlockIndex* pindex, const Consens
 //    }
 
     // Start enforcing the DERSIG (BIP66) rule
-    if (pindex->nHeight >= consensusparams.BIP66Height) {
+    // Riecoin TODO: Deploy BIP66 with CSV BIP9. Remove VersionBitsState() check and set BIP66Height
+    //if (pindex->nHeight >= consensusparams.BIP66Height) {
+    if (VersionBitsState(pindex->pprev, consensusparams, Consensus::DEPLOYMENT_CSV, versionbitscache) == THRESHOLD_ACTIVE) {
         flags |= SCRIPT_VERIFY_DERSIG;
     }
 
     // Start enforcing CHECKLOCKTIMEVERIFY (BIP65) rule
-    if (pindex->nHeight >= consensusparams.BIP65Height) {
+    // Riecoin TODO: Deploy BIP65 with CSV BIP9. Remove VersionBitsState() check and set BIP65Height
+    //if (pindex->nHeight >= consensusparams.BIP65Height) {
+    if (VersionBitsState(pindex->pprev, consensusparams, Consensus::DEPLOYMENT_CSV, versionbitscache) == THRESHOLD_ACTIVE) {
         flags |= SCRIPT_VERIFY_CHECKLOCKTIMEVERIFY;
     }
 
