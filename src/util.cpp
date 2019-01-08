@@ -596,7 +596,7 @@ fs::path GetDefaultDataDir()
     return pathRet / "Library/Application Support/Riecoin";
 #else
     // Unix
-    return pathRet / ".riecoin16"; // clo1 temp
+    return pathRet / ".riecoin";
 #endif
 #endif
 }
