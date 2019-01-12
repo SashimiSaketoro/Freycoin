@@ -3212,7 +3212,7 @@ static bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationSta
     //   (block.nVersion < 3 && nHeight >= consensusParams.BIP66Height) ||
     //   (block.nVersion < 4 && nHeight >= consensusParams.BIP65Height))
     if ((block.nVersion < 2 && nHeight >= consensusParams.BIP34Height) ||
-        (block.nVersion < 4 && VersionBitsState(pindexPrev->pprev, consensusParams, Consensus::DEPLOYMENT_CSV, versionbitscache) == THRESHOLD_ACTIVE))
+        (block.nVersion < 4 && VersionBitsState(pindexPrev, consensusParams, Consensus::DEPLOYMENT_CSV, versionbitscache) == THRESHOLD_ACTIVE))
             return state.Invalid(false, REJECT_OBSOLETE, strprintf("bad-version(0x%08x)", block.nVersion),
                                  strprintf("rejected nVersion=0x%08x block", block.nVersion));
 
