@@ -1,6 +1,8 @@
 Riecoin Core integration/staging tree
 =====================================
 
+[![Build Status](https://travis-ci.com/riecointeam/riecoin.svg?branch=master)](https://travis-ci.com/riecointeam/riecoin)
+
 http://www.riecoin.org
 
 Copyright (c) 2009-2018 Bitcoin Core Developers
