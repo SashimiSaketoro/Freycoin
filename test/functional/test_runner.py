@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # Copyright (c) 2014-2022 The Bitcoin Core developers
+# Copyright (c) 2013-present The Riecoin developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Run regression test suite.
@@ -272,8 +273,6 @@ BASE_SCRIPTS = [
     'wallet_txn_doublespend.py --legacy-wallet',
     'wallet_multisig_descriptor_psbt.py --descriptors',
     'wallet_txn_doublespend.py --descriptors',
-    'wallet_backwards_compatibility.py --legacy-wallet',
-    'wallet_backwards_compatibility.py --descriptors',
     'wallet_txn_clone.py --mineblock',
     'feature_notifications.py',
     'rpc_getblockfilter.py',
@@ -306,7 +305,6 @@ BASE_SCRIPTS = [
     'mempool_expiry.py',
     'wallet_import_with_label.py --legacy-wallet',
     'wallet_importdescriptors.py --descriptors',
-    'wallet_upgradewallet.py --legacy-wallet',
     'wallet_crosschain.py',
     'mining_basic.py',
     'feature_signet.py',
@@ -343,7 +341,6 @@ BASE_SCRIPTS = [
     'wallet_sendmany.py --descriptors',
     'wallet_sendmany.py --legacy-wallet',
     'wallet_create_tx.py --descriptors',
-    'wallet_inactive_hdchains.py --legacy-wallet',
     'wallet_spend_unconfirmed.py',
     'wallet_rescan_unconfirmed.py --descriptors',
     'p2p_fingerprint.py',
@@ -365,7 +362,6 @@ BASE_SCRIPTS = [
     'feature_asmap.py',
     'feature_fastprune.py',
     'mempool_unbroadcast.py',
-    'mempool_compatibility.py',
     'mempool_accept_wtxid.py',
     'mempool_dust.py',
     'mempool_sigoplimit.py',
@@ -376,7 +372,6 @@ BASE_SCRIPTS = [
     'rpc_scanblocks.py',
     'p2p_sendtxrcncl.py',
     'rpc_scantxoutset.py',
-    'feature_unsupported_utxo_db.py',
     'feature_logging.py',
     'feature_anchors.py',
     'mempool_datacarrier.py',

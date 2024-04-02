@@ -86,16 +86,3 @@ The Guix process builds 2 sets of files: Linux tools, then Apple binaries which 
 created using these tools. The build process has been designed to avoid including the
 SDK's files in Guix's outputs. All interim tarballs are fully deterministic and may be freely
 redistributed.
-
-As of OS X 10.9 Mavericks, using an Apple-blessed key to sign binaries is a requirement in
-order to satisfy the new Gatekeeper requirements. Because this private key cannot be
-shared, we'll have to be a bit creative in order for the build process to remain somewhat
-deterministic. Here's how it works:
-
-- Builders use Guix to create an unsigned release. This outputs an unsigned ZIP which
-  users may choose to bless and run. It also outputs an unsigned app structure in the form
-  of a tarball.
-- The Apple keyholder uses this unsigned app to create a detached signature, using the
-  script that is also included there. Detached signatures are available from this [repository](https://github.com/bitcoin-core/bitcoin-detached-sigs).
-- Builders feed the unsigned app + detached signature back into Guix. It uses the
-  pre-built tools to recombine the pieces into a deterministic ZIP.

@@ -96,7 +96,6 @@ The following can be set when running make: `make FOO=bar`
 - `SOURCES_PATH`: Downloaded sources will be placed here
 - `BASE_CACHE`: Built packages will be placed here
 - `SDK_PATH`: Path where SDKs can be found (used by macOS)
-- `FALLBACK_DOWNLOAD_PATH`: If a source file can't be fetched, try here before giving up
 - `C_STANDARD`: Set the C standard version used. Defaults to `c11`.
 - `CXX_STANDARD`: Set the C++ standard version used. Defaults to `c++20`.
 - `NO_BOOST`: Don't download/build/cache Boost

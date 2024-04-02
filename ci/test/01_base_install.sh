@@ -67,12 +67,6 @@ if [[ ${USE_MEMORY_SANITIZER} == "true" ]]; then
   ninja -C /msan/cxx_build/ "-j$( nproc )"  # Use nproc, because MAKEJOBS is the default in docker image builds
 fi
 
-if [[ "${RUN_TIDY}" == "true" ]]; then
-  ${CI_RETRY_EXE} git clone --depth=1 https://github.com/include-what-you-use/include-what-you-use -b clang_"${TIDY_LLVM_V}" /include-what-you-use
-  cmake -B /iwyu-build/ -G 'Unix Makefiles' -DCMAKE_PREFIX_PATH=/usr/lib/llvm-"${TIDY_LLVM_V}" -S /include-what-you-use
-  make -C /iwyu-build/ install "-j$( nproc )"  # Use nproc, because MAKEJOBS is the default in docker image builds
-fi
-
 mkdir -p "${DEPENDS_DIR}/SDKs" "${DEPENDS_DIR}/sdk-sources"
 
 OSX_SDK_BASENAME="Xcode-${XCODE_VERSION}-${XCODE_BUILD_ID}-extracted-SDK-with-libcxx-headers"

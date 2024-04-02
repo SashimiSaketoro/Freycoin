@@ -156,7 +156,6 @@ class BitcoinTestFramework(metaclass=BitcoinTestMetaClass):
             sys.exit(exit_code)
 
     def parse_args(self):
-        previous_releases_path = os.getenv("PREVIOUS_RELEASES_DIR") or os.getcwd() + "/releases"
         parser = argparse.ArgumentParser(usage="%(prog)s [options]")
         parser.add_argument("--nocleanup", dest="nocleanup", default=False, action="store_true",
                             help="Leave bitcoinds and test.* datadir on exit or error")
@@ -171,9 +170,6 @@ class BitcoinTestFramework(metaclass=BitcoinTestMetaClass):
                             help="Print out all RPC calls as they are made")
         parser.add_argument("--portseed", dest="port_seed", default=os.getpid(), type=int,
                             help="The seed to use for assigning port numbers (default: current process id)")
-        parser.add_argument("--previous-releases", dest="prev_releases", action="store_true",
-                            default=os.path.isdir(previous_releases_path) and bool(os.listdir(previous_releases_path)),
-                            help="Force test of previous releases (default: %(default)s)")
         parser.add_argument("--coveragedir", dest="coveragedir",
                             help="Write tested RPC commands into this directory")
         parser.add_argument("--configfile", dest="configfile",
@@ -186,7 +182,7 @@ class BitcoinTestFramework(metaclass=BitcoinTestMetaClass):
         parser.add_argument("--perf", dest="perf", default=False, action="store_true",
                             help="profile running nodes with perf for the duration of the test")
         parser.add_argument("--valgrind", dest="valgrind", default=False, action="store_true",
-                            help="run nodes under the valgrind memory error detector: expect at least a ~10x slowdown. valgrind 3.14 or later required. Does not apply to previous release binaries.")
+                            help="run nodes under the valgrind memory error detector: expect at least a ~10x slowdown. valgrind 3.14 or later required.")
         parser.add_argument("--randomseed", type=int,
                             help="set a random seed for deterministically reproducing a previous test run")
         parser.add_argument("--timeout-factor", dest="timeout_factor", type=float, help="adjust test timeouts by a factor. Setting it to 0 disables all timeouts")
@@ -204,7 +200,6 @@ class BitcoinTestFramework(metaclass=BitcoinTestMetaClass):
         if self.options.timeout_factor == 0:
             self.options.timeout_factor = 99999
         self.options.timeout_factor = self.options.timeout_factor or (4 if self.options.valgrind else 1)
-        self.options.previous_releases_path = previous_releases_path
 
         config = configparser.ConfigParser()
         config.read_file(open(self.options.configfile))
@@ -238,7 +233,6 @@ class BitcoinTestFramework(metaclass=BitcoinTestMetaClass):
         binaries = {
             "bitcoind": ("bitcoind", "BITCOIND"),
             "bitcoin-cli": ("bitcoincli", "BITCOINCLI"),
-            "bitcoin-util": ("bitcoinutil", "BITCOINUTIL"),
             "bitcoin-wallet": ("bitcoinwallet", "BITCOINWALLET"),
         }
         for binary, [attribute_name, env_variable_name] in binaries.items():
@@ -473,14 +467,11 @@ class BitcoinTestFramework(metaclass=BitcoinTestMetaClass):
         def get_bin_from_version(version, bin_name, bin_default):
             if not version:
                 return bin_default
-            if version > 219999:
-                # Starting at client version 220000 the first two digits represent
-                # the major version, e.g. v22.0 instead of v0.22.0.
-                version *= 100
+            # The first two digits represent the major version, e.g. v22.0 instead of v0.22.0.
+            version *= 100
             return os.path.join(
-                self.options.previous_releases_path,
                 re.sub(
-                    r'\.0$' if version <= 219999 else r'(\.0){1,2}$',
+                    r'(\.0){1,2}$',
                     '', # Remove trailing dot for point releases, after 22.0 also remove double trailing dot.
                     'v{}.{}.{}.{}'.format(
                         (version % 100000000) // 1000000,
@@ -537,9 +528,6 @@ class BitcoinTestFramework(metaclass=BitcoinTestMetaClass):
                 v2transport=self.options.v2transport,
             )
             self.nodes.append(test_node_i)
-            if not test_node_i.version_is_at_least(170000):
-                # adjust conf for pre 17
-                test_node_i.replace_in_config([('[regtest]', '')])
 
     def start_node(self, i, *args, **kwargs):
         """Start a bitcoind"""
@@ -963,28 +951,10 @@ class BitcoinTestFramework(metaclass=BitcoinTestMetaClass):
         if not self.is_wallet_tool_compiled():
             raise SkipTest("bitcoin-wallet has not been compiled")
 
-    def skip_if_no_bitcoin_util(self):
-        """Skip the running test if bitcoin-util has not been compiled."""
-        if not self.is_bitcoin_util_compiled():
-            raise SkipTest("bitcoin-util has not been compiled")
-
     def skip_if_no_cli(self):
         """Skip the running test if bitcoin-cli has not been compiled."""
         if not self.is_cli_compiled():
             raise SkipTest("bitcoin-cli has not been compiled.")
-
-    def skip_if_no_previous_releases(self):
-        """Skip the running test if previous releases are not available."""
-        if not self.has_previous_releases():
-            raise SkipTest("previous releases not available or disabled")
-
-    def has_previous_releases(self):
-        """Checks whether previous releases are present and enabled."""
-        if not os.path.isdir(self.options.previous_releases_path):
-            if self.options.prev_releases:
-                raise AssertionError("Force test of previous releases but releases missing: {}".format(
-                    self.options.previous_releases_path))
-        return self.options.prev_releases
 
     def skip_if_no_external_signer(self):
         """Skip the running test if external signer support has not been compiled."""
@@ -1014,10 +984,6 @@ class BitcoinTestFramework(metaclass=BitcoinTestMetaClass):
     def is_wallet_tool_compiled(self):
         """Checks whether bitcoin-wallet was compiled."""
         return self.config["components"].getboolean("ENABLE_WALLET_TOOL")
-
-    def is_bitcoin_util_compiled(self):
-        """Checks whether bitcoin-util was compiled."""
-        return self.config["components"].getboolean("ENABLE_BITCOIN_UTIL")
 
     def is_zmq_compiled(self):
         """Checks whether the zmq module was compiled."""
