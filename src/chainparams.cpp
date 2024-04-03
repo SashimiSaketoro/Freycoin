@@ -1,5 +1,6 @@
 // Copyright (c) 2010 Satoshi Nakamoto
 // Copyright (c) 2009-2022 The Bitcoin Core developers
+// Copyright (c) 2013-present The Riecoin developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -20,24 +21,6 @@
 #include <limits>
 #include <stdexcept>
 #include <vector>
-
-void ReadSigNetArgs(const ArgsManager& args, CChainParams::SigNetOptions& options)
-{
-    if (args.IsArgSet("-signetseednode")) {
-        options.seeds.emplace(args.GetArgs("-signetseednode"));
-    }
-    if (args.IsArgSet("-signetchallenge")) {
-        const auto signet_challenge = args.GetArgs("-signetchallenge");
-        if (signet_challenge.size() != 1) {
-            throw std::runtime_error("-signetchallenge cannot be multiple values.");
-        }
-        const auto val{TryParseHex<uint8_t>(signet_challenge[0])};
-        if (!val) {
-            throw std::runtime_error(strprintf("-signetchallenge must be hex, not '%s'.", signet_challenge[0]));
-        }
-        options.challenge.emplace(*val);
-    }
-}
 
 void ReadRegTestArgs(const ArgsManager& args, CChainParams::RegTestOptions& options)
 {
@@ -113,11 +96,6 @@ std::unique_ptr<const CChainParams> CreateChainParams(const ArgsManager& args, c
         return CChainParams::Main();
     case ChainType::TESTNET:
         return CChainParams::TestNet();
-    case ChainType::SIGNET: {
-        auto opts = CChainParams::SigNetOptions{};
-        ReadSigNetArgs(args, opts);
-        return CChainParams::SigNet(opts);
-    }
     case ChainType::REGTEST: {
         auto opts = CChainParams::RegTestOptions{};
         ReadRegTestArgs(args, opts);

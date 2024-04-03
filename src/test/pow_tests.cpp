@@ -1,4 +1,5 @@
 // Copyright (c) 2015-2022 The Bitcoin Core developers
+// Copyright (c) 2013-present The Riecoin developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -196,11 +197,6 @@ BOOST_AUTO_TEST_CASE(ChainParams_REGTEST_sanity)
 BOOST_AUTO_TEST_CASE(ChainParams_TESTNET_sanity)
 {
     sanity_check_chainparams(*m_node.args, ChainType::TESTNET);
-}
-
-BOOST_AUTO_TEST_CASE(ChainParams_SIGNET_sanity)
-{
-    sanity_check_chainparams(*m_node.args, ChainType::SIGNET);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

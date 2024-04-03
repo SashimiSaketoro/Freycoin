@@ -2,6 +2,7 @@
 # Copyright (c) 2010 ArtForz -- public domain half-a-node
 # Copyright (c) 2012 Jeff Garzik
 # Copyright (c) 2010-2022 The Bitcoin Core developers
+# Copyright (c) 2013-present The Riecoin developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Bitcoin test framework primitive and message structures
@@ -79,7 +80,6 @@ MAGIC_BYTES = {
     "mainnet": b"\xf9\xbe\xb4\xd9",   # mainnet
     "testnet3": b"\x0b\x11\x09\x07",  # testnet3
     "regtest": b"\xfa\xbf\xb5\xda",   # regtest
-    "signet": b"\x0a\x03\xcf\x40",    # signet
 }
 
 def sha256(s):

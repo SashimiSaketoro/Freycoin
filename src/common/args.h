@@ -1,4 +1,5 @@
 // Copyright (c) 2023 The Bitcoin Core developers
+// Copyright (c) 2013-present The Riecoin developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -423,7 +424,7 @@ private:
     fs::path GetDataDir(bool net_specific) const;
 
     /**
-     * Return -regtest/-signet/-testnet/-chain= setting as a ChainType enum if a
+     * Return -regtest/-testnet/-chain= setting as a ChainType enum if a
      * recognized chain type was set, or as a string if an unrecognized chain
      * name was set. Raise an exception if an invalid combination of flags was
      * provided.

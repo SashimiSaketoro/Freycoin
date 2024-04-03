@@ -1,5 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2021 The Bitcoin Core developers
+// Copyright (c) 2013-present The Riecoin developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -129,15 +130,6 @@ public:
     }
 
     const ChainTxData& TxData() const { return chainTxData; }
-
-    /**
-     * SigNetOptions holds configurations for creating a signet CChainParams.
-     */
-    struct SigNetOptions {
-        std::optional<std::vector<uint8_t>> challenge{};
-        std::optional<std::vector<std::string>> seeds{};
-    };
-
     /**
      * VersionBitsParameters holds activation parameters
      */
@@ -157,7 +149,6 @@ public:
     };
 
     static std::unique_ptr<const CChainParams> RegTest(const RegTestOptions& options);
-    static std::unique_ptr<const CChainParams> SigNet(const SigNetOptions& options);
     static std::unique_ptr<const CChainParams> Main();
     static std::unique_ptr<const CChainParams> TestNet();
 

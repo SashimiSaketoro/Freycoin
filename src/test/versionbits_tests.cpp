@@ -1,4 +1,5 @@
 // Copyright (c) 2014-2022 The Bitcoin Core developers
+// Copyright (c) 2013-present The Riecoin developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -419,7 +420,7 @@ BOOST_AUTO_TEST_CASE(versionbits_computeblockversion)
 
     // check that any deployment on any chain can conceivably reach both
     // ACTIVE and FAILED states in roughly the way we expect
-    for (const auto& chain_type: {ChainType::MAIN, ChainType::TESTNET, ChainType::SIGNET, ChainType::REGTEST}) {
+    for (const auto& chain_type: {ChainType::MAIN, ChainType::TESTNET, ChainType::REGTEST}) {
         const auto chainParams = CreateChainParams(*m_node.args, chain_type);
         uint32_t chain_all_vbits{0};
         for (int i = 0; i < (int)Consensus::MAX_VERSION_BITS_DEPLOYMENTS; ++i) {

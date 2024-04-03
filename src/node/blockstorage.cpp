@@ -1,4 +1,5 @@
 // Copyright (c) 2011-2022 The Bitcoin Core developers
+// Copyright (c) 2013-present The Riecoin developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -21,7 +22,6 @@
 #include <primitives/transaction.h>
 #include <reverse_iterator.h>
 #include <serialize.h>
-#include <signet.h>
 #include <span.h>
 #include <streams.h>
 #include <sync.h>
@@ -1058,12 +1058,6 @@ bool BlockManager::ReadBlockFromDisk(CBlock& block, const FlatFilePos& pos) cons
     // Check the header
     if (!CheckProofOfWork(block.GetHash(), block.nBits, GetConsensus())) {
         LogError("ReadBlockFromDisk: Errors in block header at %s\n", pos.ToString());
-        return false;
-    }
-
-    // Signet only: check block solution
-    if (GetConsensus().signet_blocks && !CheckSignetBlockSolution(block, GetConsensus())) {
-        LogError("ReadBlockFromDisk: Errors in block solution at %s\n", pos.ToString());
         return false;
     }
 
