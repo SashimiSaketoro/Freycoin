@@ -300,11 +300,8 @@ mkdir -p "$DISTSRC"
 
     case "$HOST" in
         *darwin*)
-            make osx_volname ${V:+V=1}
             make deploydir ${V:+V=1}
             mkdir -p "app-${HOST}"
-            cp  --target-directory="app-${HOST}" \
-                osx_volname
             mv --target-directory="app-${HOST}" dist
             (
                 cd "app-${HOST}"
