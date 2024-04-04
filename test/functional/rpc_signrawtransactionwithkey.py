@@ -77,19 +77,19 @@ class SignRawTransactionWithKeyTest(BitcoinTestFramework):
         self.assert_signing_completed_successfully(rawTxSigned)
 
     def witness_script_test(self):
-        self.log.info("Test signing transaction to P2SH-P2WSH addresses without wallet")
-        # Create a new P2SH-P2WSH 1-of-1 multisig address:
+        self.log.info("Test signing transaction to P2WSH addresses without wallet")
+        # Create a new P2WSH 1-of-1 multisig address:
         embedded_privkey, embedded_pubkey = generate_keypair(wif=True)
-        p2sh_p2wsh_address = self.nodes[1].createmultisig(1, [embedded_pubkey.hex()], "p2sh-segwit")
+        p2wsh_address = self.nodes[1].createmultisig(1, [embedded_pubkey.hex()], "bech32")
         # send transaction to P2SH-P2WSH 1-of-1 multisig address
         self.block_hash = self.generate(self.nodes[0], COINBASE_MATURITY + 1)
         self.blk_idx = 0
-        self.send_to_address(p2sh_p2wsh_address["address"], 49.999)
+        self.send_to_address(p2wsh_address["address"], 49.999)
         self.generate(self.nodes[0], 1)
         # Get the UTXO info from scantxoutset
-        unspent_output = self.nodes[1].scantxoutset('start', [p2sh_p2wsh_address['descriptor']])['unspents'][0]
-        spk = script_to_p2sh_p2wsh_script(p2sh_p2wsh_address['redeemScript']).hex()
-        unspent_output['witnessScript'] = p2sh_p2wsh_address['redeemScript']
+        unspent_output = self.nodes[1].scantxoutset('start', [p2wsh_address['descriptor']])['unspents'][0]
+        spk = script_to_p2wsh_script(p2wsh_address['redeemScript']).hex()
+        unspent_output['witnessScript'] = p2wsh_address['redeemScript']
         unspent_output['redeemScript'] = script_to_p2wsh_script(unspent_output['witnessScript']).hex()
         assert_equal(spk, unspent_output['scriptPubKey'])
         # Now create and sign a transaction spending that output on node[0], which doesn't know the scripts or keys

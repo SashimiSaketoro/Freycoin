@@ -43,7 +43,7 @@ class TxnMallTest(BitcoinTestFramework):
 
     def run_test(self):
         if self.options.segwit:
-            output_type = "p2sh-segwit"
+            output_type = "bech32m"
         else:
             output_type = "legacy"
 

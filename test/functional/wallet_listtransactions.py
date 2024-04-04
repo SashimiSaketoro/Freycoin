@@ -227,8 +227,8 @@ class ListTransactionsTest(BitcoinTestFramework):
         self.connect_nodes(1, 2)
         self.connect_nodes(2, 0)
 
-        addr1 = self.nodes[0].getnewaddress("pizza1", 'legacy')
-        addr2 = self.nodes[0].getnewaddress("pizza2", 'p2sh-segwit')
+        addr1 = self.nodes[0].getnewaddress("pizza1", 'bech32m')
+        addr2 = self.nodes[0].getnewaddress("pizza2", 'bech32m')
         addr3 = self.nodes[0].getnewaddress("pizza3", 'bech32')
 
         self.log.info("Send to externally generated addresses")

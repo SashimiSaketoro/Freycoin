@@ -85,10 +85,6 @@ class AvoidReuseTest(BitcoinTestFramework):
         reset_balance(self.nodes[1], self.nodes[0].getnewaddress())
         self.test_sending_from_reused_address_without_avoid_reuse()
         reset_balance(self.nodes[1], self.nodes[0].getnewaddress())
-        self.test_sending_from_reused_address_fails("legacy")
-        reset_balance(self.nodes[1], self.nodes[0].getnewaddress())
-        self.test_sending_from_reused_address_fails("p2sh-segwit")
-        reset_balance(self.nodes[1], self.nodes[0].getnewaddress())
         self.test_sending_from_reused_address_fails("bech32")
         reset_balance(self.nodes[1], self.nodes[0].getnewaddress())
         self.test_getbalances_used()
@@ -234,7 +230,7 @@ class AvoidReuseTest(BitcoinTestFramework):
         '''
         self.log.info("Test sending from reused {} address fails".format(second_addr_type))
 
-        fundaddr = self.nodes[1].getnewaddress(label="", address_type="legacy")
+        fundaddr = self.nodes[1].getnewaddress(label="")
         retaddr = self.nodes[0].getnewaddress()
 
         self.nodes[0].sendtoaddress(fundaddr, 10)

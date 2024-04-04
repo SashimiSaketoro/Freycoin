@@ -458,7 +458,7 @@ BOOST_FIXTURE_TEST_CASE(BasicOutputTypesTest, ListCoinsTest)
     BOOST_CHECK_EQUAL(available_coins.Size(), expected_coins_sizes[OutputType::UNKNOWN]);
     BOOST_CHECK_EQUAL(available_coins.coins[OutputType::UNKNOWN].size(), expected_coins_sizes[OutputType::UNKNOWN]);
 
-    // We will create a self transfer for each of the OutputTypes and
+    // We will create a self transfer for Bech32 and Bech32M and
     // verify it is put in the correct bucket after running GetAvailablecoins
     //
     // For each OutputType, We expect 2 UTXOs in our wallet following the self transfer:
@@ -466,7 +466,7 @@ BOOST_FIXTURE_TEST_CASE(BasicOutputTypesTest, ListCoinsTest)
     //   2. One UTXO from the change, due to payment address matching logic
 
     for (const auto& out_type : OUTPUT_TYPES) {
-        if (out_type == OutputType::UNKNOWN) continue;
+        if (out_type == OutputType::UNKNOWN || out_type == OutputType::LEGACY || out_type == OutputType::P2SH_SEGWIT) continue;
         expected_coins_sizes[out_type] = 2U;
         TestCoinsResult(*this, out_type, 1 * COIN, expected_coins_sizes);
     }

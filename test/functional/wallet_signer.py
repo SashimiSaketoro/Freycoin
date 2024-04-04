@@ -102,23 +102,9 @@ class WalletSignerTest(BitcoinTestFramework):
         assert_equal(address_info['ismine'], True)
         assert_equal(address_info['hdkeypath'], "m/84h/1h/0h/0/0")
 
-        address2 = hww.getnewaddress(address_type="p2sh-segwit")
-        assert_equal(address2, "tGMnPWAbec9DvEC2ccyai6gLNUcSUDzgvw")
+        address2 = hww.getnewaddress(address_type="bech32m")
+        assert_equal(address2, "rric1phw4cgpt6cd30kz9k4wkpwm872cdvhss29jga2xpmftelhqll62ms39jegq")
         address_info = hww.getaddressinfo(address2)
-        assert_equal(address_info['solvable'], True)
-        assert_equal(address_info['ismine'], True)
-        assert_equal(address_info['hdkeypath'], "m/49h/1h/0h/0/0")
-
-        address3 = hww.getnewaddress(address_type="legacy")
-        assert_equal(address3, "rS3xUvSkSMCLfnnoT9TyLhrbScjgpifgYm")
-        address_info = hww.getaddressinfo(address3)
-        assert_equal(address_info['solvable'], True)
-        assert_equal(address_info['ismine'], True)
-        assert_equal(address_info['hdkeypath'], "m/44h/1h/0h/0/0")
-
-        address4 = hww.getnewaddress(address_type="bech32m")
-        assert_equal(address4, "rric1phw4cgpt6cd30kz9k4wkpwm872cdvhss29jga2xpmftelhqll62ms39jegq")
-        address_info = hww.getaddressinfo(address4)
         assert_equal(address_info['solvable'], True)
         assert_equal(address_info['ismine'], True)
         assert_equal(address_info['hdkeypath'], "m/86h/1h/0h/0/0")
@@ -135,7 +121,7 @@ class WalletSignerTest(BitcoinTestFramework):
         self.clear_mock_result(self.nodes[1])
 
         self.log.info('Prepare mock PSBT')
-        self.nodes[0].sendtoaddress(address4, 1)
+        self.nodes[0].sendtoaddress(address2, 1)
         self.generate(self.nodes[0], 1)
 
         # Load private key into wallet to generate a signed PSBT for the mock

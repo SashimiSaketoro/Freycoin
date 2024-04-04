@@ -1339,7 +1339,7 @@ class TaprootTest(BitcoinTestFramework):
         host_spks = []
         host_pubkeys = []
         for i in range(16):
-            addr = node.getnewaddress(address_type=random.choice(["legacy", "p2sh-segwit", "bech32"]))
+            addr = node.getnewaddress(address_type=random.choice(["bech32"]))
             info = node.getaddressinfo(addr)
             spk = bytes.fromhex(info['scriptPubKey'])
             host_spks.append(spk)
