@@ -30,7 +30,7 @@ class SignMessagesWithPrivTest(BitcoinTestFramework):
         message = 'This is just a test message'
 
         self.log.info('test signing with priv_key')
-        priv_key = 'cUeKHd5orzT3mz8P9pxyREHfsWtVfgsfDjiZZBcjUBAaGk1BTj7N'
+        priv_key = 'prvd2b8a0116d641fe7d3036f8464628fb595b480414c13a301b3d4038c811c28b0'
         expected_signature = 'ILo9wUJXRheXNKGSbXKcKgXKMnsGbcmKUQK8aqQILG84BbrQKTYiwynQWURmc+0itT7NgXfRBUbZqiYB6gLUlWU='
         signature = self.nodes[0].signmessagewithprivkey(priv_key, message)
         assert_equal(expected_signature, signature)

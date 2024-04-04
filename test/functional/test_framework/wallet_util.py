@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # Copyright (c) 2018-2021 The Bitcoin Core developers
+# Copyright (c) 2013-present The Riecoin developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Useful util functions for testing the wallet"""
@@ -107,9 +108,7 @@ def test_address(node, address, **kwargs):
             raise AssertionError("key {} value {} did not match expected value {}".format(key, addr_info[key], value))
 
 def bytes_to_wif(b, compressed=True):
-    if compressed:
-        b += b'\x01'
-    return byte_to_base58(b, 239)
+    return "prv" + b.hex()
 
 def generate_keypair(compressed=True, wif=False):
     """Generate a new random keypair and return the corresponding ECKey /

@@ -65,7 +65,7 @@ class SignRawTransactionWithWalletTest(BitcoinTestFramework):
         5) Script verification errors have certain properties ("txid", "vout", "scriptSig", "sequence", "error")
         6) The verification errors refer to the invalid (vin 1) and missing input (vin 2)"""
         self.log.info("Test script verification errors")
-        privKeys = ['cUeKHd5orzT3mz8P9pxyREHfsWtVfgsfDjiZZBcjUBAaGk1BTj7N']
+        privKeys = ['prvd2b8a0116d641fe7d3036f8464628fb595b480414c13a301b3d4038c811c28b0']
 
         inputs = [
             # Valid pay-to-pubkey script

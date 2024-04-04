@@ -47,9 +47,6 @@ BOOST_AUTO_TEST_CASE(ismine_standard)
         keys[i].MakeNewKey(true);
         pubkeys[i] = keys[i].GetPubKey();
     }
-
-    CKey uncompressedKey = GenerateRandomKey(/*compressed=*/false);
-    CPubKey uncompressedPubkey = uncompressedKey.GetPubKey();
     std::unique_ptr<interfaces::Chain>& chain = m_node.chain;
 
     CScript scriptPubKey;
@@ -67,18 +64,6 @@ BOOST_AUTO_TEST_CASE(ismine_standard)
         BOOST_CHECK_EQUAL(result, ISMINE_SPENDABLE);
     }
 
-    // P2PK uncompressed - Descriptor
-    {
-        CWallet keystore(chain.get(), "", CreateMockableWalletDatabase());
-        std::string desc_str = "pk(" + EncodeSecret(uncompressedKey) + ")";
-
-        auto spk_manager = CreateDescriptor(keystore, desc_str, true);
-
-        scriptPubKey = GetScriptForRawPubKey(uncompressedPubkey);
-        result = spk_manager->IsMine(scriptPubKey);
-        BOOST_CHECK_EQUAL(result, ISMINE_SPENDABLE);
-    }
-
     // P2PKH compressed - Descriptor
     {
         CWallet keystore(chain.get(), "", CreateMockableWalletDatabase());
@@ -87,18 +72,6 @@ BOOST_AUTO_TEST_CASE(ismine_standard)
         auto spk_manager = CreateDescriptor(keystore, desc_str, true);
 
         scriptPubKey = GetScriptForDestination(PKHash(pubkeys[0]));
-        result = spk_manager->IsMine(scriptPubKey);
-        BOOST_CHECK_EQUAL(result, ISMINE_SPENDABLE);
-    }
-
-    // P2PKH uncompressed - Descriptor
-    {
-        CWallet keystore(chain.get(), "", CreateMockableWalletDatabase());
-        std::string desc_str = "pkh(" + EncodeSecret(uncompressedKey) + ")";
-
-        auto spk_manager = CreateDescriptor(keystore, desc_str, true);
-
-        scriptPubKey = GetScriptForDestination(PKHash(uncompressedPubkey));
         result = spk_manager->IsMine(scriptPubKey);
         BOOST_CHECK_EQUAL(result, ISMINE_SPENDABLE);
     }
@@ -167,11 +140,11 @@ BOOST_AUTO_TEST_CASE(ismine_standard)
     // scriptPubKey multisig - Descriptor
     {
         CWallet keystore(chain.get(), "", CreateMockableWalletDatabase());
-        std::string desc_str = "multi(2, " + EncodeSecret(uncompressedKey) + ", " + EncodeSecret(keys[1]) + ")";
+        std::string desc_str = "multi(2," + EncodeSecret(keys[0]) + "," + EncodeSecret(keys[1]) + ")";
 
         auto spk_manager = CreateDescriptor(keystore, desc_str, true);
 
-        scriptPubKey = GetScriptForMultisig(2, {uncompressedPubkey, pubkeys[1]});
+        scriptPubKey = GetScriptForMultisig(2, {pubkeys[0], pubkeys[1]});
         result = spk_manager->IsMine(scriptPubKey);
         BOOST_CHECK_EQUAL(result, ISMINE_SPENDABLE);
     }
@@ -180,11 +153,11 @@ BOOST_AUTO_TEST_CASE(ismine_standard)
     {
         CWallet keystore(chain.get(), "", CreateMockableWalletDatabase());
 
-        std::string desc_str = "sh(multi(2, " + EncodeSecret(uncompressedKey) + ", " + EncodeSecret(keys[1]) + "))";
+        std::string desc_str = "sh(multi(2," + EncodeSecret(keys[0]) + "," + EncodeSecret(keys[1]) + "))";
 
         auto spk_manager = CreateDescriptor(keystore, desc_str, true);
 
-        CScript redeemScript = GetScriptForMultisig(2, {uncompressedPubkey, pubkeys[1]});
+        CScript redeemScript = GetScriptForMultisig(2, {pubkeys[0], pubkeys[1]});
         scriptPubKey = GetScriptForDestination(ScriptHash(redeemScript));
         result = spk_manager->IsMine(scriptPubKey);
         BOOST_CHECK_EQUAL(result, ISMINE_SPENDABLE);
@@ -194,7 +167,7 @@ BOOST_AUTO_TEST_CASE(ismine_standard)
     {
         CWallet keystore(chain.get(), "", CreateMockableWalletDatabase());
 
-        std::string desc_str = "wsh(multi(2, " + EncodeSecret(keys[0]) + ", " + EncodeSecret(keys[1]) + "))";
+        std::string desc_str = "wsh(multi(2," + EncodeSecret(keys[0]) + "," + EncodeSecret(keys[1]) + "))";
 
         auto spk_manager = CreateDescriptor(keystore, desc_str, true);
 
@@ -208,7 +181,7 @@ BOOST_AUTO_TEST_CASE(ismine_standard)
     {
         CWallet keystore(chain.get(), "", CreateMockableWalletDatabase());
 
-        std::string desc_str = "sh(wsh(multi(2, " + EncodeSecret(keys[0]) + ", " + EncodeSecret(keys[1]) + ")))";
+        std::string desc_str = "sh(wsh(multi(2," + EncodeSecret(keys[0]) + "," + EncodeSecret(keys[1]) + ")))";
 
         auto spk_manager = CreateDescriptor(keystore, desc_str, true);
 
