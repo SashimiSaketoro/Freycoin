@@ -1,4 +1,5 @@
 // Copyright (c) 2017-2022 The Bitcoin Core developers
+// Copyright (c) 2013-present The Riecoin developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -53,8 +54,7 @@ static constexpr bool DEFAULT_RPC_DOC_CHECK{
 extern const std::string UNIX_EPOCH_TIME;
 
 /**
- * Example bech32 addresses for the RPCExamples help documentation. They are intentionally
- * invalid to prevent accidental transactions by users.
+ * Example bech32 addresses for the RPCExamples help documentation.
  */
 extern const std::string EXAMPLE_ADDRESS[2];
 

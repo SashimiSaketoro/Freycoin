@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # Copyright (c) 2018-2022 The Bitcoin Core developers
+# Copyright (c) 2013-present The Riecoin developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test the scantxoutset rpc call."""
@@ -44,18 +45,18 @@ class ScantxoutsetTest(BitcoinTestFramework):
         self.sendtodestination(spk_BECH32, 0.004)
 
         #send to child keys of tprv8ZgxMBicQKsPd7Uf69XL1XwhmjHopUGep8GuEiJDZmbQz6o58LninorQAfcKZWARbtRtfnLcJ5MQ2AtHcQJCCRUcMRvmDUjyEmNUWwx8UbK
-        self.sendtodestination("mkHV1C6JLheLoUSSZYk7x3FH5tnx9bu7yc", 0.008)  # (m/0'/0'/0')
-        self.sendtodestination("mipUSRmJAj2KrjSvsPQtnP8ynUon7FhpCR", 0.016)  # (m/0'/0'/1')
-        self.sendtodestination("n37dAGe6Mq1HGM9t4b6rFEEsDGq7Fcgfqg", 0.032)  # (m/0'/0'/1500')
-        self.sendtodestination("mqS9Rpg8nNLAzxFExsgFLCnzHBsoQ3PRM6", 0.064)  # (m/0'/0'/0)
-        self.sendtodestination("mnTg5gVWr3rbhHaKjJv7EEEc76ZqHgSj4S", 0.128)  # (m/0'/0'/1)
-        self.sendtodestination("mketCd6B9U9Uee1iCsppDJJBHfvi6U6ukC", 0.256)  # (m/0'/0'/1500)
-        self.sendtodestination("mj8zFzrbBcdaWXowCQ1oPZ4qioBVzLzAp7", 0.512)  # (m/1/1/0')
-        self.sendtodestination("mfnKpKQEftniaoE1iXuMMePQU3PUpcNisA", 1.024)  # (m/1/1/1')
-        self.sendtodestination("mou6cB1kaP1nNJM1sryW6YRwnd4shTbXYQ", 2.048)  # (m/1/1/1500')
-        self.sendtodestination("mtfUoUax9L4tzXARpw1oTGxWyoogp52KhJ", 4.096)  # (m/1/1/0)
-        self.sendtodestination("mxp7w7j8S1Aq6L8StS2PqVvtt4HGxXEvdy", 8.192)  # (m/1/1/1)
-        self.sendtodestination("mpQ8rokAhp1TAtJQR6F6TaUmjAWkAWYYBq", 16.384)  # (m/1/1/1500)
+        self.sendtodestination("rB17qPNU9gjyoEyPqAQdHREw1SdKzPQTTb", 0.008)  # (m/0'/0'/0')
+        self.sendtodestination("r9Y7Gd3Tyi7xrVyt915Q7m8di2e9tc4mTU", 0.016)  # (m/0'/0'/1')
+        self.sendtodestination("rTqFzTvGAp6vG7gqLCmMacEX8pfV5UrQka", 0.032)  # (m/0'/0'/1500')
+        self.sendtodestination("rG9nG1xJbMRozinCEVLkfaneCjiBBFR9cC", 0.064)  # (m/0'/0'/0)
+        self.sendtodestination("rDBJusmgf2xEh47GzvacZcEG2eQD4Hi6N5", 0.128)  # (m/0'/0'/1)
+        self.sendtodestination("rBNX2pNLxTF7eQYfUVVKYgHqDDm61k3hPv", 0.256)  # (m/0'/0'/1500)
+        self.sendtodestination("r9rd6C8kzbjDWJLtU1gJiw4VeM1sozUx7Q", 0.512)  # (m/1/1/0')
+        self.sendtodestination("r6VxeWgQUstMaZkxz9Zrh2P4PbDrheEXK7", 1.024)  # (m/1/1/1')
+        self.sendtodestination("rEcjSNHvPN7RN4sy9Ue1RvRbiAuFa9VRov", 2.048)  # (m/1/1/1500')
+        self.sendtodestination("rKP7dfs7xKAXzHhP6YgJnexAuMe4cVRNVr", 4.096)  # (m/1/1/0)
+        self.sendtodestination("rPXkmK1JEzGU66fQA3guAsvYoc7eqZN3cw", 8.192)  # (m/1/1/1)
+        self.sendtodestination("rF7mh12LWo76AeqMghubnxUReiM7z4XfJ9", 16.384)  # (m/1/1/1500)
 
         self.generate(self.nodes[0], 1)
 
