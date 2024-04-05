@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # Copyright (c) 2024 The Bitcoin Core developers
+# Copyright (c) 2013-present The Riecoin developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """
@@ -76,10 +77,10 @@ class P2PHandshakeTest(BitcoinTestFramework):
                                           DESIRABLE_SERVICE_FLAGS_FULL, expect_disconnect=False)
 
         self.log.info("Check that limited peers are only desired if the local chain is close to the tip (<24h)")
-        self.generate_at_mocktime(int(time.time()) - 25 * 3600)  # tip outside the 24h window, should fail
+        self.generate_at_mocktime(int(time.time()) - 7 * 3600)  # tip outside the 6 h (NODE_NETWORK_LIMITED_ALLOW_CONN_BLOCKS, 144 x 150 s) window, should fail
         self.test_desirable_service_flags(node, [NODE_NETWORK_LIMITED | NODE_WITNESS],
                                           DESIRABLE_SERVICE_FLAGS_FULL, expect_disconnect=True)
-        self.generate_at_mocktime(int(time.time()) - 23 * 3600)  # tip inside the 24h window, should succeed
+        self.generate_at_mocktime(int(time.time()) - 5 * 3600)  # tip inside the 6 h window, should succeed
         self.test_desirable_service_flags(node, [NODE_NETWORK_LIMITED | NODE_WITNESS],
                                           DESIRABLE_SERVICE_FLAGS_PRUNED, expect_disconnect=False)
 

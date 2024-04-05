@@ -55,7 +55,7 @@ from test_framework.wallet import MiniWallet
 
 
 HEIGHT = 200  # blocks mined
-TIME_RANGE_STEP = 600  # ten-minute steps
+TIME_RANGE_STEP = 150 # s
 TIME_RANGE_MTP = TIME_GENESIS_BLOCK + (HEIGHT - 6) * TIME_RANGE_STEP
 TIME_RANGE_TIP = TIME_GENESIS_BLOCK + (HEIGHT - 1) * TIME_RANGE_STEP
 TIME_RANGE_END = TIME_GENESIS_BLOCK + HEIGHT * TIME_RANGE_STEP
@@ -440,7 +440,7 @@ class BlockchainTest(BitcoinTestFramework):
 
         # This should be 2 hashes every 10 minutes or 1/300
         hashes_per_second = self.nodes[0].getnetworkhashps()
-        assert abs(hashes_per_second * 300 - 1) < 0.0001
+        assert abs(hashes_per_second * 75 - 1) < 0.0001
 
         # Test setting the first param of getnetworkhashps to -1 returns the average network
         # hashes per second from the last difficulty change.

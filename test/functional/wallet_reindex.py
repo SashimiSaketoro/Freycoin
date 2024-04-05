@@ -13,7 +13,7 @@ from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
     assert_equal,
 )
-BLOCK_TIME = 60 * 10
+BLOCK_TIME = 150
 
 class WalletReindexTest(BitcoinTestFramework):
     def set_test_params(self):

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # Copyright (c) 2015-2022 The Bitcoin Core developers
+# Copyright (c) 2013-present The Riecoin developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Utilities for manipulating blocks and transactions."""
@@ -52,7 +53,7 @@ MAX_BLOCK_SIGOPS_WEIGHT = MAX_BLOCK_SIGOPS * WITNESS_SCALE_FACTOR
 # Genesis block time (regtest)
 TIME_GENESIS_BLOCK = 1296688602
 
-MAX_FUTURE_BLOCK_TIME = 2 * 60 * 60
+MAX_FUTURE_BLOCK_TIME = 2 * 60 * 60 # Should be 15 s for Riecoin actually, but would break many Tests, leave it at 2 h.
 
 # Coinbase transaction outputs can only be spent after this number of new blocks (network rule)
 COINBASE_MATURITY = 100
@@ -71,7 +72,7 @@ def create_block(hashprev=None, coinbase=None, ntime=None, *, version=None, tmpl
     if tmpl is None:
         tmpl = {}
     block.nVersion = version or tmpl.get('version') or VERSIONBITS_LAST_OLD_BLOCK_VERSION
-    block.nTime = ntime or tmpl.get('curtime') or int(time.time() + 600)
+    block.nTime = ntime or tmpl.get('curtime') or int(time.time() + 150)
     block.hashPrevBlock = hashprev or int(tmpl['previousblockhash'], 0x10)
     if tmpl and not tmpl.get('bits') is None:
         block.nBits = struct.unpack('>I', bytes.fromhex(tmpl['bits']))[0]
