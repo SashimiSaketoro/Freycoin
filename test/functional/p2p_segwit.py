@@ -250,7 +250,6 @@ class SegWitTest(BitcoinTestFramework):
 
         # Keep a place to store utxo's that can be used in later tests
         self.utxo = []
-        self.wallet = MiniWallet(self.nodes[0])
 
         self.log.info("Starting tests before segwit activation")
         self.wallet = MiniWallet(self.nodes[0])

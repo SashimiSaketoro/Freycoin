@@ -1,4 +1,5 @@
 // Copyright (c) 2012-2022 The Bitcoin Core developers
+// Copyright (c) 2013-present The Riecoin developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -19,7 +20,6 @@
 #include <test/util/random.h>
 #include <test/util/setup_common.h>
 #include <test/util/validation.h>
-#include <timedata.h>
 #include <util/strencodings.h>
 #include <util/string.h>
 #include <validation.h>
@@ -844,7 +844,7 @@ BOOST_AUTO_TEST_CASE(initial_advertise_from_version_message)
                /*inbound_onion=*/false};
 
     const uint64_t services{NODE_NETWORK | NODE_WITNESS};
-    const int64_t time{0};
+    const int64_t time{GetTime()};
 
     // Force ChainstateManager::IsInitialBlockDownload() to return false.
     // Otherwise PushAddress() isn't called by PeerManager::ProcessMessage().
@@ -902,10 +902,6 @@ BOOST_AUTO_TEST_CASE(initial_advertise_from_version_message)
     chainman.ResetIbd();
     m_node.args->ForceSetArg("-capturemessages", "0");
     m_node.args->ForceSetArg("-bind", "");
-    // PeerManager::ProcessMessage() calls AddTimeData() which changes the internal state
-    // in timedata.cpp and later confuses the test "timedata_tests/addtimedata". Thus reset
-    // that state as it was before our test was run.
-    TestOnlyResetTimeData();
 }
 
 

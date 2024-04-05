@@ -35,7 +35,6 @@
 #include <scheduler.h>
 #include <streams.h>
 #include <sync.h>
-#include <timedata.h>
 #include <tinyformat.h>
 #include <txmempool.h>
 #include <txorphanage.h>
@@ -3665,10 +3664,12 @@ void PeerManagerImpl::ProcessMessage(CNode& pfrom, const std::string& msg_type, 
 
         int64_t nTimeOffset = nTime - GetTime();
         pfrom.nTimeOffset = nTimeOffset;
-        if (!pfrom.IsInboundConn()) {
-            // Don't use timedata samples from inbound peers to make it
-            // harder for others to tamper with our adjusted time.
-            AddTimeData(pfrom.addr, nTimeOffset);
+        if (std::abs(pfrom.nTimeOffset) > MAX_TIME_OFFSET
+         && m_chainman.GetParams().GetChainType() != ChainType::REGTEST) // Disable for RegTest since this breaks many Tests.
+        {
+            LogPrintf("peer=%d has too large time offset %d s, disconnecting (check your system clock and timezone if it happens too often and prevents you from connecting to peers)\n", pfrom.GetId(), pfrom.nTimeOffset);
+            pfrom.fDisconnect = true;
+            return;
         }
 
         // Feeler connections exist only to verify if address is online.

@@ -1,4 +1,5 @@
 // Copyright (c) 2020-2022 The Bitcoin Core developers
+// Copyright (c) 2013-present The Riecoin developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -34,7 +35,7 @@ void ConnmanTestMsg::Handshake(CNode& node,
         NetMsg::Make(NetMsgType::VERSION,
                 version,                                        //
                 Using<CustomUintFormatter<8>>(remote_services), //
-                int64_t{},                                      // dummy time
+                int64_t{GetTime()},                             // now (cannot simply be dummy for Riecoin Tests)
                 int64_t{},                                      // ignored service bits
                 CNetAddr::V1(CService{}),                       // dummy
                 int64_t{},                                      // ignored service bits

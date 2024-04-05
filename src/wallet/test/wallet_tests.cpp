@@ -322,16 +322,6 @@ BOOST_FIXTURE_TEST_CASE(LoadReceiveRequests, TestingSetup)
 #endif
 }
 
-// Cryptographically invalidate a PubKey whilst keeping length and first byte
-static void PollutePubKey(CPubKey& pubkey)
-{
-    std::vector<unsigned char> pubkey_raw(pubkey.begin(), pubkey.end());
-    std::fill(pubkey_raw.begin()+1, pubkey_raw.end(), 0);
-    pubkey = CPubKey(pubkey_raw);
-    assert(!pubkey.IsFullyValid());
-    assert(pubkey.IsValid());
-}
-
 class ListCoinsTestingSetup : public TestChain100Setup
 {
 public:
