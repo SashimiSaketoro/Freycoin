@@ -51,7 +51,7 @@ MAX_BLOCK_SIGOPS = 10000
 MAX_BLOCK_SIGOPS_WEIGHT = MAX_BLOCK_SIGOPS * WITNESS_SCALE_FACTOR
 
 # Genesis block time (regtest)
-TIME_GENESIS_BLOCK = 1296688602
+TIME_GENESIS_BLOCK = 1707684554
 
 MAX_FUTURE_BLOCK_TIME = 2 * 60 * 60 # Should be 15 s for Riecoin actually, but would break many Tests, leave it at 2 h.
 
@@ -77,7 +77,7 @@ def create_block(hashprev=None, coinbase=None, ntime=None, *, version=None, tmpl
     if tmpl and not tmpl.get('bits') is None:
         block.nBits = struct.unpack('>I', bytes.fromhex(tmpl['bits']))[0]
     else:
-        block.nBits = 0x207fffff  # difficulty retargeting is disabled in REGTEST chainparams
+        block.nBits = 0x00012000  # difficulty retargeting is disabled in REGTEST chainparams
     if coinbase is None:
         coinbase = create_coinbase(height=tmpl['height'])
     block.vtx.append(coinbase)

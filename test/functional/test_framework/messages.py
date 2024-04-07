@@ -682,8 +682,7 @@ class CTransaction:
 
 
 class CBlockHeader:
-    __slots__ = ("hash", "hashMerkleRoot", "hashPrevBlock", "nBits", "nNonce",
-                 "nTime", "nVersion", "sha256")
+    __slots__ = ("hash", "hashMerkleRoot", "hashPrevBlock", "nBits", "nNonce", "nTime", "nVersion", "sha256", "sha256PoW")
 
     def __init__(self, header=None):
         if header is None:
@@ -696,6 +695,7 @@ class CBlockHeader:
             self.nBits = header.nBits
             self.nNonce = header.nNonce
             self.sha256 = header.sha256
+            self.sha256PoW = header.sha256PoW
             self.hash = header.hash
             self.calc_sha256()
 
@@ -705,17 +705,18 @@ class CBlockHeader:
         self.hashMerkleRoot = 0
         self.nTime = 0
         self.nBits = 0
-        self.nNonce = 0
+        self.nNonce = uint256_from_str(bytearray.fromhex("0000000000000000000000000000000000000000000000000000000000000000"))
         self.sha256 = None
+        self.sha256PoW = None
         self.hash = None
 
     def deserialize(self, f):
         self.nVersion = int.from_bytes(f.read(4), "little", signed=True)
         self.hashPrevBlock = deser_uint256(f)
         self.hashMerkleRoot = deser_uint256(f)
-        self.nTime = int.from_bytes(f.read(4), "little")
+        self.nTime = int.from_bytes(f.read(8), "little", signed=True)
         self.nBits = int.from_bytes(f.read(4), "little")
-        self.nNonce = int.from_bytes(f.read(4), "little")
+        self.nNonce = deser_uint256(f)
         self.sha256 = None
         self.hash = None
 
@@ -724,9 +725,9 @@ class CBlockHeader:
         r += self.nVersion.to_bytes(4, "little", signed=True)
         r += ser_uint256(self.hashPrevBlock)
         r += ser_uint256(self.hashMerkleRoot)
-        r += self.nTime.to_bytes(4, "little")
+        r += self.nTime.to_bytes(8, "little", signed=True)
         r += self.nBits.to_bytes(4, "little")
-        r += self.nNonce.to_bytes(4, "little")
+        r += ser_uint256(self.nNonce)
         return r
 
     def calc_sha256(self):
@@ -735,24 +736,35 @@ class CBlockHeader:
             r += self.nVersion.to_bytes(4, "little", signed=True)
             r += ser_uint256(self.hashPrevBlock)
             r += ser_uint256(self.hashMerkleRoot)
-            r += self.nTime.to_bytes(4, "little")
+            r += self.nTime.to_bytes(8, "little", signed=True)
             r += self.nBits.to_bytes(4, "little")
-            r += self.nNonce.to_bytes(4, "little")
+            self.sha256PoW = uint256_from_str(hash256(r))
+            r += ser_uint256(self.nNonce)
             self.sha256 = uint256_from_str(hash256(r))
             self.hash = hash256(r)[::-1].hex()
 
     def rehash(self):
         self.sha256 = None
+        self.sha256PoW = None
         self.calc_sha256()
         return self.sha256
 
     def __repr__(self):
-        return "CBlockHeader(nVersion=%i hashPrevBlock=%064x hashMerkleRoot=%064x nTime=%s nBits=%08x nNonce=%08x)" \
+        return "CBlockHeader(nVersion=%i hashPrevBlock=%064x hashMerkleRoot=%064x nTime=%s nBits=%08x nNonce=%s)" \
             % (self.nVersion, self.hashPrevBlock, self.hashMerkleRoot,
                time.ctime(self.nTime), self.nBits, self.nNonce)
 
 BLOCK_HEADER_SIZE = len(CBlockHeader().serialize())
-assert_equal(BLOCK_HEADER_SIZE, 80)
+assert_equal(BLOCK_HEADER_SIZE, 112)
+
+def is_fermat_prime(n):
+    if n == 2:
+        return True
+    if not n & 1:
+        return False
+    if pow(2, n - 1, n) == 1:
+        return True
+    return False
 
 class CBlock(CBlockHeader):
     __slots__ = ("vtx",)
@@ -803,10 +815,17 @@ class CBlock(CBlockHeader):
 
         return self.get_merkle_root(hashes)
 
+    def has_valid_pow(self): # PoW Version 1, simplified (only handle Primorial Offset)
+        D = self.nBits//256
+        Df = self.nBits % 256
+        L = (10*Df*Df*Df + 7383*Df*Df + 5840720*Df + 3997440)//8388608
+        target = (1 << D) + L*(1 << (D - 8)) + self.sha256PoW*(1 << (D - 264))
+        offset = self.nNonce//65536 + 1
+        return is_fermat_prime(target + offset) # only look for prime numbers in RegTest
+
     def is_valid(self):
         self.calc_sha256()
-        target = uint256_from_compact(self.nBits)
-        if self.sha256 > target:
+        if not self.has_valid_pow():
             return False
         for tx in self.vtx:
             if not tx.is_valid():
@@ -816,11 +835,12 @@ class CBlock(CBlockHeader):
         return True
 
     def solve(self):
-        self.rehash()
-        target = uint256_from_compact(self.nBits)
-        while self.sha256 > target:
-            self.nNonce += 1
+        self.nNonce = uint256_from_str(bytearray.fromhex("0200000000000000000000000000000000000000000000000000000000000000"))
+        while True:
             self.rehash()
+            if self.has_valid_pow():
+                break
+            self.nNonce += 131072
 
     # Calculate the block weight using witness and non-witness
     # serialization size (does NOT use sigops).
@@ -830,7 +850,7 @@ class CBlock(CBlockHeader):
         return (WITNESS_SCALE_FACTOR - 1) * without_witness_size + with_witness_size
 
     def __repr__(self):
-        return "CBlock(nVersion=%i hashPrevBlock=%064x hashMerkleRoot=%064x nTime=%s nBits=%08x nNonce=%08x vtx=%s)" \
+        return "CBlock(nVersion=%i hashPrevBlock=%064x hashMerkleRoot=%064x nTime=%s nBits=%08x nNonce=%s vtx=%s)" \
             % (self.nVersion, self.hashPrevBlock, self.hashMerkleRoot,
                time.ctime(self.nTime), self.nBits, self.nNonce, repr(self.vtx))
 

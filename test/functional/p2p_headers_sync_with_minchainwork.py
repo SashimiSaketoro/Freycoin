@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # Copyright (c) 2019-2022 The Bitcoin Core developers
+# Copyright (c) 2013-present The Riecoin developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test that we reject low difficulty headers to prevent our block tree from filling up with useless bloat"""
@@ -31,7 +32,8 @@ class RejectLowDifficultyHeadersTest(BitcoinTestFramework):
         self.setup_clean_chain = True
         self.num_nodes = 4
         # Node0 has no required chainwork; node1 requires 15 blocks on top of the genesis block; node2 requires 2047
-        self.extra_args = [["-minimumchainwork=0x0", "-checkblockindex=0"], ["-minimumchainwork=0x1f", "-checkblockindex=0"], ["-minimumchainwork=0x1000", "-checkblockindex=0"], ["-minimumchainwork=0x1000", "-checkblockindex=0", "-whitelist=noban@127.0.0.1"]]
+        # REGTEST_WORK_PER_BLOCK = 130615648, 0x78ac1150 = REGTEST_WORK_PER_BLOCK*1f/2 (was 1f for Bitcoin Core), 0x3e484b0000 = REGTEST_WORK_PER_BLOCK*1000/2 (was 1000)
+        self.extra_args = [["-minimumchainwork=0x0", "-checkblockindex=0"], ["-minimumchainwork=0x78ac1150", "-checkblockindex=0"], ["-minimumchainwork=0x3e484b0000", "-checkblockindex=0"], ["-minimumchainwork=0x3e484b0000", "-checkblockindex=0", "-whitelist=noban@127.0.0.1"]]
 
     def setup_network(self):
         self.setup_nodes()
@@ -73,7 +75,7 @@ class RejectLowDifficultyHeadersTest(BitcoinTestFramework):
             assert len(chaintips) == 1
             assert {
                 'height': 0,
-                'hash': '0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206',
+                'hash': '08982e71e300f2c7f5b967df5e9b40788942abd4bc62edaeabd27d351f953b68',
                 'branchlen': 0,
                 'status': 'active',
             } in chaintips
@@ -85,7 +87,7 @@ class RejectLowDifficultyHeadersTest(BitcoinTestFramework):
 
         assert {
             'height': 0,
-            'hash': '0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206',
+            'hash': '08982e71e300f2c7f5b967df5e9b40788942abd4bc62edaeabd27d351f953b68',
             'branchlen': 0,
             'status': 'active',
         } in self.nodes[2].getchaintips()

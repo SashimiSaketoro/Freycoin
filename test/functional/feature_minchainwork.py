@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # Copyright (c) 2017-2022 The Bitcoin Core developers
+# Copyright (c) 2013-present The Riecoin developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test logic for setting nMinimumChainWork on command line.
@@ -21,16 +22,16 @@ from test_framework.p2p import P2PInterface, msg_getheaders
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal
 
-# 2 hashes required per regtest block (with no difficulty adjustment)
-REGTEST_WORK_PER_BLOCK = 2
+# 288^(1 + 2.3) (was 2 for Bitcoin)
+REGTEST_WORK_PER_BLOCK = 130615648
 
 class MinimumChainWorkTest(BitcoinTestFramework):
     def set_test_params(self):
         self.setup_clean_chain = True
         self.num_nodes = 3
 
-        self.extra_args = [[], ["-minimumchainwork=0x65"], ["-minimumchainwork=0x65"]]
-        self.node_min_work = [0, 101, 101]
+        self.extra_args = [[], ["-minimumchainwork=0x189285973"], ["-minimumchainwork=189285973"]] # REGTEST_WORK_PER_BLOCK*50.5 (was 101 for Bitcoin)
+        self.node_min_work = [0, 6596090227, 6596090227] # REGTEST_WORK_PER_BLOCK*50.5
 
     def setup_network(self):
         # This test relies on the chain setup being:

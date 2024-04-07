@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # Copyright (c) 2019-2022 The Bitcoin Core developers
+# Copyright (c) 2013-present The Riecoin developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test that we reject low difficulty headers to prevent our block tree from filling up with useless bloat"""
@@ -51,7 +52,7 @@ class RejectLowDifficultyHeadersTest(BitcoinTestFramework):
         peer_checkpoint.send_and_ping(msg_headers(self.headers))
         assert {
             'height': 546,
-            'hash': '000000002a936ca763904c3c35fce2f3556c559c0214345d31b1bcebf76acb70',
+            'hash': 'de0475d73da731abe2763210994fb17532589949bd9966e8e31c814d9f4242e1',
             'branchlen': 546,
             'status': 'headers-only',
         } in self.nodes[0].getchaintips()
@@ -68,7 +69,7 @@ class RejectLowDifficultyHeadersTest(BitcoinTestFramework):
         peer_no_checkpoint.send_and_ping(msg_headers(self.headers_fork))
         assert {
             "height": 2,
-            "hash": "00000000b0494bd6c3d5ff79c497cfce40831871cbf39b1bc28bd1dac817dc39",
+            "hash": "1ff0923900e74d3aa476e14a3aa0dd6627cd05482d148fbc4227999b2302b54e",
             "branchlen": 2,
             "status": "headers-only",
         } in self.nodes[0].getchaintips()
@@ -78,7 +79,7 @@ class RejectLowDifficultyHeadersTest(BitcoinTestFramework):
         peer_before_checkpoint.send_and_ping(msg_headers(self.headers_fork))
         assert {
             "height": 2,
-            "hash": "00000000b0494bd6c3d5ff79c497cfce40831871cbf39b1bc28bd1dac817dc39",
+            "hash": "1ff0923900e74d3aa476e14a3aa0dd6627cd05482d148fbc4227999b2302b54e",
             "branchlen": 2,
             "status": "headers-only",
         } in self.nodes[1].getchaintips()

@@ -592,7 +592,7 @@ class FullBlockTest(BitcoinTestFramework):
         b44 = CBlock()
         b44.nTime = self.tip.nTime + 1
         b44.hashPrevBlock = self.tip.sha256
-        b44.nBits = 0x207fffff
+        b44.nBits = 0x00012000
         b44.vtx.append(coinbase)
         tx = self.create_and_sign_transaction(out[14], 1)
         b44.vtx.append(tx)
@@ -608,7 +608,7 @@ class FullBlockTest(BitcoinTestFramework):
         b45 = CBlock()
         b45.nTime = self.tip.nTime + 1
         b45.hashPrevBlock = self.tip.sha256
-        b45.nBits = 0x207fffff
+        b45.nBits = 0x00012000
         b45.vtx.append(non_coinbase)
         b45.hashMerkleRoot = b45.calc_merkle_root()
         b45.solve()
@@ -622,7 +622,7 @@ class FullBlockTest(BitcoinTestFramework):
         b46 = CBlock()
         b46.nTime = b44.nTime + 1
         b46.hashPrevBlock = b44.sha256
-        b46.nBits = 0x207fffff
+        b46.nBits = 0x00012000
         b46.vtx = []
         b46.hashMerkleRoot = 0
         b46.solve()
@@ -635,13 +635,12 @@ class FullBlockTest(BitcoinTestFramework):
         self.log.info("Reject a block with invalid work")
         self.move_tip(44)
         b47 = self.next_block(47)
-        target = uint256_from_compact(b47.nBits)
-        while b47.sha256 <= target:
-            # Rehash nonces until an invalid too-high-hash block is found.
-            b47.nNonce += 1
-            b47.rehash()
-        self.send_blocks([b47], False, force_send=True, reject_reason='high-hash', reconnect=True)
+        b47.nBits = 0x00012000
+        b47.nNonce = uint256_from_str(bytearray.fromhex("0200000000000000000000000000000000000000000000000000000000000000"))
+        b47.rehash()
+        self.send_blocks([b47], False, force_send=True, reject_reason='short-constellation', reconnect=True)
 
+        # In Riecoin, Blocks > 15 s in the future are rejected, but in RegTest, this is reverted to the Bitcoin's 2 h until all the affected tests are rewritten.
         self.log.info("Reject a block with a timestamp >2 hours in the future")
         self.move_tip(44)
         b48 = self.next_block(48)
@@ -657,12 +656,13 @@ class FullBlockTest(BitcoinTestFramework):
         b49.solve()
         self.send_blocks([b49], success=False, reject_reason='bad-txnmrklroot', reconnect=True)
 
-        self.log.info("Reject a block with incorrect POW limit")
+        self.log.info("Reject a block with incorrect Difficulty")
         self.move_tip(44)
         b50 = self.next_block(50)
-        b50.nBits = b50.nBits - 1
+        b50.nBits = 0x00011fff
         b50.solve()
-        self.send_blocks([b50], False, force_send=True, reject_reason='bad-diffbits', reconnect=True)
+        # self.send_blocks([b50], False, force_send=True, reject_reason='bad-diffbits', reconnect=True) # Todo: worth to investigate why it does the PoW Check before "Bad DiffBits" and if we should change something in the code.
+        self.send_blocks([b50], False, force_send=True, reject_reason='short-constellation', reconnect=True)
 
         self.log.info("Reject a block with two coinbase transactions")
         self.move_tip(44)

@@ -130,10 +130,11 @@ bool BlockTreeDB::LoadBlockIndexGuts(const Consensus::Params& consensusParams, s
                 pindexNew->nStatus        = diskindex.nStatus;
                 pindexNew->nTx            = diskindex.nTx;
 
-                if (!CheckProofOfWork(pindexNew->GetBlockHash(), pindexNew->nBits, consensusParams)) {
+                // This makes the start very long and disabling this check should not have any practical drawback. It has been so since at least 0.10.2 (2014). So, assume that the disk's PoW data is valid.
+                /*if (!CheckProofOfWork(pindexNew->GetBlockHeader().GetHashForPoW(), pindexNew->nBits, ArithToUint256(pindexNew->nNonce), consensusParams)) {
                     LogError("%s: CheckProofOfWork failed: %s\n", __func__, pindexNew->ToString());
                     return false;
-                }
+                }*/
 
                 pcursor->Next();
             } else {
@@ -1056,7 +1057,7 @@ bool BlockManager::ReadBlockFromDisk(CBlock& block, const FlatFilePos& pos) cons
     }
 
     // Check the header
-    if (!CheckProofOfWork(block.GetHash(), block.nBits, GetConsensus())) {
+    if (!CheckProofOfWork(block.GetHashForPoW(), block.nBits, ArithToUint256(block.nNonce), GetConsensus())) {
         LogError("ReadBlockFromDisk: Errors in block header at %s\n", pos.ToString());
         return false;
     }

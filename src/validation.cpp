@@ -3640,8 +3640,8 @@ void ChainstateManager::ReceivedBlockTransactions(const CBlock& block, CBlockInd
 static bool CheckBlockHeader(const CBlockHeader& block, BlockValidationState& state, const Consensus::Params& consensusParams, bool fCheckPOW = true)
 {
     // Check proof of work matches claimed amount
-    if (fCheckPOW && !CheckProofOfWork(block.GetHash(), block.nBits, consensusParams))
-        return state.Invalid(BlockValidationResult::BLOCK_INVALID_HEADER, "high-hash", "proof of work failed");
+    if (fCheckPOW && !CheckProofOfWork(block.GetHashForPoW(), block.nBits, ArithToUint256(block.nNonce), consensusParams))
+        return state.Invalid(BlockValidationResult::BLOCK_INVALID_HEADER, "short-constellation", "proof of work failed");
 
     return true;
 }
@@ -3829,7 +3829,7 @@ std::vector<unsigned char> ChainstateManager::GenerateCoinbaseCommitment(CBlock&
 bool HasValidProofOfWork(const std::vector<CBlockHeader>& headers, const Consensus::Params& consensusParams)
 {
     return std::all_of(headers.cbegin(), headers.cend(),
-            [&](const auto& header) { return CheckProofOfWork(header.GetHash(), header.nBits, consensusParams);});
+            [&](const auto& header) { return CheckProofOfWork(header.GetHashForPoW(), header.nBits, ArithToUint256(header.nNonce), consensusParams);});
 }
 
 bool IsBlockMutated(const CBlock& block, bool check_witness_root)
@@ -3890,8 +3890,10 @@ static bool ContextualCheckBlockHeader(const CBlockHeader& block, BlockValidatio
 
     // Check proof of work
     const Consensus::Params& consensusParams = chainman.GetConsensus();
-    if (block.nBits != GetNextWorkRequired(pindexPrev, &block, consensusParams))
+    if (block.nBits != GetNextWorkRequired(pindexPrev, consensusParams))
         return state.Invalid(BlockValidationResult::BLOCK_INVALID_HEADER, "bad-diffbits", "incorrect proof of work");
+    if (block.GetPoWVersion() != consensusParams.GetPoWVersionAtHeight(nHeight))
+        return state.Invalid(BlockValidationResult::BLOCK_INVALID_HEADER, "bad-pow-version", "incorrect proof of work version");
 
     // Check against checkpoints
     if (chainman.m_options.checkpoints_enabled) {
@@ -3915,6 +3917,11 @@ static bool ContextualCheckBlockHeader(const CBlockHeader& block, BlockValidatio
         maxFutureBlockTime = 7200;
     if (block.Time() > NodeClock::now() + std::chrono::seconds{maxFutureBlockTime}) {
         return state.Invalid(BlockValidationResult::BLOCK_TIME_FUTURE, "time-too-new", "block timestamp too far in the future");
+    }
+
+    if (nHeight >= consensusParams.fork2Height) { // Stricter Timestamp Check starting from Fork 2 (note that the MAX_FUTURE_BLOCK_TIME above was also reduced to 15 s).
+        if (block.GetBlockTime() < pindexPrev->GetBlockTime() - 15)
+            return state.Invalid(BlockValidationResult::BLOCK_INVALID_HEADER, "time-too-old", "block's timestamp is too early");
     }
 
     // Reject blocks with outdated version
@@ -4009,12 +4016,6 @@ bool ChainstateManager::AcceptBlockHeader(const CBlockHeader& block, BlockValida
             }
             return true;
         }
-
-        if (!CheckBlockHeader(block, state, GetConsensus())) {
-            LogPrint(BCLog::VALIDATION, "%s: Consensus::CheckBlockHeader: %s, %s\n", __func__, hash.ToString(), state.ToString());
-            return false;
-        }
-
         // Get prev block index
         CBlockIndex* pindexPrev = nullptr;
         BlockMap::iterator mi{m_blockman.m_block_index.find(block.hashPrevBlock)};
@@ -4029,6 +4030,11 @@ bool ChainstateManager::AcceptBlockHeader(const CBlockHeader& block, BlockValida
         }
         if (!ContextualCheckBlockHeader(block, state, m_blockman, *this, pindexPrev)) {
             LogPrint(BCLog::VALIDATION, "%s: Consensus::ContextualCheckBlockHeader: %s, %s\n", __func__, hash.ToString(), state.ToString());
+            return false;
+        }
+
+        if (!CheckBlockHeader(block, state, GetConsensus())) {
+            LogPrint(BCLog::VALIDATION, "%s: Consensus::CheckBlockHeader: %s, %s\n", __func__, hash.ToString(), state.ToString());
             return false;
         }
 
@@ -4209,8 +4215,8 @@ bool ChainstateManager::AcceptBlock(const std::shared_ptr<const CBlock>& pblock,
 
     const CChainParams& params{GetParams()};
 
-    if (!CheckBlock(block, state, params.GetConsensus()) ||
-        !ContextualCheckBlock(block, state, *this, pindex->pprev)) {
+    if (!ContextualCheckBlock(block, state, *this, pindex->pprev) ||
+        !CheckBlock(block, state, params.GetConsensus())) {
         if (state.IsInvalid() && state.GetResult() != BlockValidationResult::BLOCK_MUTATED) {
             pindex->nStatus |= BLOCK_FAILED_VALID;
             m_blockman.m_dirty_blockindex.insert(pindex);

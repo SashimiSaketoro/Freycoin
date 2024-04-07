@@ -1,4 +1,5 @@
 // Copyright (c) 2022 The Bitcoin Core developers
+// Copyright (c) 2013-present The Riecoin developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -150,8 +151,8 @@ BOOST_AUTO_TEST_CASE(blockmanager_flush_block_file)
     CBlock block3;
     block3.nVersion = 3;
 
-    // They are 80 bytes header + 1 byte 0x00 for vtx length
-    constexpr int TEST_BLOCK_SIZE{81};
+    // They are 112 bytes header + 1 byte 0x00 for vtx length
+    constexpr int TEST_BLOCK_SIZE{113};
 
     // Blockstore is empty
     BOOST_CHECK_EQUAL(blockman.CalculateCurrentUsage(), 0);

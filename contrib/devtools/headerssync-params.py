@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # Copyright (c) 2022 Pieter Wuille
+# Copyright (c) 2013-present The Riecoin developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -15,10 +16,10 @@ import random
 TIME = datetime(2026, 10, 5)
 
 # Expected block interval. [timedelta]
-BLOCK_INTERVAL = timedelta(seconds=600)
+BLOCK_INTERVAL = timedelta(seconds=150)
 
 # The number of headers corresponding to the minchainwork parameter. [headers]
-MINCHAINWORK_HEADERS = 804000
+MINCHAINWORK_HEADERS = 2121892
 
 # Combined processing bandwidth from all attackers to one victim. [bit/s]
 # 6 Gbit/s is approximately the speed at which a single thread of a Ryzen 5950X CPU thread can hash
@@ -106,10 +107,10 @@ ASSUME_CONVEX = True
 # System properties:
 
 # Headers in the redownload buffer are stored without prevhash. [bits]
-COMPACT_HEADER_SIZE = 48 * 8
+COMPACT_HEADER_SIZE = 88*8
 
 # How many bits a header uses in P2P protocol. [bits]
-NET_HEADER_SIZE = 81 * 8
+NET_HEADER_SIZE = 113*8
 
 # How many headers are sent at once. [headers]
 HEADER_BATCH_COUNT = 2000
@@ -118,7 +119,7 @@ HEADER_BATCH_COUNT = 2000
 RANDOMIZE_OFFSET = True
 
 # Timestamp of the genesis block
-GENESIS_TIME = datetime(2009, 1, 3)
+GENESIS_TIME = datetime(2014, 2, 11)
 
 # Derived values:
 

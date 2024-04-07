@@ -1,11 +1,13 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2022 The Bitcoin Core developers
+// Copyright (c) 2013-present The Riecoin developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #ifndef BITCOIN_ARITH_UINT256_H
 #define BITCOIN_ARITH_UINT256_H
 
+#include <span.h>
 #include <cstdint>
 #include <cstring>
 #include <limits>
@@ -234,6 +236,18 @@ public:
     {
         static_assert(WIDTH >= 2, "Assertion WIDTH >= 2 failed (WIDTH = BITS / 32). BITS is a template parameter.");
         return pn[0] | (uint64_t)pn[1] << 32;
+    }
+
+    template<typename Stream>
+    void Serialize(Stream& s) const
+    {
+        s.write(MakeByteSpan(pn));
+    }
+
+    template<typename Stream>
+    void Unserialize(Stream& s)
+    {
+        s.read(MakeWritableByteSpan(pn));
     }
 };
 

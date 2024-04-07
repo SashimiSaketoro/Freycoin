@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # Copyright (c) 2015-2021 The Bitcoin Core developers
+# Copyright (c) 2013-present The Riecoin developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test node responses to invalid network messages."""
@@ -9,6 +10,7 @@ import struct
 import time
 
 from test_framework.messages import (
+    CBlock,
     CBlockHeader,
     CInv,
     MAX_HEADERS_RESULTS,
@@ -288,9 +290,12 @@ class InvalidMessagesTest(BitcoinTestFramework):
         blockheader.nTime = int(time.time())
         blockheader.nBits = blockheader_tip.nBits
         blockheader.rehash()
-        while not blockheader.hash.startswith('0'):
-            blockheader.nNonce += 1
+        blockheader.nNonce = 2
+        while True:
             blockheader.rehash()
+            if CBlock(blockheader).has_valid_pow():
+                break
+            blockheader.nNonce += 131072
         peer = self.nodes[0].add_p2p_connection(P2PInterface())
         peer.send_and_ping(msg_headers([blockheader]))
         assert_equal(self.nodes[0].getblockchaininfo()['headers'], 1)
@@ -299,9 +304,8 @@ class InvalidMessagesTest(BitcoinTestFramework):
         assert_equal(chaintips[0]['hash'], blockheader.hash)
 
         # invalidate PoW
-        while not blockheader.hash.startswith('f'):
-            blockheader.nNonce += 1
-            blockheader.rehash()
+        blockheader.nNonce += 65536
+        blockheader.rehash()
         with self.nodes[0].assert_debug_log(['Misbehaving', 'header with invalid proof of work']):
             peer.send_message(msg_headers([blockheader]))
             peer.wait_for_disconnect()

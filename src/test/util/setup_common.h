@@ -1,4 +1,5 @@
 // Copyright (c) 2015-2022 The Bitcoin Core developers
+// Copyright (c) 2013-present The Riecoin developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -230,7 +231,7 @@ std::unique_ptr<T> MakeNoLogFileContext(const ChainType chain_type = ChainType::
     return std::make_unique<T>(chain_type, arguments);
 }
 
-CBlock getBlock13b8a();
+CBlock getBlock5564f();
 
 // define an implicit conversion here so that uint256 may be used directly in BOOST_CHECK_*
 std::ostream& operator<<(std::ostream& os, const uint256& num);

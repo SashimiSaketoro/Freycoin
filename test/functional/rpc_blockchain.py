@@ -38,6 +38,7 @@ from test_framework.messages import (
     CBlockHeader,
     from_hex,
     msg_block,
+    is_fermat_prime
 )
 from test_framework.p2p import P2PInterface
 from test_framework.script import hash256
@@ -59,7 +60,6 @@ TIME_RANGE_STEP = 150 # s
 TIME_RANGE_MTP = TIME_GENESIS_BLOCK + (HEIGHT - 6) * TIME_RANGE_STEP
 TIME_RANGE_TIP = TIME_GENESIS_BLOCK + (HEIGHT - 1) * TIME_RANGE_STEP
 TIME_RANGE_END = TIME_GENESIS_BLOCK + HEIGHT * TIME_RANGE_STEP
-DIFFICULTY_ADJUSTMENT_INTERVAL = 2016
 
 
 class BlockchainTest(BitcoinTestFramework):
@@ -87,7 +87,7 @@ class BlockchainTest(BitcoinTestFramework):
         self._test_gettxoutsetinfo()
         self._test_getblockheader()
         self._test_getdifficulty()
-        self._test_getnetworkhashps()
+        self._test_getnetworkminingpower()
         self._test_stopatheight()
         self._test_waitforblockheight()
         self._test_getblock()
@@ -377,10 +377,10 @@ class BlockchainTest(BitcoinTestFramework):
         assert_is_hash_string(header['bits'], length=None)
         assert isinstance(header['time'], int)
         assert_equal(header['mediantime'], TIME_RANGE_MTP)
-        assert isinstance(header['nonce'], int)
+        assert isinstance(header['nonce'], str)
         assert isinstance(header['version'], int)
         assert isinstance(int(header['versionHex'], 16), int)
-        assert isinstance(header['difficulty'], Decimal)
+        assert isinstance(header['difficulty'], int)
 
         # Test with verbose=False, which should return the header as hex.
         header_hex = node.getblockheader(blockhash=besthash, verbose=False)
@@ -396,12 +396,10 @@ class BlockchainTest(BitcoinTestFramework):
     def _test_getdifficulty(self):
         self.log.info("Test getdifficulty")
         difficulty = self.nodes[0].getdifficulty()
-        # 1 hash in 2 should be valid, so difficulty should be 1/2**31
-        # binary => decimal => binary math is why we do this check
-        assert abs(difficulty * 2**31 - 1) < 0.0001
+        assert difficulty == 288
 
-    def _test_getnetworkhashps(self):
-        self.log.info("Test getnetworkhashps")
+    def _test_getnetworkminingpower(self):
+        self.log.info("Test getnetworkminingpower")
         assert_raises_rpc_error(
             -3,
             textwrap.dedent("""
@@ -411,48 +409,40 @@ class BlockchainTest(BitcoinTestFramework):
                 "Position 2 (height)": "JSON value of type array is not of expected type number"
             }
             """).strip(),
-            lambda: self.nodes[0].getnetworkhashps("a", []),
+            lambda: self.nodes[0].getnetworkminingpower("a", []),
         )
         assert_raises_rpc_error(
             -8,
             "Block does not exist at specified height",
-            lambda: self.nodes[0].getnetworkhashps(100, self.nodes[0].getblockcount() + 1),
+            lambda: self.nodes[0].getnetworkminingpower(100, self.nodes[0].getblockcount() + 1),
         )
         assert_raises_rpc_error(
             -8,
             "Block does not exist at specified height",
-            lambda: self.nodes[0].getnetworkhashps(100, -10),
+            lambda: self.nodes[0].getnetworkminingpower(100, -10),
         )
         assert_raises_rpc_error(
             -8,
-            "Invalid nblocks. Must be a positive number or -1.",
-            lambda: self.nodes[0].getnetworkhashps(-100),
+            "Invalid nblocks. Must be greater than 0.",
+            lambda: self.nodes[0].getnetworkminingpower(-100),
         )
         assert_raises_rpc_error(
             -8,
-            "Invalid nblocks. Must be a positive number or -1.",
-            lambda: self.nodes[0].getnetworkhashps(0),
+            "Invalid nblocks. Must be greater than 0.",
+            lambda: self.nodes[0].getnetworkminingpower(0),
         )
 
         # Genesis block height estimate should return 0
-        hashes_per_second = self.nodes[0].getnetworkhashps(100, 0)
-        assert_equal(hashes_per_second, 0)
+        mining_power = self.nodes[0].getnetworkminingpower(100, 0)
+        assert_equal(mining_power, 0)
 
-        # This should be 2 hashes every 10 minutes or 1/300
-        hashes_per_second = self.nodes[0].getnetworkhashps()
-        assert abs(hashes_per_second * 75 - 1) < 0.0001
-
-        # Test setting the first param of getnetworkhashps to -1 returns the average network
-        # hashes per second from the last difficulty change.
-        current_block_height = self.nodes[0].getmininginfo()['blocks']
-        blocks_since_last_diff_change = current_block_height % DIFFICULTY_ADJUSTMENT_INTERVAL + 1
-        expected_hashes_per_second_since_diff_change = self.nodes[0].getnetworkhashps(blocks_since_last_diff_change)
-
-        assert_equal(self.nodes[0].getnetworkhashps(-1), expected_hashes_per_second_since_diff_change)
+        # Mining 1 block every 150 s at Difficulty 288, by definition, corresponds to a Mining Power of 1
+        mining_power = self.nodes[0].getnetworkminingpower()
+        assert abs(mining_power - 1.) < 0.0001
 
         # Ensure long lookups get truncated to chain length
-        hashes_per_second = self.nodes[0].getnetworkhashps(self.nodes[0].getblockcount() + 1000)
-        assert hashes_per_second > 0.003
+        mining_power = self.nodes[0].getnetworkminingpower(self.nodes[0].getblockcount() + 1000)
+        assert mining_power == self.nodes[0].getnetworkminingpower(self.nodes[0].getblockcount())
 
     def _test_stopatheight(self):
         self.log.info("Test stopping at height")
@@ -519,7 +509,7 @@ class BlockchainTest(BitcoinTestFramework):
 
         def assert_hexblock_hashes(verbosity):
             block = node.getblock(blockhash, verbosity)
-            assert_equal(blockhash, hash256(bytes.fromhex(block[:160]))[::-1].hex())
+            assert_equal(blockhash, hash256(bytes.fromhex(block[:224]))[::-1].hex())
 
         def assert_fee_not_in_block(verbosity):
             block = node.getblock(blockhash, verbosity)

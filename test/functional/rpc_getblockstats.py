@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # Copyright (c) 2017-2021 The Bitcoin Core developers
+# Copyright (c) 2013-present The Riecoin developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -41,7 +42,7 @@ class GetblockstatsTest(BitcoinTestFramework):
         return [self.nodes[0].getblockstats(hash_or_height=self.start_height + i) for i in range(self.max_stat_pos+1)]
 
     def generate_test_data(self, filename):
-        mocktime = 1525107225
+        mocktime = 1710190154
         self.nodes[0].setmocktime(mocktime)
         self.nodes[0].createwallet(wallet_name='test')
         privkey = self.nodes[0].get_deterministic_priv_key().key
@@ -160,8 +161,7 @@ class GetblockstatsTest(BitcoinTestFramework):
         assert_raises_rpc_error(-8, f"Invalid selected statistic 'aaa{inv_sel_stat}'",
                                 self.nodes[0].getblockstats, hash_or_height=1, stats=['minfee', f'aaa{inv_sel_stat}'])
         # Mainchain's genesis block shouldn't be found on regtest
-        assert_raises_rpc_error(-5, 'Block not found', self.nodes[0].getblockstats,
-                                hash_or_height='000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f')
+        assert_raises_rpc_error(-5, 'Block not found', self.nodes[0].getblockstats, hash_or_height='e1ea18d0676ef9899fbc78ef428d1d26a2416d0f0441d46668d33bcb41275740')
 
         # Invalid number of args
         assert_raises_rpc_error(-1, 'getblockstats hash_or_height ( stats )', self.nodes[0].getblockstats, '00', 1, 2)
@@ -169,18 +169,18 @@ class GetblockstatsTest(BitcoinTestFramework):
 
         self.log.info('Test block height 0')
         genesis_stats = self.nodes[0].getblockstats(0)
-        assert_equal(genesis_stats["blockhash"], "0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206")
+        assert_equal(genesis_stats["blockhash"], "08982e71e300f2c7f5b967df5e9b40788942abd4bc62edaeabd27d351f953b68")
         assert_equal(genesis_stats["utxo_increase"], 1)
-        assert_equal(genesis_stats["utxo_size_inc"], 117)
+        assert_equal(genesis_stats["utxo_size_inc"], 51)
         assert_equal(genesis_stats["utxo_increase_actual"], 0)
         assert_equal(genesis_stats["utxo_size_inc_actual"], 0)
 
         self.log.info('Test tip including OP_RETURN')
         tip_stats = self.nodes[0].getblockstats(tip)
         assert_equal(tip_stats["utxo_increase"], 6)
-        assert_equal(tip_stats["utxo_size_inc"], 441)
+        assert_equal(tip_stats["utxo_size_inc"], 459)
         assert_equal(tip_stats["utxo_increase_actual"], 4)
-        assert_equal(tip_stats["utxo_size_inc_actual"], 300)
+        assert_equal(tip_stats["utxo_size_inc_actual"], 318)
 
 if __name__ == '__main__':
     GetblockstatsTest().main()

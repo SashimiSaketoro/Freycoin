@@ -99,7 +99,7 @@ std::string LicenseInfo()
                        "Visit %s for further information about the software.").translated, PACKAGE_NAME, "<" PACKAGE_URL ">") +
            "\n" +
            strprintf(_("The source code is available from %s. Support us by starring our repositories!").translated, URL_SOURCE_CODE) +
-           "\n\n Riecoin Forum: <https://forum.riecoin.xyz/>" +
+           "\n\n Riecoin Forum: <https://riecoin.xyz/Forum>" +
            "\n Discord: <https://discord.gg/2sJEayC>" +
            "\n X: <https://twitter.com/RiecoinDev>" +
            "\n Reddit: <https://www.reddit.com/r/Riecoin/>\n\n" +

@@ -1,4 +1,5 @@
 // Copyright (c) 2020-2022 The Bitcoin Core developers
+// Copyright (c) 2013-present The Riecoin developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -64,8 +65,8 @@ FUZZ_TARGET(pow, .init = initialize_pow)
         {
             (void)GetBlockProof(current_block);
             (void)CalculateNextWorkRequired(&current_block, fuzzed_data_provider.ConsumeIntegralInRange<int64_t>(0, std::numeric_limits<int64_t>::max()), consensus_params);
-            if (current_block.nHeight != std::numeric_limits<int>::max() && current_block.nHeight - (consensus_params.DifficultyAdjustmentInterval() - 1) >= 0) {
-                (void)GetNextWorkRequired(&current_block, &(*block_header), consensus_params);
+            if (current_block.nHeight != std::numeric_limits<int>::max()) {
+                (void)GetNextWorkRequired(&current_block, consensus_params);
             }
         }
         {
@@ -80,7 +81,7 @@ FUZZ_TARGET(pow, .init = initialize_pow)
         {
             const std::optional<uint256> hash = ConsumeDeserializable<uint256>(fuzzed_data_provider);
             if (hash) {
-                (void)CheckProofOfWork(*hash, fuzzed_data_provider.ConsumeIntegral<unsigned int>(), consensus_params);
+                (void)CheckProofOfWork(*hash, fuzzed_data_provider.ConsumeIntegral<unsigned int>(), ArithToUint256(current_block.nNonce), consensus_params);
             }
         }
     }
@@ -97,28 +98,33 @@ FUZZ_TARGET(pow_transition, .init = initialize_pow)
     const uint32_t new_time{fuzzed_data_provider.ConsumeIntegral<uint32_t>()};
     const int32_t version{fuzzed_data_provider.ConsumeIntegral<int32_t>()};
     uint32_t nbits{fuzzed_data_provider.ConsumeIntegral<uint32_t>()};
+    uint32_t nBitsMin(consensus_params.nBitsMin);
 
-    const arith_uint256 pow_limit = UintToArith256(consensus_params.powLimit);
-    arith_uint256 old_target;
-    old_target.SetCompact(nbits);
-    if (old_target > pow_limit) {
-        nbits = pow_limit.GetCompact();
-    }
-    // Create one difficulty adjustment period worth of headers
-    for (int height = 0; height < consensus_params.DifficultyAdjustmentInterval(); ++height) {
+    if (nbits < nBitsMin)
+        nbits = nBitsMin;
+
+    {
         CBlockHeader header;
         header.nVersion = version;
         header.nTime = old_time;
         header.nBits = nbits;
-        if (height == consensus_params.DifficultyAdjustmentInterval() - 1) {
-            header.nTime = new_time;
-        }
         auto current_block{std::make_unique<CBlockIndex>(header)};
-        current_block->pprev = blocks.empty() ? nullptr : blocks.back().get();
-        current_block->nHeight = height;
+        current_block->pprev = nullptr;
+        current_block->nHeight = 0;
         blocks.emplace_back(std::move(current_block));
     }
-    auto last_block{blocks.back().get()};
-    unsigned int new_nbits{GetNextWorkRequired(last_block, nullptr, consensus_params)};
-    Assert(PermittedDifficultyTransition(consensus_params, last_block->nHeight + 1, last_block->nBits, new_nbits));
+
+    {
+        CBlockHeader header;
+        header.nVersion = version;
+        header.nTime = new_time;
+        header.nBits = nbits;
+        auto current_block{std::make_unique<CBlockIndex>(header)};
+        current_block->pprev = blocks.back().get();
+        current_block->nHeight = 1;
+        blocks.emplace_back(std::move(current_block));
+    }
+
+    unsigned int new_nbits{GetNextWorkRequired(blocks[1].get(), consensus_params)};
+    Assert(PermittedDifficultyTransition(consensus_params, blocks[1]->nHeight + 1, blocks[1]->nBits, new_nbits));
 }

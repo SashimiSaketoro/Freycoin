@@ -23,9 +23,7 @@ enum DeploymentPos : uint16_t {
 };
 constexpr bool ValidDeployment(DeploymentPos dep) { return dep < MAX_VERSION_BITS_DEPLOYMENTS; }
 
-/**
- * Struct for each individual consensus rule change using BIP9.
- */
+/** Struct for each individual consensus rule change using BIP9. */
 struct BIP9Deployment {
     /** Bit position to select the particular bit in nVersion. */
     int bit{28};
@@ -54,36 +52,27 @@ struct BIP9Deployment {
     static constexpr int64_t NEVER_ACTIVE = -2;
 };
 
-/**
- * Parameters that influence chain consensus.
- */
+/** Parameters that influence chain consensus. */
 struct Params {
     uint256 hashGenesisBlock;
+    uint256 hashGenesisBlockForPoW;
     int nSubsidyHalvingInterval;
-    /** Don't warn about unknown BIP 9 activations below this height.
-     * This prevents us from warning about the CSV and segwit activations. */
+    /** Don't warn about unknown BIP 9 activations below this height. This prevents us from warning about the CSV and segwit activations. */
     int MinBIP9WarningHeight;
     int fork1Height;
     int fork2Height;
-    /**
-     * Minimum blocks including miner confirmation of the total of 2016 blocks in a retargeting period,
-     * (nPowTargetTimespan / nPowTargetSpacing) which is also used for BIP9 deployments.
-     * Examples: 1916 for 95%, 1512 for testchains.
-     */
+    /** Window and Threshold for BIP9 deployments. */
     uint32_t nRuleChangeActivationThreshold;
     uint32_t nMinerConfirmationWindow;
     BIP9Deployment vDeployments[MAX_VERSION_BITS_DEPLOYMENTS];
     /** Proof of work parameters */
-    uint256 powLimit;
-    bool fPowAllowMinDifficultyBlocks;
+    int32_t GetPoWVersionAtHeight(int32_t height) const {return height < fork2Height ? -1 : 1;}
+    std::vector<std::vector<int32_t>> powAcceptedPatterns;
+    std::vector<std::vector<int32_t>> GetPowAcceptedPatternsAtHeight(int height) const {return height >= fork2Height ? powAcceptedPatterns : std::vector<std::vector<int32_t>>{{0, 4, 2, 4, 2, 4}};} // MainNet Only: Prime Sextuplets prior Fork 2
+    uint32_t nBitsMin;
     bool fPowNoRetargeting;
     int64_t nPowTargetSpacing;
-    int64_t nPowTargetTimespan;
-    std::chrono::seconds PowTargetSpacing() const
-    {
-        return std::chrono::seconds{nPowTargetSpacing};
-    }
-    int64_t DifficultyAdjustmentInterval() const { return nPowTargetTimespan / nPowTargetSpacing; }
+    std::chrono::seconds PowTargetSpacing() const {return std::chrono::seconds{nPowTargetSpacing};}
     /** The best chain should have at least this much work */
     uint256 nMinimumChainWork;
     /** By default assume that the signatures in ancestors of this block are valid */

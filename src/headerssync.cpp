@@ -1,4 +1,5 @@
 // Copyright (c) 2022 The Bitcoin Core developers
+// Copyright (c) 2013-present The Riecoin developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -13,15 +14,15 @@
 // contrib/devtools/headerssync-params.py.
 
 //! Store one header commitment per HEADER_COMMITMENT_PERIOD blocks.
-constexpr size_t HEADER_COMMITMENT_PERIOD{606};
+constexpr size_t HEADER_COMMITMENT_PERIOD{420};
 
 //! Only feed headers to validation once this many headers on top have been
 //! received and validated against commitments.
-constexpr size_t REDOWNLOAD_BUFFER_SIZE{14441}; // 14441/606 = ~23.8 commitments
+constexpr size_t REDOWNLOAD_BUFFER_SIZE{8090}; // 8090/420 = ~19.3 commitments
 
 // Our memory analysis assumes 48 bytes for a CompressedHeader (so we should
 // re-calculate parameters if we compress further)
-static_assert(sizeof(CompressedHeader) == 48);
+static_assert(sizeof(CompressedHeader) == 88);
 
 HeadersSyncState::HeadersSyncState(NodeId id, const Consensus::Params& consensus_params,
         const CBlockIndex* chain_start, const arith_uint256& minimum_required_work) :
@@ -206,7 +207,9 @@ bool HeadersSyncState::ValidateAndProcessSingleHeader(const CBlockHeader& curren
         }
     }
 
-    m_current_chain_work += GetBlockProof(CBlockIndex(current));
+    CBlockIndex block_index(current);
+    block_index.nHeight = next_height;
+    m_current_chain_work += GetBlockProof(block_index);
     m_last_header_received = current;
     m_current_height = next_height;
 
@@ -242,7 +245,9 @@ bool HeadersSyncState::ValidateAndStoreRedownloadedHeader(const CBlockHeader& he
     }
 
     // Track work on the redownloaded chain
-    m_redownload_chain_work += GetBlockProof(CBlockIndex(header));
+    CBlockIndex block_index(header);
+    block_index.nHeight = next_height;
+    m_redownload_chain_work += GetBlockProof(block_index);
 
     if (m_redownload_chain_work >= m_minimum_required_work) {
         m_process_all_remaining_headers = true;

@@ -8,6 +8,8 @@
 #define BITCOIN_POW_H
 
 #include <consensus/params.h>
+#include <gmp.h>
+#include <gmpxx.h>
 
 #include <stdint.h>
 
@@ -15,14 +17,17 @@ class CBlockHeader;
 class CBlockIndex;
 class uint256;
 
-bool isInSuperblockInterval(int nHeight, const Consensus::Params& params);
-bool isSuperblock(int nHeight, const Consensus::Params& params);
+// MainNet Only, Pre Fork 2 SuperBlocks
+inline bool isInSuperblockInterval(int nHeight, const Consensus::Params& params) {return ((nHeight/288) % 14) == 12;} // once per week
+inline bool isSuperblock(int nHeight, const Consensus::Params& params) {return ((nHeight % 288) == 144) && isInSuperblockInterval(nHeight, params);}
 
-unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock, const Consensus::Params&);
+uint32_t GenerateTarget(mpz_class &gmpTarget, uint256 hash, uint32_t compactBits, const int32_t powVersion);
+unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const Consensus::Params&);
 unsigned int CalculateNextWorkRequired(const CBlockIndex* pindexLast, int64_t nFirstBlockTime, const Consensus::Params&);
 
-/** Check whether a block hash satisfies the proof-of-work requirement specified by nBits */
-bool CheckProofOfWork(uint256 hash, unsigned int nBits, const Consensus::Params&);
+extern const std::vector<uint64_t> primeTable;
+/** Check whether a Nonce satisfies the proof-of-work requirement */
+bool CheckProofOfWork(uint256 hash, unsigned int nBits, uint256 nNonce, const Consensus::Params&);
 
 /**
  * Return false if the proof-of-work requirement specified by new_nbits at a

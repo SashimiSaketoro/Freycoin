@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # Copyright (c) 2021-present The Bitcoin Core developers
+# Copyright (c) 2013-present The Riecoin developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test for assumeutxo, a means of quickly bootstrapping a node using
@@ -116,7 +117,7 @@ class AssumeutxoTest(BitcoinTestFramework):
 
     def test_headers_not_synced(self, valid_snapshot_path):
         for node in self.nodes[1:]:
-            assert_raises_rpc_error(-32603, "The base block header (3bb7ce5eba0be48939b7a521ac1ba9316afee2c7bada3a0cca24188e6d7d96c0) must appear in the headers chain. Make sure all headers are syncing, and call this RPC again.",
+            assert_raises_rpc_error(-32603, "The base block header (2009a01115534453d45027644401c24ba00dc87f6e043232700911418b142b4c) must appear in the headers chain. Make sure all headers are syncing, and call this RPC again.",
                                     node.loadtxoutset,
                                     valid_snapshot_path)
 

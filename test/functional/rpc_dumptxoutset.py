@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # Copyright (c) 2019-2022 The Bitcoin Core developers
+# Copyright (c) 2013-present The Riecoin developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test the generation of UTXO snapshots using `dumptxoutset`.
@@ -38,12 +39,12 @@ class DumptxoutsetTest(BitcoinTestFramework):
         # Blockhash should be deterministic based on mocked time.
         assert_equal(
             out['base_hash'],
-            '09abf0e7b510f61ca6cf33bab104e9ee99b3528b371d27a2d4b39abb800fba7e')
+            'aa41786831c9d616bfaff46cdb03be80ca7b5a63c946ae3104de125ac59f8df1')
 
         # UTXO snapshot hash should be deterministic based on mocked time.
         assert_equal(
             sha256sum_file(str(expected_path)).hex(),
-            'b1bacb602eacf5fbc9a7c2ef6eeb0d229c04e98bdf0c2ea5929012cd0eae3830')
+            '86bd50ea2646644f1a51c7baef0e21e4c35e2b5a3fde4a8909ee4ef51fe7fa10')
 
         assert_equal(
             out['txoutset_hash'], 'a0b7baa3bf5ccbd3279728f230d7ca0c44a76e9923fca8f32dbfd08d65ea496a')

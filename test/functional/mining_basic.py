@@ -133,8 +133,8 @@ class MiningTest(BitcoinTestFramework):
         assert_equal(mining_info['chain'], self.chain)
         assert 'currentblocktx' not in mining_info
         assert 'currentblockweight' not in mining_info
-        assert_equal(mining_info['difficulty'], Decimal('4.656542373906925E-10'))
-        assert_equal(mining_info['networkhashps'], Decimal('0.01333333333333333'))
+        assert_equal(mining_info['difficulty'], 288)
+        assert_equal(mining_info['networkminingpower'], Decimal('1.'))
         assert_equal(mining_info['pooledtx'], 0)
 
         self.log.info("getblocktemplate: Test default witness commitment")
@@ -169,7 +169,7 @@ class MiningTest(BitcoinTestFramework):
         block.hashPrevBlock = int(tmpl["previousblockhash"], 16)
         block.nTime = tmpl["curtime"]
         block.nBits = int(tmpl["bits"], 16)
-        block.nNonce = 0
+        block.nNonce = 2
         block.vtx = [coinbase_tx]
 
         self.log.info("getblocktemplate: segwit rule must be set")

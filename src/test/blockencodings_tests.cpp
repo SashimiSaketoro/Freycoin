@@ -1,4 +1,5 @@
 // Copyright (c) 2011-2022 The Bitcoin Core developers
+// Copyright (c) 2013-present The Riecoin developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -30,7 +31,7 @@ static CBlock BuildBlockTestCase() {
     block.vtx[0] = MakeTransactionRef(tx);
     block.nVersion = 42;
     block.hashPrevBlock = InsecureRand256();
-    block.nBits = 0x207fffff;
+    block.nBits = 0x00012000; // 288
 
     tx.vin[0].prevout.hash = Txid::FromUint256(InsecureRand256());
     tx.vin[0].prevout.n = 0;
@@ -46,7 +47,8 @@ static CBlock BuildBlockTestCase() {
     bool mutated;
     block.hashMerkleRoot = BlockMerkleRoot(block, &mutated);
     assert(!mutated);
-    while (!CheckProofOfWork(block.GetHash(), block.nBits, Params().GetConsensus())) ++block.nNonce;
+    block.nNonce = UintToArith256(uint256S("0x0000000000000000000000000000000000000000000000000000000000000002"));
+    while (!CheckProofOfWork(block.GetHashForPoW(), block.nBits, ArithToUint256(block.nNonce), Params().GetConsensus())) block.nNonce += 131072;
     return block;
 }
 
@@ -272,12 +274,13 @@ BOOST_AUTO_TEST_CASE(EmptyBlockRoundTripTest)
     block.vtx[0] = MakeTransactionRef(std::move(coinbase));
     block.nVersion = 42;
     block.hashPrevBlock = InsecureRand256();
-    block.nBits = 0x207fffff;
+    block.nBits = 0x00012000; // 288
 
     bool mutated;
     block.hashMerkleRoot = BlockMerkleRoot(block, &mutated);
     assert(!mutated);
-    while (!CheckProofOfWork(block.GetHash(), block.nBits, Params().GetConsensus())) ++block.nNonce;
+    block.nNonce = UintToArith256(uint256S("0x0000000000000000000000000000000000000000000000000000000000000002"));
+    while (!CheckProofOfWork(block.GetHashForPoW(), block.nBits, ArithToUint256(block.nNonce), Params().GetConsensus())) block.nNonce += 131072;
 
     // Test simple header round-trip with only coinbase
     {
