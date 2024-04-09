@@ -3751,7 +3751,13 @@ bool CheckBlock(const CBlock& block, BlockValidationState& state, const Consensu
     // checks that use witness data may be performed here.
 
     // Size limits
-    if (block.vtx.empty() || block.vtx.size() * WITNESS_SCALE_FACTOR > MAX_BLOCK_WEIGHT || ::GetSerializeSize(TX_NO_WITNESS(block)) * WITNESS_SCALE_FACTOR > MAX_BLOCK_WEIGHT)
+    unsigned int maxBlockWeight(MAX_BLOCK_WEIGHT);
+    int64_t maxBlockSigopsCost(MAX_BLOCK_SIGOPS_COST);
+    if (consensusParams.fork2Height == 1482768 && block.GetBlockHeader().nTime < 1715731200) { // Block Limits were higher and reduced to current in MainNet, effective about 1 month after 24.04 Release.
+        maxBlockWeight = 8000000;
+        maxBlockSigopsCost = 320000;
+    }
+    if (block.vtx.empty() || block.vtx.size() * WITNESS_SCALE_FACTOR > maxBlockWeight || ::GetSerializeSize(TX_NO_WITNESS(block)) * WITNESS_SCALE_FACTOR > maxBlockWeight)
         return state.Invalid(BlockValidationResult::BLOCK_CONSENSUS, "bad-blk-length", "size limits failed");
 
     // First transaction must be coinbase, the rest must not be
@@ -3778,7 +3784,7 @@ bool CheckBlock(const CBlock& block, BlockValidationState& state, const Consensu
     {
         nSigOps += GetLegacySigOpCount(*tx);
     }
-    if (nSigOps * WITNESS_SCALE_FACTOR > MAX_BLOCK_SIGOPS_COST)
+    if (nSigOps * WITNESS_SCALE_FACTOR > maxBlockSigopsCost)
         return state.Invalid(BlockValidationResult::BLOCK_CONSENSUS, "bad-blk-sigops", "out-of-bounds SigOpCount");
 
     if (fCheckPOW && fCheckMerkleRoot)
@@ -3990,7 +3996,10 @@ static bool ContextualCheckBlock(const CBlock& block, BlockValidationState& stat
     // large by filling up the coinbase witness, which doesn't change
     // the block hash, so we couldn't mark the block as permanently
     // failed).
-    if (GetBlockWeight(block) > MAX_BLOCK_WEIGHT) {
+    unsigned int maxBlockWeight(MAX_BLOCK_WEIGHT);
+    if (chainman.GetParams().GetChainType() == ChainType::MAIN && block.GetBlockHeader().nTime < 1715731200) // Block Limits Reduced in MainNet, effective about 1 month after 24.04 Release.
+        maxBlockWeight = 8000000;
+    if (GetBlockWeight(block) > maxBlockWeight) {
         return state.Invalid(BlockValidationResult::BLOCK_CONSENSUS, "bad-blk-weight", strprintf("%s : weight limit failed", __func__));
     }
 
