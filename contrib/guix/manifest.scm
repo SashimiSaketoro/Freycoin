@@ -478,6 +478,7 @@ inspecting signatures in Mach-O binaries.")
         gzip
         xz
         ;; Build tools
+        cmake-minimal
         gnu-make
         libtool
         autoconf-2.71
@@ -508,7 +509,6 @@ inspecting signatures in Mach-O binaries.")
                  gcc-toolchain-11
                  binutils
                  clang-toolchain-17
-                 cmake-minimal
                  python-signapple
                  zip))
           (else '())))))
