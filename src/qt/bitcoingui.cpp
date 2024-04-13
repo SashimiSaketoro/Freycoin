@@ -169,7 +169,9 @@ BitcoinGUI::BitcoinGUI(interfaces::Node& node, const PlatformStyle *_platformSty
     labelWalletHDStatusIcon = new GUIUtil::ThemedLabel(platformStyle);
     labelProxyIcon = new GUIUtil::ClickableLabel(platformStyle);
     connectionsControl = new GUIUtil::ClickableLabel(platformStyle);
+    connectionsControlText = new GUIUtil::ClickableLabel(platformStyle);
     labelBlocksIcon = new GUIUtil::ClickableLabel(platformStyle);
+    labelBlocksText = new GUIUtil::ClickableLabel(platformStyle);
     if(enableWallet)
     {
         frameBlocksLayout->addStretch();
@@ -183,8 +185,10 @@ BitcoinGUI::BitcoinGUI(interfaces::Node& node, const PlatformStyle *_platformSty
     frameBlocksLayout->addWidget(labelProxyIcon);
     frameBlocksLayout->addStretch();
     frameBlocksLayout->addWidget(connectionsControl);
+    frameBlocksLayout->addWidget(connectionsControlText);
     frameBlocksLayout->addStretch();
     frameBlocksLayout->addWidget(labelBlocksIcon);
+    frameBlocksLayout->addWidget(labelBlocksText);
     frameBlocksLayout->addStretch();
 
     // Progress bar and label for blocks download
@@ -221,6 +225,7 @@ BitcoinGUI::BitcoinGUI(interfaces::Node& node, const PlatformStyle *_platformSty
     });
 
     connect(labelBlocksIcon, &GUIUtil::ClickableLabel::clicked, this, &BitcoinGUI::showModalOverlay);
+    connect(labelBlocksText, &GUIUtil::ClickableLabel::clicked, this, &BitcoinGUI::showModalOverlay);
     connect(progressBar, &GUIUtil::ClickableProgressBar::clicked, this, &BitcoinGUI::showModalOverlay);
 
 #ifdef Q_OS_MACOS
@@ -610,6 +615,9 @@ void BitcoinGUI::setClientModel(ClientModel *_clientModel, interfaces::BlockAndH
         connect(connectionsControl, &GUIUtil::ClickableLabel::clicked, [this] {
             GUIUtil::PopupMenu(m_network_context_menu, QCursor::pos());
         });
+        connect(connectionsControlText, &GUIUtil::ClickableLabel::clicked, [this] {
+            GUIUtil::PopupMenu(m_network_context_menu, QCursor::pos());
+        });
         connect(_clientModel, &ClientModel::numConnectionsChanged, this, &BitcoinGUI::setNumConnections);
         connect(_clientModel, &ClientModel::networkActiveChanged, this, &BitcoinGUI::setNetworkActive);
 
@@ -988,33 +996,24 @@ void BitcoinGUI::updateNetworkState()
     if (!clientModel) return;
     int count = clientModel->getNumConnections();
     QString icon;
-    switch(count)
-    {
-    case 0: icon = ":/icons/connect_0"; break;
-    case 1: case 2: case 3: icon = ":/icons/connect_1"; break;
-    case 4: case 5: case 6: icon = ":/icons/connect_2"; break;
-    case 7: case 8: case 9: icon = ":/icons/connect_3"; break;
-    default: icon = ":/icons/connect_4"; break;
-    }
-
-    QString tooltip;
-
-    if (m_node.getNetworkActive()) {
-        //: A substring of the tooltip.
-        tooltip = tr("%n active connection(s) to Riecoin network.", "", count);
-    } else {
-        //: A substring of the tooltip.
-        tooltip = tr("Network activity disabled.");
+    if (!m_node.getNetworkActive())
         icon = ":/icons/network_disabled";
-    }
+    else if (count == 0)
+        icon = ":/icons/connect_0";
+    else if (count <= 3)
+        icon = ":/icons/connect_1";
+    else if (count <= 6)
+        icon = ":/icons/connect_2";
+    else if (count <= 9)
+        icon = ":/icons/connect_3";
+    else
+        icon = ":/icons/connect_4";
 
-    // Don't word-wrap this (fixed-width) tooltip
-    tooltip = QLatin1String("<nobr>") + tooltip + QLatin1String("<br>") +
-              //: A substring of the tooltip. "More actions" are available via the context menu.
-              tr("Click for more actions.") + QLatin1String("</nobr>");
-    connectionsControl->setToolTip(tooltip);
+    if (!m_node.getNetworkActive())
+        icon = ":/icons/network_disabled";
 
     connectionsControl->setThemedPixmap(icon, STATUSBAR_ICONSIZE, STATUSBAR_ICONSIZE);
+    connectionsControlText->setText(QString::number(count));
 }
 
 void BitcoinGUI::setNumConnections(int count)
@@ -1124,16 +1123,11 @@ void BitcoinGUI::setNumBlocks(int count, const QDateTime& blockDate, double nVer
             break;
     }
 
-    QString tooltip;
-
     QDateTime currentDate = QDateTime::currentDateTime();
     qint64 secs = blockDate.secsTo(currentDate);
 
-    tooltip = tr("Processed %n block(s) of transaction history.", "", count);
-
     // Set icon state: spinning if catching up, tick otherwise
     if (secs < MAX_BLOCK_TIME_GAP) {
-        tooltip = tr("Up to date") + QString(".<br>") + tooltip;
         labelBlocksIcon->setThemedPixmap(QStringLiteral(":/icons/synced"), STATUSBAR_ICONSIZE, STATUSBAR_ICONSIZE);
 
 #ifdef ENABLE_WALLET
@@ -1157,8 +1151,7 @@ void BitcoinGUI::setNumBlocks(int count, const QDateTime& blockDate, double nVer
         progressBar->setValue(nVerificationProgress * 1000000000.0 + 0.5);
         progressBar->setVisible(true);
 
-        tooltip = tr("Catching up…") + QString("<br>") + tooltip;
-        if(count != prevBlocks)
+        if(count != prevBlocks || count == 0)
         {
             labelBlocksIcon->setThemedPixmap(
                 QString(":/animation/spinner-%1").arg(spinnerFrame, 3, 10, QChar('0')),
@@ -1174,19 +1167,9 @@ void BitcoinGUI::setNumBlocks(int count, const QDateTime& blockDate, double nVer
             modalOverlay->showHide();
         }
 #endif // ENABLE_WALLET
-
-        tooltip += QString("<br>");
-        tooltip += tr("Last received block was generated %1 ago.").arg(timeBehindText);
-        tooltip += QString("<br>");
-        tooltip += tr("Transactions after this will not yet be visible.");
     }
 
-    // Don't word-wrap this (fixed-width) tooltip
-    tooltip = QString("<nobr>") + tooltip + QString("</nobr>");
-
-    labelBlocksIcon->setToolTip(tooltip);
-    progressBarLabel->setToolTip(tooltip);
-    progressBar->setToolTip(tooltip);
+    labelBlocksText->setText(QString::number(count));
 }
 
 void BitcoinGUI::createWallet()
