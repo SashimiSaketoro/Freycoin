@@ -3499,7 +3499,7 @@ void PeerManagerImpl::ProcessMessage(CNode& pfrom, const std::string& msg_type, 
             return;
         }
 
-        if (nVersion < MIN_PEER_PROTO_VERSION) {
+        if (nVersion < MIN_PEER_PROTO_VERSION || nVersion == 10070001) {
             // disconnect from peers older than this proto version
             LogPrint(BCLog::NET, "peer=%d using obsolete version %i; disconnecting\n", pfrom.GetId(), nVersion);
             pfrom.fDisconnect = true;
@@ -3544,22 +3544,13 @@ void PeerManagerImpl::ProcessMessage(CNode& pfrom, const std::string& msg_type, 
         }
 
         // Change version
-        const int greatest_common_version = std::min(nVersion, PROTOCOL_VERSION);
-        pfrom.SetCommonVersion(greatest_common_version);
+        pfrom.SetCommonVersion(std::min(nVersion, PROTOCOL_VERSION));
         pfrom.nVersion = nVersion;
 
-        if (greatest_common_version >= WTXID_RELAY_VERSION) {
-            MakeAndPushMessage(pfrom, NetMsgType::WTXIDRELAY);
-        }
+        MakeAndPushMessage(pfrom, NetMsgType::WTXIDRELAY);
 
         // Signal ADDRv2 support (BIP155).
-        if (greatest_common_version >= 70016) {
-            // BIP155 defines addrv2 and sendaddrv2 for all protocol versions, but some
-            // implementations reject messages they don't know. As a courtesy, don't send
-            // it to nodes with a version before 70016, as no software is known to support
-            // BIP155 that doesn't announce at least that protocol version number.
-            MakeAndPushMessage(pfrom, NetMsgType::SENDADDRV2);
-        }
+        MakeAndPushMessage(pfrom, NetMsgType::SENDADDRV2);
 
         pfrom.m_has_all_wanted_services = HasAllDesirableServiceFlags(nServices);
         peer->m_their_services = nServices;
@@ -3587,7 +3578,7 @@ void PeerManagerImpl::ProcessMessage(CNode& pfrom, const std::string& msg_type, 
             if (fRelay) pfrom.m_relays_txs = true;
         }
 
-        if (greatest_common_version >= WTXID_RELAY_VERSION && m_txreconciliation) {
+        if (m_txreconciliation) {
             // Per BIP-330, we announce txreconciliation support if:
             // - protocol version per the peer's VERSION message supports WTXID_RELAY;
             // - transaction relay is supported per the peer's VERSION message

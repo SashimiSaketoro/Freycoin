@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # Copyright (c) 2022 The Bitcoin Core developers
+# Copyright (c) 2013-present The Riecoin developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test SENDTXRCNCL message
@@ -83,18 +84,6 @@ class SendTxRcnclTest(BitcoinTestFramework):
         verack_index = [i for i, msg in enumerate(peer.messages) if msg.msgtype == b'verack'][0]
         sendtxrcncl_index = [i for i, msg in enumerate(peer.messages) if msg.msgtype == b'sendtxrcncl'][0]
         assert sendtxrcncl_index < verack_index
-        self.nodes[0].disconnect_p2ps()
-
-        self.log.info('SENDTXRCNCL on pre-WTXID version should not be sent')
-        peer = self.nodes[0].add_p2p_connection(SendTxrcnclReceiver(), send_version=False, wait_for_verack=False)
-        pre_wtxid_version_msg = msg_version()
-        pre_wtxid_version_msg.nVersion = 70015
-        pre_wtxid_version_msg.strSubVer = P2P_SUBVERSION
-        pre_wtxid_version_msg.nServices = P2P_SERVICES
-        pre_wtxid_version_msg.relay = 1
-        peer.send_message(pre_wtxid_version_msg)
-        peer.wait_for_verack()
-        assert not peer.sendtxrcncl_msg_received
         self.nodes[0].disconnect_p2ps()
 
         self.log.info('SENDTXRCNCL for fRelay=false should not be sent')
@@ -195,18 +184,6 @@ class SendTxRcnclTest(BitcoinTestFramework):
         peer = self.nodes[0].add_p2p_connection(PeerNoVerack(), send_version=True, wait_for_verack=False)
         with self.nodes[0].assert_debug_log(['Register peer=1']):
             peer.send_message(sendtxrcncl_higher_version)
-        self.nodes[0].disconnect_p2ps()
-
-        self.log.info('unexpected SENDTXRCNCL is ignored')
-        peer = self.nodes[0].add_p2p_connection(PeerNoVerack(), send_version=False, wait_for_verack=False)
-        old_version_msg = msg_version()
-        old_version_msg.nVersion = 70015
-        old_version_msg.strSubVer = P2P_SUBVERSION
-        old_version_msg.nServices = P2P_SERVICES
-        old_version_msg.relay = 1
-        peer.send_message(old_version_msg)
-        with self.nodes[0].assert_debug_log(['Ignore unexpected txreconciliation signal']):
-            peer.send_message(create_sendtxrcncl_msg())
         self.nodes[0].disconnect_p2ps()
 
         self.log.info('sending SENDTXRCNCL after sending VERACK triggers a disconnect')
