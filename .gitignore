@@ -26,3 +26,20 @@ target/
 /guix-build-*
 
 /ci/scratch/
+
+# Claude Code / AI tooling
+CLAUDE.md
+.claude/
+IMPLEMENTATION_PLAN.md
+
+# Dev scripts with credentials
+check_merit.ps1
+
+# Python version
+.python-version
+
+# Local dev artifacts
+*.tar.gz
+nul
+aqtinstall.log
+tmp_*
