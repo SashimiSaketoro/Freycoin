@@ -1096,6 +1096,17 @@ static uint64_t intensity_to_sieve_cap(int intensity) {
     return caps[idx];
 }
 
+uint16_t MiningEngine::compute_shift(int intensity) {
+    const uint64_t sieve_cap = intensity_to_sieve_cap(std::clamp(intensity, 1, 10));
+    uint16_t shift = MIN_SHIFT;
+    // Need 2^shift / 2 >= sieve_cap, i.e. 2^shift >= 2 * sieve_cap
+    const uint64_t required = 2 * sieve_cap;
+    while ((1ULL << shift) < required && shift < MAX_SHIFT) {
+        shift++;
+    }
+    return shift;
+}
+
 void MiningEngine::run_sieve(PoW* pow, PoWProcessor* processor,
                              std::vector<uint8_t>* offset) {
     pipeline->set_processor(processor);
@@ -1188,6 +1199,15 @@ void MiningEngine::mine_parallel(const std::vector<uint8_t>& header_template,
     par_gaps = 0;
     par_tests = 0;
     mining_threads.clear();
+
+    // Ensure shift allows full sieve range for the configured intensity
+    uint16_t min_shift = compute_shift(m_gpu_intensity);
+    if (shift < min_shift) {
+        LogPrintf("Mining: Adjusting shift from %u to %u for intensity %d (sieve_cap=%llu)\n",
+                  shift, min_shift, m_gpu_intensity,
+                  (unsigned long long)intensity_to_sieve_cap(m_gpu_intensity));
+        shift = min_shift;
+    }
 
     // Start GPU worker thread if we have a GPU
     if (tier != MiningTier::CPU_ONLY) {

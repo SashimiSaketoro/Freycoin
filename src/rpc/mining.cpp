@@ -171,8 +171,8 @@ static bool GenerateBlock(ChainstateManager& chainman, CBlock&& block, uint64_t&
     block_out.reset();
     block.hashMerkleRoot = BlockMerkleRoot(block);
 
-    // Set up mining parameters
-    const uint16_t shift = 20;  // Default shift for testnet/regtest mining
+    // Set up mining parameters — shift computed to allow full sieve range
+    const uint16_t shift = MiningEngine::compute_shift(5);  // default intensity
     block.nShift = shift;
     block.nAdd.SetNull();
     block.nReserved = 0;

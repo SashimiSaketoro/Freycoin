@@ -292,6 +292,10 @@ public:
      *  Higher = more work per nonce, better GPU utilization. Default: 5. */
     void set_gpu_intensity(int intensity);
 
+    /** Compute minimum shift needed for a given intensity level.
+     *  Ensures 2^shift / 2 >= sieve_cap so the sieve can use its full range. */
+    static uint16_t compute_shift(int intensity);
+
     /** Stop any ongoing mining operation (blocks until workers finish) */
     void stop();
 

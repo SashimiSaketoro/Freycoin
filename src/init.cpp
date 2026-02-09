@@ -1426,8 +1426,8 @@ static void MiningThread(NodeContext& node, const CScript& coinbase_script, int 
         CBlock& block = block_template->block;
         block.hashMerkleRoot = BlockMerkleRoot(block);
 
-        // Set up mining parameters
-        const uint16_t shift = 20;
+        // Set up mining parameters — shift computed from intensity to allow full sieve range
+        const uint16_t shift = MiningEngine::compute_shift(gpu_intensity);
         block.nShift = shift;
         block.nAdd.SetNull();
         block.nReserved = 0;

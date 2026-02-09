@@ -585,8 +585,8 @@ void MiningPage::miningThreadFunc()
             CBlock block = tmpl->getBlock();
             block.hashMerkleRoot = BlockMerkleRoot(block);
 
-            // Set PoW parameters
-            const uint16_t shift = 20;
+            // Set PoW parameters — shift computed from intensity to allow full sieve range
+            const uint16_t shift = MiningEngine::compute_shift(m_gpuIntensity);
             block.nShift = shift;
             block.nAdd.SetNull();
             block.nReserved = 0;
