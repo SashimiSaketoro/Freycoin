@@ -323,6 +323,7 @@ private:
     std::atomic<uint64_t> par_primes{0};
     std::atomic<uint64_t> par_gaps{0};
     std::atomic<uint64_t> par_tests{0};
+    std::atomic<uint64_t> par_nonces{0};
 
     // GPU worker infrastructure for mine_parallel()
     std::thread gpu_thread;

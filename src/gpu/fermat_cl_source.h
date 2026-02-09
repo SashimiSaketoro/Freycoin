@@ -93,7 +93,7 @@ bool fermat320(__private uint *p) {
     uint exp[10]; for (int i = 0; i < 10; i++) exp[i] = mod[i]; exp[0] &= ~1u;
     for (int i = 0; i < 10; i++) redcl[i] = 0; redcl[0] = 1;
     for (int i = 0; i < 320; i++) { uint carry = 0; for (int j = 0; j < 10; j++) { ulong tmp = ((ulong)redcl[j] << 1) | carry; redcl[j] = (uint)tmp; carry = (uint)(tmp >> 32); } if (carry) sub10(redcl, mod); int doSub = 0; for (int j = 9; j >= 0; j--) { if (redcl[j] > mod[j]) { doSub = 1; break; } if (redcl[j] < mod[j]) break; } if (doSub) sub10(redcl, mod); }
-    int remaining = bitCount - 1;
+    int remaining = bitCount;
     while (remaining > 0) {
         int bits = (remaining >= windowSize) ? windowSize : remaining; int start = remaining - bits;
         int wordIdx = start / 32; int bitIdx = start % 32; uint windowVal;
@@ -132,7 +132,7 @@ bool fermat352(__private uint *p) {
     uint exp[11]; for (int i = 0; i < 11; i++) exp[i] = mod[i]; exp[0] &= ~1u;
     for (int i = 0; i < 11; i++) redcl[i] = 0; redcl[0] = 1;
     for (int i = 0; i < 352; i++) { uint carry = 0; for (int j = 0; j < 11; j++) { ulong tmp = ((ulong)redcl[j] << 1) | carry; redcl[j] = (uint)tmp; carry = (uint)(tmp >> 32); } if (carry) sub11(redcl, mod); int doSub = 0; for (int j = 10; j >= 0; j--) { if (redcl[j] > mod[j]) { doSub = 1; break; } if (redcl[j] < mod[j]) break; } if (doSub) sub11(redcl, mod); }
-    int remaining = bitCount - 1;
+    int remaining = bitCount;
     while (remaining > 0) {
         int bits = (remaining >= windowSize) ? windowSize : remaining; int start = remaining - bits;
         int wordIdx = start / 32; int bitIdx = start % 32; uint windowVal;
@@ -165,10 +165,10 @@ __kernel void fermat_kernel_352(__global uchar *results, __global const uint *pr
 void monSqr320(__private uint *op, __private uint *mod, uint invm) {
     uint invValue[10]; ulong accLow = 0, accHi = 0;
     for (int i = 0; i < 10; i++) {
-        ulong prod = (ulong)op[i] * op[i]; accLow += (uint)prod; accHi += (uint)(prod >> 32);
-        for (int j = 0; j < i; j++) { prod = (ulong)op[j] * op[i]; accLow += (uint)prod; accLow += (uint)prod; accHi += (uint)(prod >> 32); accHi += (uint)(prod >> 32); }
-        for (int j = 0; j < i; j++) { prod = (ulong)invValue[j] * mod[i-j]; accLow += (uint)prod; accHi += (uint)(prod >> 32); }
-        invValue[i] = invm * (uint)accLow; prod = (ulong)invValue[i] * mod[0]; accLow += (uint)prod; accHi += (uint)(prod >> 32);
+        for (int j = 0; j < (i+1)/2; j++) { int k = i - j; ulong prod = (ulong)op[j] * op[k]; accLow += (uint)prod; accLow += (uint)prod; accHi += (uint)(prod >> 32); accHi += (uint)(prod >> 32); }
+        if (i % 2 == 0) { ulong prod = (ulong)op[i/2] * op[i/2]; accLow += (uint)prod; accHi += (uint)(prod >> 32); }
+        for (int j = 0; j < i; j++) { ulong prod = (ulong)invValue[j] * mod[i-j]; accLow += (uint)prod; accHi += (uint)(prod >> 32); }
+        invValue[i] = invm * (uint)accLow; ulong prod = (ulong)invValue[i] * mod[0]; accLow += (uint)prod; accHi += (uint)(prod >> 32);
         accHi += (uint)(accLow >> 32); accLow = accHi; accHi = 0;
     }
     for (int i = 0; i < 9; i++) {
@@ -208,10 +208,10 @@ void redcHalf320(__private uint *op, __private uint *mod, uint invm) {
 void monSqr352(__private uint *op, __private uint *mod, uint invm) {
     uint invValue[11]; ulong accLow = 0, accHi = 0;
     for (int i = 0; i <= 10; i++) {
-        if (i <= 10) { ulong prod = (ulong)op[i] * op[i]; accLow += (uint)prod; accHi += (uint)(prod >> 32); }
-        for (int j = 0; j < (i+1)/2; j++) { int k = i - j; if (k <= 10 && k != j) { ulong prod = (ulong)op[j] * op[k]; accLow += (uint)prod; accLow += (uint)prod; accHi += (uint)(prod >> 32); accHi += (uint)(prod >> 32); } }
+        for (int j = 0; j < (i+1)/2; j++) { int k = i - j; if (k <= 10) { ulong prod = (ulong)op[j] * op[k]; accLow += (uint)prod; accLow += (uint)prod; accHi += (uint)(prod >> 32); accHi += (uint)(prod >> 32); } }
+        if (i % 2 == 0) { int d = i / 2; if (d <= 10) { ulong prod = (ulong)op[d] * op[d]; accLow += (uint)prod; accHi += (uint)(prod >> 32); } }
         for (int j = 0; j < i; j++) { ulong prod = (ulong)invValue[j] * mod[i-j]; accLow += (uint)prod; accHi += (uint)(prod >> 32); }
-        if (i <= 10) { invValue[i] = invm * (uint)accLow; ulong prod = (ulong)invValue[i] * mod[0]; accLow += (uint)prod; accHi += (uint)(prod >> 32); }
+        invValue[i] = invm * (uint)accLow; ulong prod = (ulong)invValue[i] * mod[0]; accLow += (uint)prod; accHi += (uint)(prod >> 32);
         accHi += (uint)(accLow >> 32); accLow = accHi; accHi = 0;
     }
     for (int i = 0; i < 10; i++) {

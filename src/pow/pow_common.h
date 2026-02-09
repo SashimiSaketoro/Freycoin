@@ -83,7 +83,6 @@ static constexpr uint64_t DEFAULT_SIEVE_PRIMES = 250000;
 enum class MiningTier {
     CPU_ONLY = 1,      // Pure CPU mining with BPSW
     CPU_OPENCL = 2,    // CPU sieve + OpenCL primality
-    CPU_CUDA = 3       // CPU sieve + CUDA primality
 };
 
 /**
@@ -119,6 +118,7 @@ struct MiningStatsSnapshot {
     uint64_t primes_found;
     uint64_t tests_performed;
     uint64_t gaps_found;
+    uint64_t nonces_tested;
     uint64_t sieve_runs;
     uint64_t cache_misses;
     uint64_t time_sieving_us;
@@ -132,6 +132,7 @@ struct MiningStats {
     std::atomic<uint64_t> primes_found{0};
     std::atomic<uint64_t> tests_performed{0};
     std::atomic<uint64_t> gaps_found{0};
+    std::atomic<uint64_t> nonces_tested{0};
     std::atomic<uint64_t> sieve_runs{0};
     std::atomic<uint64_t> cache_misses{0};
     std::atomic<uint64_t> time_sieving_us{0};
@@ -141,6 +142,7 @@ struct MiningStats {
         primes_found = 0;
         tests_performed = 0;
         gaps_found = 0;
+        nonces_tested = 0;
         sieve_runs = 0;
         cache_misses = 0;
         time_sieving_us = 0;
@@ -152,6 +154,7 @@ struct MiningStats {
             primes_found.load(std::memory_order_relaxed),
             tests_performed.load(std::memory_order_relaxed),
             gaps_found.load(std::memory_order_relaxed),
+            nonces_tested.load(std::memory_order_relaxed),
             sieve_runs.load(std::memory_order_relaxed),
             cache_misses.load(std::memory_order_relaxed),
             time_sieving_us.load(std::memory_order_relaxed),

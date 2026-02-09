@@ -103,10 +103,10 @@ __device__ void monSqr320(uint32_t *op, uint32_t *mod, uint32_t invm) {
 
     /* Step 0: i=0 */
     {
-        accLow += (uint64_t)op[0]*op[0];
+        accLow += op[0]*op[0];
         accHi += __umulhi(op[0], op[0]);
         invValue[0] = invm * (uint32_t)accLow;
-        accLow += (uint64_t)invValue[0]*mod[0];
+        accLow += invValue[0]*mod[0];
         accHi += __umulhi(invValue[0], mod[0]);
         accHi += (uint32_t)(accLow >> 32);
         accLow = accHi;
@@ -118,10 +118,10 @@ __device__ void monSqr320(uint32_t *op, uint32_t *mod, uint32_t invm) {
         low0 = op[0]*op[1]; hi0 = __umulhi(op[0], op[1]);
         accLow += low0; accLow += low0;
         accHi += hi0; accHi += hi0;
-        accLow += (uint64_t)invValue[0]*mod[1];
+        accLow += invValue[0]*mod[1];
         accHi += __umulhi(invValue[0], mod[1]);
         invValue[1] = invm * (uint32_t)accLow;
-        accLow += (uint64_t)invValue[1]*mod[0];
+        accLow += invValue[1]*mod[0];
         accHi += __umulhi(invValue[1], mod[0]);
         accHi += (uint32_t)(accLow >> 32);
         accLow = accHi;
@@ -133,14 +133,14 @@ __device__ void monSqr320(uint32_t *op, uint32_t *mod, uint32_t invm) {
         low0 = op[0]*op[2]; hi0 = __umulhi(op[0], op[2]);
         accLow += low0; accLow += low0;
         accHi += hi0; accHi += hi0;
-        accLow += (uint64_t)op[1]*op[1];
+        accLow += op[1]*op[1];
         accHi += __umulhi(op[1], op[1]);
-        accLow += (uint64_t)invValue[0]*mod[2];
+        accLow += invValue[0]*mod[2];
         accHi += __umulhi(invValue[0], mod[2]);
-        accLow += (uint64_t)invValue[1]*mod[1];
+        accLow += invValue[1]*mod[1];
         accHi += __umulhi(invValue[1], mod[1]);
         invValue[2] = invm * (uint32_t)accLow;
-        accLow += (uint64_t)invValue[2]*mod[0];
+        accLow += invValue[2]*mod[0];
         accHi += __umulhi(invValue[2], mod[0]);
         accHi += (uint32_t)(accLow >> 32);
         accLow = accHi;
@@ -155,14 +155,14 @@ __device__ void monSqr320(uint32_t *op, uint32_t *mod, uint32_t invm) {
         accHi += hi0; accHi += hi0;
         accLow += low1; accLow += low1;
         accHi += hi1; accHi += hi1;
-        accLow += (uint64_t)invValue[0]*mod[3];
+        accLow += invValue[0]*mod[3];
         accHi += __umulhi(invValue[0], mod[3]);
-        accLow += (uint64_t)invValue[1]*mod[2];
+        accLow += invValue[1]*mod[2];
         accHi += __umulhi(invValue[1], mod[2]);
-        accLow += (uint64_t)invValue[2]*mod[1];
+        accLow += invValue[2]*mod[1];
         accHi += __umulhi(invValue[2], mod[1]);
         invValue[3] = invm * (uint32_t)accLow;
-        accLow += (uint64_t)invValue[3]*mod[0];
+        accLow += invValue[3]*mod[0];
         accHi += __umulhi(invValue[3], mod[0]);
         accHi += (uint32_t)(accLow >> 32);
         accLow = accHi;
@@ -177,18 +177,18 @@ __device__ void monSqr320(uint32_t *op, uint32_t *mod, uint32_t invm) {
         accHi += hi0; accHi += hi0;
         accLow += low1; accLow += low1;
         accHi += hi1; accHi += hi1;
-        accLow += (uint64_t)op[2]*op[2];
+        accLow += op[2]*op[2];
         accHi += __umulhi(op[2], op[2]);
-        accLow += (uint64_t)invValue[0]*mod[4];
+        accLow += invValue[0]*mod[4];
         accHi += __umulhi(invValue[0], mod[4]);
-        accLow += (uint64_t)invValue[1]*mod[3];
+        accLow += invValue[1]*mod[3];
         accHi += __umulhi(invValue[1], mod[3]);
-        accLow += (uint64_t)invValue[2]*mod[2];
+        accLow += invValue[2]*mod[2];
         accHi += __umulhi(invValue[2], mod[2]);
-        accLow += (uint64_t)invValue[3]*mod[1];
+        accLow += invValue[3]*mod[1];
         accHi += __umulhi(invValue[3], mod[1]);
         invValue[4] = invm * (uint32_t)accLow;
-        accLow += (uint64_t)invValue[4]*mod[0];
+        accLow += invValue[4]*mod[0];
         accHi += __umulhi(invValue[4], mod[0]);
         accHi += (uint32_t)(accLow >> 32);
         accLow = accHi;
@@ -206,18 +206,18 @@ __device__ void monSqr320(uint32_t *op, uint32_t *mod, uint32_t invm) {
         accHi += hi1; accHi += hi1;
         accLow += low2; accLow += low2;
         accHi += hi2; accHi += hi2;
-        accLow += (uint64_t)invValue[0]*mod[5];
+        accLow += invValue[0]*mod[5];
         accHi += __umulhi(invValue[0], mod[5]);
-        accLow += (uint64_t)invValue[1]*mod[4];
+        accLow += invValue[1]*mod[4];
         accHi += __umulhi(invValue[1], mod[4]);
-        accLow += (uint64_t)invValue[2]*mod[3];
+        accLow += invValue[2]*mod[3];
         accHi += __umulhi(invValue[2], mod[3]);
-        accLow += (uint64_t)invValue[3]*mod[2];
+        accLow += invValue[3]*mod[2];
         accHi += __umulhi(invValue[3], mod[2]);
-        accLow += (uint64_t)invValue[4]*mod[1];
+        accLow += invValue[4]*mod[1];
         accHi += __umulhi(invValue[4], mod[1]);
         invValue[5] = invm * (uint32_t)accLow;
-        accLow += (uint64_t)invValue[5]*mod[0];
+        accLow += invValue[5]*mod[0];
         accHi += __umulhi(invValue[5], mod[0]);
         accHi += (uint32_t)(accLow >> 32);
         accLow = accHi;
@@ -235,22 +235,22 @@ __device__ void monSqr320(uint32_t *op, uint32_t *mod, uint32_t invm) {
         accHi += hi1; accHi += hi1;
         accLow += low2; accLow += low2;
         accHi += hi2; accHi += hi2;
-        accLow += (uint64_t)op[3]*op[3];
+        accLow += op[3]*op[3];
         accHi += __umulhi(op[3], op[3]);
-        accLow += (uint64_t)invValue[0]*mod[6];
+        accLow += invValue[0]*mod[6];
         accHi += __umulhi(invValue[0], mod[6]);
-        accLow += (uint64_t)invValue[1]*mod[5];
+        accLow += invValue[1]*mod[5];
         accHi += __umulhi(invValue[1], mod[5]);
-        accLow += (uint64_t)invValue[2]*mod[4];
+        accLow += invValue[2]*mod[4];
         accHi += __umulhi(invValue[2], mod[4]);
-        accLow += (uint64_t)invValue[3]*mod[3];
+        accLow += invValue[3]*mod[3];
         accHi += __umulhi(invValue[3], mod[3]);
-        accLow += (uint64_t)invValue[4]*mod[2];
+        accLow += invValue[4]*mod[2];
         accHi += __umulhi(invValue[4], mod[2]);
-        accLow += (uint64_t)invValue[5]*mod[1];
+        accLow += invValue[5]*mod[1];
         accHi += __umulhi(invValue[5], mod[1]);
         invValue[6] = invm * (uint32_t)accLow;
-        accLow += (uint64_t)invValue[6]*mod[0];
+        accLow += invValue[6]*mod[0];
         accHi += __umulhi(invValue[6], mod[0]);
         accHi += (uint32_t)(accLow >> 32);
         accLow = accHi;
@@ -271,22 +271,22 @@ __device__ void monSqr320(uint32_t *op, uint32_t *mod, uint32_t invm) {
         accHi += hi2; accHi += hi2;
         accLow += low3; accLow += low3;
         accHi += hi3; accHi += hi3;
-        accLow += (uint64_t)invValue[0]*mod[7];
+        accLow += invValue[0]*mod[7];
         accHi += __umulhi(invValue[0], mod[7]);
-        accLow += (uint64_t)invValue[1]*mod[6];
+        accLow += invValue[1]*mod[6];
         accHi += __umulhi(invValue[1], mod[6]);
-        accLow += (uint64_t)invValue[2]*mod[5];
+        accLow += invValue[2]*mod[5];
         accHi += __umulhi(invValue[2], mod[5]);
-        accLow += (uint64_t)invValue[3]*mod[4];
+        accLow += invValue[3]*mod[4];
         accHi += __umulhi(invValue[3], mod[4]);
-        accLow += (uint64_t)invValue[4]*mod[3];
+        accLow += invValue[4]*mod[3];
         accHi += __umulhi(invValue[4], mod[3]);
-        accLow += (uint64_t)invValue[5]*mod[2];
+        accLow += invValue[5]*mod[2];
         accHi += __umulhi(invValue[5], mod[2]);
-        accLow += (uint64_t)invValue[6]*mod[1];
+        accLow += invValue[6]*mod[1];
         accHi += __umulhi(invValue[6], mod[1]);
         invValue[7] = invm * (uint32_t)accLow;
-        accLow += (uint64_t)invValue[7]*mod[0];
+        accLow += invValue[7]*mod[0];
         accHi += __umulhi(invValue[7], mod[0]);
         accHi += (uint32_t)(accLow >> 32);
         accLow = accHi;
@@ -307,26 +307,26 @@ __device__ void monSqr320(uint32_t *op, uint32_t *mod, uint32_t invm) {
         accHi += hi2; accHi += hi2;
         accLow += low3; accLow += low3;
         accHi += hi3; accHi += hi3;
-        accLow += (uint64_t)op[4]*op[4];
+        accLow += op[4]*op[4];
         accHi += __umulhi(op[4], op[4]);
-        accLow += (uint64_t)invValue[0]*mod[8];
+        accLow += invValue[0]*mod[8];
         accHi += __umulhi(invValue[0], mod[8]);
-        accLow += (uint64_t)invValue[1]*mod[7];
+        accLow += invValue[1]*mod[7];
         accHi += __umulhi(invValue[1], mod[7]);
-        accLow += (uint64_t)invValue[2]*mod[6];
+        accLow += invValue[2]*mod[6];
         accHi += __umulhi(invValue[2], mod[6]);
-        accLow += (uint64_t)invValue[3]*mod[5];
+        accLow += invValue[3]*mod[5];
         accHi += __umulhi(invValue[3], mod[5]);
-        accLow += (uint64_t)invValue[4]*mod[4];
+        accLow += invValue[4]*mod[4];
         accHi += __umulhi(invValue[4], mod[4]);
-        accLow += (uint64_t)invValue[5]*mod[3];
+        accLow += invValue[5]*mod[3];
         accHi += __umulhi(invValue[5], mod[3]);
-        accLow += (uint64_t)invValue[6]*mod[2];
+        accLow += invValue[6]*mod[2];
         accHi += __umulhi(invValue[6], mod[2]);
-        accLow += (uint64_t)invValue[7]*mod[1];
+        accLow += invValue[7]*mod[1];
         accHi += __umulhi(invValue[7], mod[1]);
         invValue[8] = invm * (uint32_t)accLow;
-        accLow += (uint64_t)invValue[8]*mod[0];
+        accLow += invValue[8]*mod[0];
         accHi += __umulhi(invValue[8], mod[0]);
         accHi += (uint32_t)(accLow >> 32);
         accLow = accHi;
@@ -350,26 +350,26 @@ __device__ void monSqr320(uint32_t *op, uint32_t *mod, uint32_t invm) {
         accHi += hi3; accHi += hi3;
         accLow += low4; accLow += low4;
         accHi += hi4; accHi += hi4;
-        accLow += (uint64_t)invValue[0]*mod[9];
+        accLow += invValue[0]*mod[9];
         accHi += __umulhi(invValue[0], mod[9]);
-        accLow += (uint64_t)invValue[1]*mod[8];
+        accLow += invValue[1]*mod[8];
         accHi += __umulhi(invValue[1], mod[8]);
-        accLow += (uint64_t)invValue[2]*mod[7];
+        accLow += invValue[2]*mod[7];
         accHi += __umulhi(invValue[2], mod[7]);
-        accLow += (uint64_t)invValue[3]*mod[6];
+        accLow += invValue[3]*mod[6];
         accHi += __umulhi(invValue[3], mod[6]);
-        accLow += (uint64_t)invValue[4]*mod[5];
+        accLow += invValue[4]*mod[5];
         accHi += __umulhi(invValue[4], mod[5]);
-        accLow += (uint64_t)invValue[5]*mod[4];
+        accLow += invValue[5]*mod[4];
         accHi += __umulhi(invValue[5], mod[4]);
-        accLow += (uint64_t)invValue[6]*mod[3];
+        accLow += invValue[6]*mod[3];
         accHi += __umulhi(invValue[6], mod[3]);
-        accLow += (uint64_t)invValue[7]*mod[2];
+        accLow += invValue[7]*mod[2];
         accHi += __umulhi(invValue[7], mod[2]);
-        accLow += (uint64_t)invValue[8]*mod[1];
+        accLow += invValue[8]*mod[1];
         accHi += __umulhi(invValue[8], mod[1]);
         invValue[9] = invm * (uint32_t)accLow;
-        accLow += (uint64_t)invValue[9]*mod[0];
+        accLow += invValue[9]*mod[0];
         accHi += __umulhi(invValue[9], mod[0]);
         accHi += (uint32_t)(accLow >> 32);
         accLow = accHi;
@@ -390,25 +390,25 @@ __device__ void monSqr320(uint32_t *op, uint32_t *mod, uint32_t invm) {
         accHi += hi2; accHi += hi2;
         accLow += low3; accLow += low3;
         accHi += hi3; accHi += hi3;
-        accLow += (uint64_t)op[5]*op[5];
+        accLow += op[5]*op[5];
         accHi += __umulhi(op[5], op[5]);
-        accLow += (uint64_t)invValue[1]*mod[9];
+        accLow += invValue[1]*mod[9];
         accHi += __umulhi(invValue[1], mod[9]);
-        accLow += (uint64_t)invValue[2]*mod[8];
+        accLow += invValue[2]*mod[8];
         accHi += __umulhi(invValue[2], mod[8]);
-        accLow += (uint64_t)invValue[3]*mod[7];
+        accLow += invValue[3]*mod[7];
         accHi += __umulhi(invValue[3], mod[7]);
-        accLow += (uint64_t)invValue[4]*mod[6];
+        accLow += invValue[4]*mod[6];
         accHi += __umulhi(invValue[4], mod[6]);
-        accLow += (uint64_t)invValue[5]*mod[5];
+        accLow += invValue[5]*mod[5];
         accHi += __umulhi(invValue[5], mod[5]);
-        accLow += (uint64_t)invValue[6]*mod[4];
+        accLow += invValue[6]*mod[4];
         accHi += __umulhi(invValue[6], mod[4]);
-        accLow += (uint64_t)invValue[7]*mod[3];
+        accLow += invValue[7]*mod[3];
         accHi += __umulhi(invValue[7], mod[3]);
-        accLow += (uint64_t)invValue[8]*mod[2];
+        accLow += invValue[8]*mod[2];
         accHi += __umulhi(invValue[8], mod[2]);
-        accLow += (uint64_t)invValue[9]*mod[1];
+        accLow += invValue[9]*mod[1];
         accHi += __umulhi(invValue[9], mod[1]);
         op[0] = (uint32_t)accLow;
         accHi += (uint32_t)(accLow >> 32);
@@ -429,21 +429,21 @@ __device__ void monSqr320(uint32_t *op, uint32_t *mod, uint32_t invm) {
         accHi += hi2; accHi += hi2;
         accLow += low3; accLow += low3;
         accHi += hi3; accHi += hi3;
-        accLow += (uint64_t)invValue[2]*mod[9];
+        accLow += invValue[2]*mod[9];
         accHi += __umulhi(invValue[2], mod[9]);
-        accLow += (uint64_t)invValue[3]*mod[8];
+        accLow += invValue[3]*mod[8];
         accHi += __umulhi(invValue[3], mod[8]);
-        accLow += (uint64_t)invValue[4]*mod[7];
+        accLow += invValue[4]*mod[7];
         accHi += __umulhi(invValue[4], mod[7]);
-        accLow += (uint64_t)invValue[5]*mod[6];
+        accLow += invValue[5]*mod[6];
         accHi += __umulhi(invValue[5], mod[6]);
-        accLow += (uint64_t)invValue[6]*mod[5];
+        accLow += invValue[6]*mod[5];
         accHi += __umulhi(invValue[6], mod[5]);
-        accLow += (uint64_t)invValue[7]*mod[4];
+        accLow += invValue[7]*mod[4];
         accHi += __umulhi(invValue[7], mod[4]);
-        accLow += (uint64_t)invValue[8]*mod[3];
+        accLow += invValue[8]*mod[3];
         accHi += __umulhi(invValue[8], mod[3]);
-        accLow += (uint64_t)invValue[9]*mod[2];
+        accLow += invValue[9]*mod[2];
         accHi += __umulhi(invValue[9], mod[2]);
         op[1] = (uint32_t)accLow;
         accHi += (uint32_t)(accLow >> 32);
@@ -461,21 +461,21 @@ __device__ void monSqr320(uint32_t *op, uint32_t *mod, uint32_t invm) {
         accHi += hi1; accHi += hi1;
         accLow += low2; accLow += low2;
         accHi += hi2; accHi += hi2;
-        accLow += (uint64_t)op[6]*op[6];
+        accLow += op[6]*op[6];
         accHi += __umulhi(op[6], op[6]);
-        accLow += (uint64_t)invValue[3]*mod[9];
+        accLow += invValue[3]*mod[9];
         accHi += __umulhi(invValue[3], mod[9]);
-        accLow += (uint64_t)invValue[4]*mod[8];
+        accLow += invValue[4]*mod[8];
         accHi += __umulhi(invValue[4], mod[8]);
-        accLow += (uint64_t)invValue[5]*mod[7];
+        accLow += invValue[5]*mod[7];
         accHi += __umulhi(invValue[5], mod[7]);
-        accLow += (uint64_t)invValue[6]*mod[6];
+        accLow += invValue[6]*mod[6];
         accHi += __umulhi(invValue[6], mod[6]);
-        accLow += (uint64_t)invValue[7]*mod[5];
+        accLow += invValue[7]*mod[5];
         accHi += __umulhi(invValue[7], mod[5]);
-        accLow += (uint64_t)invValue[8]*mod[4];
+        accLow += invValue[8]*mod[4];
         accHi += __umulhi(invValue[8], mod[4]);
-        accLow += (uint64_t)invValue[9]*mod[3];
+        accLow += invValue[9]*mod[3];
         accHi += __umulhi(invValue[9], mod[3]);
         op[2] = (uint32_t)accLow;
         accHi += (uint32_t)(accLow >> 32);
@@ -493,17 +493,17 @@ __device__ void monSqr320(uint32_t *op, uint32_t *mod, uint32_t invm) {
         accHi += hi1; accHi += hi1;
         accLow += low2; accLow += low2;
         accHi += hi2; accHi += hi2;
-        accLow += (uint64_t)invValue[4]*mod[9];
+        accLow += invValue[4]*mod[9];
         accHi += __umulhi(invValue[4], mod[9]);
-        accLow += (uint64_t)invValue[5]*mod[8];
+        accLow += invValue[5]*mod[8];
         accHi += __umulhi(invValue[5], mod[8]);
-        accLow += (uint64_t)invValue[6]*mod[7];
+        accLow += invValue[6]*mod[7];
         accHi += __umulhi(invValue[6], mod[7]);
-        accLow += (uint64_t)invValue[7]*mod[6];
+        accLow += invValue[7]*mod[6];
         accHi += __umulhi(invValue[7], mod[6]);
-        accLow += (uint64_t)invValue[8]*mod[5];
+        accLow += invValue[8]*mod[5];
         accHi += __umulhi(invValue[8], mod[5]);
-        accLow += (uint64_t)invValue[9]*mod[4];
+        accLow += invValue[9]*mod[4];
         accHi += __umulhi(invValue[9], mod[4]);
         op[3] = (uint32_t)accLow;
         accHi += (uint32_t)(accLow >> 32);
@@ -518,17 +518,17 @@ __device__ void monSqr320(uint32_t *op, uint32_t *mod, uint32_t invm) {
         accHi += hi0; accHi += hi0;
         accLow += low1; accLow += low1;
         accHi += hi1; accHi += hi1;
-        accLow += (uint64_t)op[7]*op[7];
+        accLow += op[7]*op[7];
         accHi += __umulhi(op[7], op[7]);
-        accLow += (uint64_t)invValue[5]*mod[9];
+        accLow += invValue[5]*mod[9];
         accHi += __umulhi(invValue[5], mod[9]);
-        accLow += (uint64_t)invValue[6]*mod[8];
+        accLow += invValue[6]*mod[8];
         accHi += __umulhi(invValue[6], mod[8]);
-        accLow += (uint64_t)invValue[7]*mod[7];
+        accLow += invValue[7]*mod[7];
         accHi += __umulhi(invValue[7], mod[7]);
-        accLow += (uint64_t)invValue[8]*mod[6];
+        accLow += invValue[8]*mod[6];
         accHi += __umulhi(invValue[8], mod[6]);
-        accLow += (uint64_t)invValue[9]*mod[5];
+        accLow += invValue[9]*mod[5];
         accHi += __umulhi(invValue[9], mod[5]);
         op[4] = (uint32_t)accLow;
         accHi += (uint32_t)(accLow >> 32);
@@ -543,13 +543,13 @@ __device__ void monSqr320(uint32_t *op, uint32_t *mod, uint32_t invm) {
         accHi += hi0; accHi += hi0;
         accLow += low1; accLow += low1;
         accHi += hi1; accHi += hi1;
-        accLow += (uint64_t)invValue[6]*mod[9];
+        accLow += invValue[6]*mod[9];
         accHi += __umulhi(invValue[6], mod[9]);
-        accLow += (uint64_t)invValue[7]*mod[8];
+        accLow += invValue[7]*mod[8];
         accHi += __umulhi(invValue[7], mod[8]);
-        accLow += (uint64_t)invValue[8]*mod[7];
+        accLow += invValue[8]*mod[7];
         accHi += __umulhi(invValue[8], mod[7]);
-        accLow += (uint64_t)invValue[9]*mod[6];
+        accLow += invValue[9]*mod[6];
         accHi += __umulhi(invValue[9], mod[6]);
         op[5] = (uint32_t)accLow;
         accHi += (uint32_t)(accLow >> 32);
@@ -561,13 +561,13 @@ __device__ void monSqr320(uint32_t *op, uint32_t *mod, uint32_t invm) {
         low0 = op[7]*op[9]; hi0 = __umulhi(op[7], op[9]);
         accLow += low0; accLow += low0;
         accHi += hi0; accHi += hi0;
-        accLow += (uint64_t)op[8]*op[8];
+        accLow += op[8]*op[8];
         accHi += __umulhi(op[8], op[8]);
-        accLow += (uint64_t)invValue[7]*mod[9];
+        accLow += invValue[7]*mod[9];
         accHi += __umulhi(invValue[7], mod[9]);
-        accLow += (uint64_t)invValue[8]*mod[8];
+        accLow += invValue[8]*mod[8];
         accHi += __umulhi(invValue[8], mod[8]);
-        accLow += (uint64_t)invValue[9]*mod[7];
+        accLow += invValue[9]*mod[7];
         accHi += __umulhi(invValue[9], mod[7]);
         op[6] = (uint32_t)accLow;
         accHi += (uint32_t)(accLow >> 32);
@@ -579,9 +579,9 @@ __device__ void monSqr320(uint32_t *op, uint32_t *mod, uint32_t invm) {
         low0 = op[8]*op[9]; hi0 = __umulhi(op[8], op[9]);
         accLow += low0; accLow += low0;
         accHi += hi0; accHi += hi0;
-        accLow += (uint64_t)invValue[8]*mod[9];
+        accLow += invValue[8]*mod[9];
         accHi += __umulhi(invValue[8], mod[9]);
-        accLow += (uint64_t)invValue[9]*mod[8];
+        accLow += invValue[9]*mod[8];
         accHi += __umulhi(invValue[9], mod[8]);
         op[7] = (uint32_t)accLow;
         accHi += (uint32_t)(accLow >> 32);
@@ -590,9 +590,9 @@ __device__ void monSqr320(uint32_t *op, uint32_t *mod, uint32_t invm) {
     }
 
     {
-        accLow += (uint64_t)op[9]*op[9];
+        accLow += op[9]*op[9];
         accHi += __umulhi(op[9], op[9]);
-        accLow += (uint64_t)invValue[9]*mod[9];
+        accLow += invValue[9]*mod[9];
         accHi += __umulhi(invValue[9], mod[9]);
         op[8] = (uint32_t)accLow;
         accHi += (uint32_t)(accLow >> 32);
@@ -613,10 +613,10 @@ __device__ void monMul320(uint32_t *op1, uint32_t *op2, uint32_t *mod, uint32_t 
 
     /* Step 0 */
     {
-        accLow += (uint64_t)op1[0]*op2[0];
+        accLow += op1[0]*op2[0];
         accHi += __umulhi(op1[0], op2[0]);
         invValue[0] = invm * (uint32_t)accLow;
-        accLow += (uint64_t)invValue[0]*mod[0];
+        accLow += invValue[0]*mod[0];
         accHi += __umulhi(invValue[0], mod[0]);
         accHi += (uint32_t)(accLow >> 32);
         accLow = accHi;
@@ -625,14 +625,14 @@ __device__ void monMul320(uint32_t *op1, uint32_t *op2, uint32_t *mod, uint32_t 
 
     /* Step 1 */
     {
-        accLow += (uint64_t)op1[0]*op2[1];
+        accLow += op1[0]*op2[1];
         accHi += __umulhi(op1[0], op2[1]);
-        accLow += (uint64_t)op1[1]*op2[0];
+        accLow += op1[1]*op2[0];
         accHi += __umulhi(op1[1], op2[0]);
-        accLow += (uint64_t)invValue[0]*mod[1];
+        accLow += invValue[0]*mod[1];
         accHi += __umulhi(invValue[0], mod[1]);
         invValue[1] = invm * (uint32_t)accLow;
-        accLow += (uint64_t)invValue[1]*mod[0];
+        accLow += invValue[1]*mod[0];
         accHi += __umulhi(invValue[1], mod[0]);
         accHi += (uint32_t)(accLow >> 32);
         accLow = accHi;
@@ -643,15 +643,15 @@ __device__ void monMul320(uint32_t *op1, uint32_t *op2, uint32_t *mod, uint32_t 
     #pragma unroll
     for (int i = 2; i < 10; i++) {
         for (int j = 0; j <= i; j++) {
-            accLow += (uint64_t)op1[j]*op2[i-j];
+            accLow += op1[j]*op2[i-j];
             accHi += __umulhi(op1[j], op2[i-j]);
         }
         for (int j = 0; j < i; j++) {
-            accLow += (uint64_t)invValue[j]*mod[i-j];
+            accLow += invValue[j]*mod[i-j];
             accHi += __umulhi(invValue[j], mod[i-j]);
         }
         invValue[i] = invm * (uint32_t)accLow;
-        accLow += (uint64_t)invValue[i]*mod[0];
+        accLow += invValue[i]*mod[0];
         accHi += __umulhi(invValue[i], mod[0]);
         accHi += (uint32_t)(accLow >> 32);
         accLow = accHi;
@@ -662,11 +662,11 @@ __device__ void monMul320(uint32_t *op1, uint32_t *op2, uint32_t *mod, uint32_t 
     #pragma unroll
     for (int i = 0; i < 9; i++) {
         for (int j = i + 1; j < 10; j++) {
-            accLow += (uint64_t)op1[j]*op2[10 + i - j];
+            accLow += op1[j]*op2[10 + i - j];
             accHi += __umulhi(op1[j], op2[10 + i - j]);
         }
         for (int j = i + 1; j < 10; j++) {
-            accLow += (uint64_t)invValue[j]*mod[10 + i - j];
+            accLow += invValue[j]*mod[10 + i - j];
             accHi += __umulhi(invValue[j], mod[10 + i - j]);
         }
         op1[i] = (uint32_t)accLow;
@@ -691,7 +691,7 @@ __device__ void redcHalf320(uint32_t *op, uint32_t *mod, uint32_t invm) {
     /* Reduction phase */
     {
         invValue[0] = invm * (uint32_t)accLow;
-        accLow += (uint64_t)invValue[0]*mod[0];
+        accLow += invValue[0]*mod[0];
         accHi += __umulhi(invValue[0], mod[0]);
         accHi += (uint32_t)(accLow >> 32);
         accLow = accHi;
@@ -701,11 +701,11 @@ __device__ void redcHalf320(uint32_t *op, uint32_t *mod, uint32_t invm) {
     #pragma unroll
     for (int i = 1; i < 9; i++) {
         for (int j = 0; j < i; j++) {
-            accLow += (uint64_t)invValue[j]*mod[i-j];
+            accLow += invValue[j]*mod[i-j];
             accHi += __umulhi(invValue[j], mod[i-j]);
         }
         invValue[i] = invm * (uint32_t)accLow;
-        accLow += (uint64_t)invValue[i]*mod[0];
+        accLow += invValue[i]*mod[0];
         accHi += __umulhi(invValue[i], mod[0]);
         accHi += (uint32_t)(accLow >> 32);
         accLow = accHi;
@@ -715,11 +715,11 @@ __device__ void redcHalf320(uint32_t *op, uint32_t *mod, uint32_t invm) {
     /* i = 9 */
     {
         for (int j = 0; j < 9; j++) {
-            accLow += (uint64_t)invValue[j]*mod[9-j];
+            accLow += invValue[j]*mod[9-j];
             accHi += __umulhi(invValue[j], mod[9-j]);
         }
         invValue[9] = invm * (uint32_t)accLow;
-        accLow += (uint64_t)invValue[9]*mod[0];
+        accLow += invValue[9]*mod[0];
         accHi += __umulhi(invValue[9], mod[0]);
         accHi += (uint32_t)(accLow >> 32);
         accLow = accHi;
@@ -730,7 +730,7 @@ __device__ void redcHalf320(uint32_t *op, uint32_t *mod, uint32_t invm) {
     #pragma unroll
     for (int i = 0; i < 9; i++) {
         for (int j = i + 1; j < 10; j++) {
-            accLow += (uint64_t)invValue[j]*mod[10 + i - j];
+            accLow += invValue[j]*mod[10 + i - j];
             accHi += __umulhi(invValue[j], mod[10 + i - j]);
         }
         op[i] = (uint32_t)accLow;
@@ -756,7 +756,7 @@ __device__ void monSqr352(uint32_t *op, uint32_t *mod, uint32_t invm) {
     for (int i = 0; i <= 10; i++) {
         /* Diagonal term */
         if (i <= 10) {
-            accLow += (uint64_t)op[i]*op[i];
+            accLow += op[i]*op[i];
             accHi += __umulhi(op[i], op[i]);
         }
 
@@ -764,21 +764,21 @@ __device__ void monSqr352(uint32_t *op, uint32_t *mod, uint32_t invm) {
         for (int j = 0; j < (i+1)/2; j++) {
             int k = i - j;
             if (k <= 10 && k != j) {
-                uint64_t prod = (uint64_t)op[j]*op[k];
-                accLow += prod; accLow += prod;
+                uint32_t prodlo = op[j]*op[k];
+                accLow += prodlo; accLow += prodlo;
                 accHi += __umulhi(op[j], op[k]); accHi += __umulhi(op[j], op[k]);
             }
         }
 
         /* Reduction terms */
         for (int j = 0; j < i; j++) {
-            accLow += (uint64_t)invValue[j]*mod[i-j];
+            accLow += invValue[j]*mod[i-j];
             accHi += __umulhi(invValue[j], mod[i-j]);
         }
 
         if (i <= 10) {
             invValue[i] = invm * (uint32_t)accLow;
-            accLow += (uint64_t)invValue[i]*mod[0];
+            accLow += invValue[i]*mod[0];
             accHi += __umulhi(invValue[i], mod[0]);
         }
 
@@ -794,8 +794,8 @@ __device__ void monSqr352(uint32_t *op, uint32_t *mod, uint32_t invm) {
         for (int j = i + 1; j <= 10; j++) {
             int k = 11 + i - j;
             if (k >= 0 && k <= 10 && k > j) {
-                uint64_t prod = (uint64_t)op[j]*op[k];
-                accLow += prod; accLow += prod;
+                uint32_t prodlo = op[j]*op[k];
+                accLow += prodlo; accLow += prodlo;
                 accHi += __umulhi(op[j], op[k]); accHi += __umulhi(op[j], op[k]);
             }
         }
@@ -803,13 +803,13 @@ __device__ void monSqr352(uint32_t *op, uint32_t *mod, uint32_t invm) {
         /* Diagonal */
         int diag = (11 + i) / 2;
         if ((11 + i) % 2 == 0 && diag <= 10) {
-            accLow += (uint64_t)op[diag]*op[diag];
+            accLow += op[diag]*op[diag];
             accHi += __umulhi(op[diag], op[diag]);
         }
 
         /* Reduction terms */
         for (int j = i + 1; j <= 10; j++) {
-            accLow += (uint64_t)invValue[j]*mod[11 + i - j];
+            accLow += invValue[j]*mod[11 + i - j];
             accHi += __umulhi(invValue[j], mod[11 + i - j]);
         }
 
@@ -835,15 +835,15 @@ __device__ void monMul352(uint32_t *op1, uint32_t *op2, uint32_t *mod, uint32_t 
     #pragma unroll
     for (int i = 0; i <= 10; i++) {
         for (int j = 0; j <= i; j++) {
-            accLow += (uint64_t)op1[j]*op2[i-j];
+            accLow += op1[j]*op2[i-j];
             accHi += __umulhi(op1[j], op2[i-j]);
         }
         for (int j = 0; j < i; j++) {
-            accLow += (uint64_t)invValue[j]*mod[i-j];
+            accLow += invValue[j]*mod[i-j];
             accHi += __umulhi(invValue[j], mod[i-j]);
         }
         invValue[i] = invm * (uint32_t)accLow;
-        accLow += (uint64_t)invValue[i]*mod[0];
+        accLow += invValue[i]*mod[0];
         accHi += __umulhi(invValue[i], mod[0]);
         accHi += (uint32_t)(accLow >> 32);
         accLow = accHi;
@@ -854,11 +854,11 @@ __device__ void monMul352(uint32_t *op1, uint32_t *op2, uint32_t *mod, uint32_t 
     #pragma unroll
     for (int i = 0; i < 10; i++) {
         for (int j = i + 1; j <= 10; j++) {
-            accLow += (uint64_t)op1[j]*op2[11 + i - j];
+            accLow += op1[j]*op2[11 + i - j];
             accHi += __umulhi(op1[j], op2[11 + i - j]);
         }
         for (int j = i + 1; j <= 10; j++) {
-            accLow += (uint64_t)invValue[j]*mod[11 + i - j];
+            accLow += invValue[j]*mod[11 + i - j];
             accHi += __umulhi(invValue[j], mod[11 + i - j]);
         }
         op1[i] = (uint32_t)accLow;
@@ -882,7 +882,7 @@ __device__ void redcHalf352(uint32_t *op, uint32_t *mod, uint32_t invm) {
     /* First phase */
     {
         invValue[0] = invm * (uint32_t)accLow;
-        accLow += (uint64_t)invValue[0]*mod[0];
+        accLow += invValue[0]*mod[0];
         accHi += __umulhi(invValue[0], mod[0]);
         accHi += (uint32_t)(accLow >> 32);
         accLow = accHi;
@@ -892,11 +892,11 @@ __device__ void redcHalf352(uint32_t *op, uint32_t *mod, uint32_t invm) {
     #pragma unroll
     for (int i = 1; i < 10; i++) {
         for (int j = 0; j < i; j++) {
-            accLow += (uint64_t)invValue[j]*mod[i-j];
+            accLow += invValue[j]*mod[i-j];
             accHi += __umulhi(invValue[j], mod[i-j]);
         }
         invValue[i] = invm * (uint32_t)accLow;
-        accLow += (uint64_t)invValue[i]*mod[0];
+        accLow += invValue[i]*mod[0];
         accHi += __umulhi(invValue[i], mod[0]);
         accHi += (uint32_t)(accLow >> 32);
         accLow = accHi;
@@ -906,11 +906,11 @@ __device__ void redcHalf352(uint32_t *op, uint32_t *mod, uint32_t invm) {
     /* i = 10 */
     {
         for (int j = 0; j < 10; j++) {
-            accLow += (uint64_t)invValue[j]*mod[10-j];
+            accLow += invValue[j]*mod[10-j];
             accHi += __umulhi(invValue[j], mod[10-j]);
         }
         invValue[10] = invm * (uint32_t)accLow;
-        accLow += (uint64_t)invValue[10]*mod[0];
+        accLow += invValue[10]*mod[0];
         accHi += __umulhi(invValue[10], mod[0]);
         accHi += (uint32_t)(accLow >> 32);
         accLow = accHi;
@@ -921,7 +921,7 @@ __device__ void redcHalf352(uint32_t *op, uint32_t *mod, uint32_t invm) {
     #pragma unroll
     for (int i = 0; i < 10; i++) {
         for (int j = i + 1; j <= 10; j++) {
-            accLow += (uint64_t)invValue[j]*mod[11 + i - j];
+            accLow += invValue[j]*mod[11 + i - j];
             accHi += __umulhi(invValue[j], mod[11 + i - j]);
         }
         op[i] = (uint32_t)accLow;
@@ -1022,8 +1022,10 @@ __device__ bool fermat320(uint32_t *p) {
         if (doSub) sub10(redcl, mod);
     }
 
-    /* Main exponentiation loop with 5-bit windows */
-    int remaining = bitCount - 1;
+    /* Main exponentiation loop with 5-bit windows.
+     * Process ALL bitCount bits of the exponent from MSB to LSB.
+     * Result starts at 1 (Montgomery form), so every bit must be included. */
+    int remaining = bitCount;
     while (remaining > 0) {
         int bits = (remaining >= windowSize) ? windowSize : remaining;
         int start = remaining - bits;
@@ -1140,8 +1142,10 @@ __device__ bool fermat352(uint32_t *p) {
         if (doSub) sub11(redcl, mod);
     }
 
-    /* Main exponentiation loop */
-    int remaining = bitCount - 1;
+    /* Main exponentiation loop.
+     * Process ALL bitCount bits of the exponent from MSB to LSB.
+     * Result starts at 1 (Montgomery form), so every bit must be included. */
+    int remaining = bitCount;
     while (remaining > 0) {
         int bits = (remaining >= windowSize) ? windowSize : remaining;
         int start = remaining - bits;

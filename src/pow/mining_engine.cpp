@@ -45,11 +45,8 @@
 #define aligned_free(ptr) free(ptr)
 #endif
 
-#include <gpu/cuda_loader.h>
-#include <gpu/cuda_fermat.h>
 #include <gpu/opencl_loader.h>
 #include <gpu/opencl_fermat.h>
-#include <gpu/cgbn_fermat.h>
 
 /*============================================================================
  * Utility macros
@@ -677,7 +674,7 @@ void MiningPipeline::start_mining(PoW* pow, std::vector<uint8_t>* offset) {
     }
 
     // Start GPU worker if applicable
-    if (tier == MiningTier::CPU_CUDA || tier == MiningTier::CPU_OPENCL) {
+    if (tier == MiningTier::CPU_OPENCL) {
         gpu_thread = std::thread(&MiningPipeline::gpu_worker, this);
     }
 }
@@ -907,9 +904,6 @@ void MiningPipeline::sieve_worker(uint32_t thread_id) {
 }
 
 void MiningPipeline::gpu_worker() {
-    if (tier == MiningTier::CPU_CUDA) {
-        cuda_fermat_init(0);
-    }
     if (tier == MiningTier::CPU_OPENCL) {
         opencl_fermat_init(0);
     }
@@ -929,34 +923,15 @@ void MiningPipeline::gpu_worker() {
             gpu_queue.pop();
         }
 
-        // Run GPU Fermat test
+        // Run OpenCL Fermat test
         std::vector<uint8_t> results(batch.count);
-
-        if (tier == MiningTier::CPU_CUDA) {
-#ifdef HAVE_CGBN
-            // Use CGBN cooperative group kernels when available (faster for large batches)
-            if (cgbn_is_available()) {
-                cgbn_fermat_batch(results.data(), batch.candidates.data(),
-                                  batch.count, batch.bits);
-            } else
-#endif
-            {
-                cuda_fermat_batch(results.data(), batch.candidates.data(),
-                                  batch.count, batch.bits);
-            }
-        }
-        if (tier == MiningTier::CPU_OPENCL) {
-            opencl_fermat_batch(results.data(), batch.candidates.data(),
-                                batch.count, batch.bits);
-        }
+        opencl_fermat_batch(results.data(), batch.candidates.data(),
+                            batch.count, batch.bits);
 
         // Process results
         process_gpu_results(batch, results);
     }
 
-    if (tier == MiningTier::CPU_CUDA) {
-        cuda_fermat_cleanup();
-    }
     if (tier == MiningTier::CPU_OPENCL) {
         opencl_fermat_cleanup();
     }
@@ -1038,18 +1013,6 @@ MiningEngine::~MiningEngine() {
 }
 
 MiningTier MiningEngine::detect_tier() {
-    // CUDA Driver API: dynamically loaded at runtime, no CUDA Toolkit needed
-    // Preferred for NVIDIA GPUs — uses PTX JIT compilation
-    if (cuda_load() == 0) {
-        int cuda_devices = cuda_get_device_count();
-        if (cuda_devices > 0) {
-            std::snprintf(hardware_info, sizeof(hardware_info),
-                     "CUDA: %d device(s) - %s",
-                     cuda_devices, cuda_get_device_name(0));
-            return MiningTier::CPU_CUDA;
-        }
-    }
-
     // OpenCL: dynamically loaded at runtime, no SDK needed at build time
     // Works for all GPU vendors (NVIDIA, AMD, Intel)
     if (opencl_load() == 0) {
@@ -1115,16 +1078,8 @@ void MiningEngine::run_sieve(PoW* pow, PoWProcessor* processor,
 }
 
 void MiningEngine::gpu_worker_func() {
-    // Initialize GPU backend
-    if (tier == MiningTier::CPU_CUDA) {
-        if (cuda_fermat_init(0) != 0) {
-            LogPrintf("Mining: GPU worker failed to init CUDA, falling back to CPU\n");
-            gpu_initialized = false;
-            return;
-        }
-        gpu_initialized = true;
-        LogPrintf("Mining: GPU worker initialized (CUDA)\n");
-    } else if (tier == MiningTier::CPU_OPENCL) {
+    // Initialize OpenCL GPU backend
+    if (tier == MiningTier::CPU_OPENCL) {
         if (opencl_fermat_init(0) != 0) {
             LogPrintf("Mining: GPU worker failed to init OpenCL, falling back to CPU\n");
             gpu_initialized = false;
@@ -1147,25 +1102,10 @@ void MiningEngine::gpu_worker_func() {
             gpu_request_queue.pop();
         }
 
-        // Run GPU Fermat primality pre-filter
-        if (tier == MiningTier::CPU_CUDA) {
-#ifdef HAVE_CGBN
-            if (cgbn_is_available()) {
-                cgbn_fermat_batch(request->results.data(),
-                                  request->batch.candidates.data(),
-                                  request->batch.count, request->batch.bits);
-            } else
-#endif
-            {
-                cuda_fermat_batch(request->results.data(),
-                                  request->batch.candidates.data(),
-                                  request->batch.count, request->batch.bits);
-            }
-        } else if (tier == MiningTier::CPU_OPENCL) {
-            opencl_fermat_batch(request->results.data(),
-                                request->batch.candidates.data(),
-                                request->batch.count, request->batch.bits);
-        }
+        // Run OpenCL Fermat primality pre-filter
+        opencl_fermat_batch(request->results.data(),
+                            request->batch.candidates.data(),
+                            request->batch.count, request->batch.bits);
 
         // Signal the submitting CPU thread that results are ready
         {
@@ -1176,8 +1116,7 @@ void MiningEngine::gpu_worker_func() {
     }
 
     // Cleanup GPU
-    if (tier == MiningTier::CPU_CUDA) cuda_fermat_cleanup();
-    else if (tier == MiningTier::CPU_OPENCL) opencl_fermat_cleanup();
+    if (tier == MiningTier::CPU_OPENCL) opencl_fermat_cleanup();
 
     LogPrintf("Mining: GPU worker stopped\n");
 }
@@ -1392,6 +1331,7 @@ void MiningEngine::parallel_worker(uint32_t thread_id,
                         // Full BPSW confirmation (consensus-grade)
                         if (tester.bpsw_test(states[k].mpz_candidate)) {
                             states[k].primes_found++;
+                            par_primes.fetch_add(1, std::memory_order_relaxed);
 
                             if (!states[k].have_first_prime) {
                                 states[k].last_prime_offset = offset;
@@ -1446,6 +1386,7 @@ void MiningEngine::parallel_worker(uint32_t thread_id,
 
                         if (tester.bpsw_test(states[k].mpz_candidate)) {
                             states[k].primes_found++;
+                            par_primes.fetch_add(1, std::memory_order_relaxed);
 
                             if (!states[k].have_first_prime) {
                                 states[k].last_prime_offset = offset;
@@ -1495,6 +1436,7 @@ void MiningEngine::parallel_worker(uint32_t thread_id,
 
                     if (tester.bpsw_test(states[k].mpz_candidate)) {
                         states[k].primes_found++;
+                        par_primes.fetch_add(1, std::memory_order_relaxed);
 
                         if (!states[k].have_first_prime) {
                             states[k].last_prime_offset = offset;
@@ -1529,12 +1471,11 @@ void MiningEngine::parallel_worker(uint32_t thread_id,
             }
         }
 
-        // Accumulate stats
+        // Accumulate stats (primes already incremented in real-time above)
         for (int k = 0; k < COMBINED_SIEVE_BATCH; k++) {
-            par_primes.fetch_add(states[k].primes_found, std::memory_order_relaxed);
             par_gaps.fetch_add(states[k].valid_gaps, std::memory_order_relaxed);
         }
-        par_tests.fetch_add(COMBINED_SIEVE_BATCH, std::memory_order_relaxed);
+        par_nonces.fetch_add(COMBINED_SIEVE_BATCH, std::memory_order_relaxed);
 
         // Periodic progress logging
         if ((nonce_base / n_threads) % 100 == 0) {
@@ -1585,6 +1526,7 @@ MiningStatsSnapshot MiningEngine::get_stats() const {
         snap.primes_found = par_primes.load(std::memory_order_relaxed);
         snap.gaps_found = par_gaps.load(std::memory_order_relaxed);
         snap.tests_performed = par_tests.load(std::memory_order_relaxed);
+        snap.nonces_tested = par_nonces.load(std::memory_order_relaxed);
         return snap;
     }
     return pipeline->get_stats();

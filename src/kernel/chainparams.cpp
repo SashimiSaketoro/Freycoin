@@ -121,7 +121,7 @@ public:
         genesis = CreateGenesisBlock(
             pszTimestamp,
             genesisOutputScript,
-            1770630206,       // 2026-02-09: Freycoin mainnet genesis
+            1770668772,       // 2026-02-10: Freycoin mainnet genesis
             MIN_DIFFICULTY,   // Initial difficulty
             0,                // nNonce (will be mined)
             14,               // nShift (minimum)
@@ -131,7 +131,7 @@ public:
         );
 
         consensus.hashGenesisBlock = genesis.GetHash();
-        assert(consensus.hashGenesisBlock == uint256{"017aad31d0a3986ce744b83be34375dd1211be1053132e7aa6ce7a1e1c57c872"});
+        assert(consensus.hashGenesisBlock == uint256{"4475b999b591b660d891ca240451bfd6519e716ac2547133d464ab749a6c27fe"});
         assert(genesis.hashMerkleRoot == uint256{"87925d0a69a0e00b2aab9512c4771fad6d918d370bf8bab5fd951789b20ddd29"});
 
         base58Prefixes[EXT_PUBLIC_KEY] = {0x04, 0x88, 0xB2, 0x1E};
@@ -200,7 +200,7 @@ public:
         genesis = CreateGenesisBlock(
             pszTimestamp,
             genesisOutputScript,
-            1770630206,       // 2026-02-09: Freycoin testnet genesis (same timestamp as mainnet)
+            1770668772,       // 2026-02-10: Freycoin testnet genesis (same timestamp as mainnet)
             1ULL << 48,       // Initial difficulty (merit ~1 for testnet)
             0,                // nNonce
             14,               // nShift (minimum)
@@ -210,7 +210,7 @@ public:
         );
 
         consensus.hashGenesisBlock = genesis.GetHash();
-        assert(consensus.hashGenesisBlock == uint256{"0c54acc761b21500aa39f1a6574206e137f6e8e2929133a47832dc76c61b491e"});
+        assert(consensus.hashGenesisBlock == uint256{"6716f28b571cf6b4f40ab00d454bae73cf7c30270197fed22369fccb762027eb"});
         assert(genesis.hashMerkleRoot == uint256{"3d88cf475c00c0a831fb98c7816aa8ad8dae0edcaca6d012cbb4cef3bc6402d5"});
 
         vFixedSeeds.clear();

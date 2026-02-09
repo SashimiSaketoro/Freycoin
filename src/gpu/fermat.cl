@@ -356,8 +356,8 @@ bool fermat320(__private uint *p) {
         if (doSub) sub10(redcl, mod);
     }
 
-    /* Main exponentiation loop */
-    int remaining = bitCount - 1;
+    /* Main exponentiation loop — process ALL bitCount bits from MSB to LSB */
+    int remaining = bitCount;
     while (remaining > 0) {
         int bits = (remaining >= windowSize) ? windowSize : remaining;
         int start = remaining - bits;
@@ -684,8 +684,8 @@ bool fermat352(__private uint *p) {
         if (doSub) sub11(redcl, mod);
     }
 
-    /* Main exponentiation loop */
-    int remaining = bitCount - 1;
+    /* Main exponentiation loop — process ALL bitCount bits from MSB to LSB */
+    int remaining = bitCount;
     while (remaining > 0) {
         int bits = (remaining >= windowSize) ? windowSize : remaining;
         int start = remaining - bits;

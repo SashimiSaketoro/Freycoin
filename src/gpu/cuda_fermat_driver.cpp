@@ -43,6 +43,7 @@ static CUcontext  g_context = nullptr;
 static CUmodule   g_module = nullptr;
 static CUfunction g_kernel_320 = nullptr;
 static CUfunction g_kernel_352 = nullptr;
+static CUfunction g_kernel_selftest = nullptr;
 static int        g_initialized = 0;
 static char       g_device_name[256] = {0};
 static size_t     g_device_memory = 0;
@@ -147,7 +148,25 @@ int cuda_fermat_init(int device_id) {
         return -1;
     }
 
+    /* Load self-test kernel (optional — failure is non-fatal) */
+    res = cu_cuModuleGetFunction(&g_kernel_selftest, g_module, "fermat_selftest");
+    if (res != CUDA_SUCCESS) {
+        fprintf(stderr, "CUDA: Warning: self-test kernel not found (error %d)\n", res);
+        g_kernel_selftest = nullptr;
+    }
+
     g_initialized = 1;
+
+    /* Run self-test to verify Montgomery math */
+    if (g_kernel_selftest) {
+        int st = cuda_fermat_selftest();
+        if (st != 0) {
+            fprintf(stderr, "CUDA: SELF-TEST FAILED — GPU Fermat math is broken!\n");
+            /* Don't return error — log it prominently but let mining proceed
+             * so the user can see the self-test output */
+        }
+    }
+
     return 0;
 }
 
@@ -165,6 +184,7 @@ void cuda_fermat_cleanup(void) {
 
     g_kernel_320 = nullptr;
     g_kernel_352 = nullptr;
+    g_kernel_selftest = nullptr;
     g_initialized = 0;
 }
 
@@ -251,6 +271,76 @@ int cuda_fermat_batch(uint8_t *h_results, const uint32_t *h_primes,
     cu_cuMemFree(d_primes);
 
     return 0;
+}
+
+int cuda_fermat_selftest(void) {
+    if (!g_initialized || !g_kernel_selftest) return -1;
+
+    CUresult res;
+
+    /* Allocate 4 bytes on device for results:
+     * [0] = fermat320(secp256k1_prime)  — expect 1
+     * [1] = fermat320(mersenne_127)     — expect 1
+     * [2] = fermat320(15)               — expect 0
+     * [3] = sentinel 0xAA               — expect 0xAA */
+    CUdeviceptr d_results = 0;
+    res = cu_cuMemAlloc(&d_results, 4);
+    if (res != CUDA_SUCCESS) {
+        fprintf(stderr, "CUDA selftest: cuMemAlloc failed (error %d)\n", res);
+        return -1;
+    }
+
+    /* Zero out results */
+    uint8_t zeros[4] = {0, 0, 0, 0};
+    cu_cuMemcpyHtoD(d_results, zeros, 4);
+
+    /* Launch self-test kernel: 1 block, 1 thread */
+    void* params[] = { &d_results };
+    res = cu_cuLaunchKernel(g_kernel_selftest,
+                            1, 1, 1,    /* grid */
+                            1, 1, 1,    /* block (only thread 0 runs) */
+                            0, nullptr, params, nullptr);
+    if (res != CUDA_SUCCESS) {
+        cu_cuMemFree(d_results);
+        fprintf(stderr, "CUDA selftest: launch failed (error %d)\n", res);
+        return -1;
+    }
+
+    res = cu_cuCtxSynchronize();
+    if (res != CUDA_SUCCESS) {
+        cu_cuMemFree(d_results);
+        fprintf(stderr, "CUDA selftest: sync failed (error %d)\n", res);
+        return -1;
+    }
+
+    uint8_t h_results[4] = {0};
+    res = cu_cuMemcpyDtoH(h_results, d_results, 4);
+    cu_cuMemFree(d_results);
+
+    if (res != CUDA_SUCCESS) {
+        fprintf(stderr, "CUDA selftest: readback failed (error %d)\n", res);
+        return -1;
+    }
+
+    fprintf(stderr, "CUDA selftest results:\n");
+    fprintf(stderr, "  secp256k1 prime (expect 1): %d\n", h_results[0]);
+    fprintf(stderr, "  Mersenne M127   (expect 1): %d\n", h_results[1]);
+    fprintf(stderr, "  Composite 15    (expect 0): %d\n", h_results[2]);
+    fprintf(stderr, "  Sentinel        (expect AA): %02X\n", h_results[3]);
+
+    int pass = 1;
+    if (h_results[0] != 1) { fprintf(stderr, "  FAIL: secp256k1 prime returned %d\n", h_results[0]); pass = 0; }
+    if (h_results[1] != 1) { fprintf(stderr, "  FAIL: Mersenne M127 returned %d\n", h_results[1]); pass = 0; }
+    if (h_results[2] != 0) { fprintf(stderr, "  FAIL: Composite 15 returned %d\n", h_results[2]); pass = 0; }
+    if (h_results[3] != 0xAA) { fprintf(stderr, "  FAIL: Sentinel not 0xAA (kernel didn't run?)\n"); pass = 0; }
+
+    if (pass) {
+        fprintf(stderr, "CUDA selftest: PASSED — Montgomery math verified\n");
+        return 0;
+    } else {
+        fprintf(stderr, "CUDA selftest: FAILED\n");
+        return -1;
+    }
 }
 
 int cuda_get_device_count(void) {

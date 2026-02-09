@@ -76,6 +76,15 @@ size_t cuda_get_device_memory(int device_id);
 int cuda_get_sm_count(int device_id);
 
 /**
+ * Run self-test to verify Montgomery math correctness.
+ * Tests fermat320 with known primes and composites on the GPU.
+ * Must be called after cuda_fermat_init().
+ *
+ * @return 0 if all tests pass, -1 on failure
+ */
+int cuda_fermat_selftest(void);
+
+/**
  * Check if CUDA is available on this system.
  * Attempts to load the CUDA driver and detect devices.
  * @return 1 if available, 0 if not

@@ -44,7 +44,7 @@ struct GPUDevice {
  * Mining page - provides GUI controls for CPU and GPU mining.
  *
  * Features:
- * - Automatic GPU/CUDA detection
+ * - Automatic GPU detection
  * - CPU thread count control
  * - Real-time statistics display
  * - Solo mining to wallet address
@@ -119,7 +119,6 @@ private:
     // Hardware detection
     void detectCPU();
     void detectGPU();
-    bool detectCUDA();
     void populateGPUComboBox();
 
     // Mining control

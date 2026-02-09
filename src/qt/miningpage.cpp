@@ -45,8 +45,6 @@
 #endif
 
 // GPU detection via dynamic loading (no SDK needed at build time)
-#include <gpu/cuda_loader.h>
-#include <gpu/cuda_fermat.h>
 
 namespace {
 /**
@@ -204,16 +202,7 @@ void MiningPage::detectGPU()
     // Always detect GPUs at runtime — users may use pre-compiled builds
     // Compile flags only control whether GPU mining is actually usable
 
-    // Try CUDA Driver API first (NVIDIA GPUs — best performance)
-    if (detectCUDA()) {
-        populateGPUComboBox();
-        ui->groupBoxGPUMining->setEnabled(true);
-        ui->labelGPUInfo->setText(QString("%1 CUDA device(s) found").arg(gpuDevices.size()));
-        ui->labelCUDAInfo->setText("CUDA available");
-        return;
-    }
-
-    // Runtime GPU detection via system tools (works without CUDA/OpenCL SDK)
+    // Runtime GPU detection via system tools (works without OpenCL SDK)
 #ifdef WIN32
     // === NVIDIA Detection via nvidia-smi ===
     QProcess nvidiaSmi;
@@ -358,13 +347,8 @@ void MiningPage::detectGPU()
         bool gpuMiningAvailable = false;
         QString backendInfo;
 
-        // Try CUDA Driver API (loads nvcuda.dll / libcuda.so at runtime)
-        if (cuda_load() == 0 && cuda_get_device_count() > 0) {
-            gpuMiningAvailable = true;
-            backendInfo = "CUDA";
-        }
-        // Try OpenCL as fallback (works with any GPU vendor)
-        else if (opencl_load() == 0) {
+        // Try OpenCL (works with any GPU vendor: NVIDIA, AMD, Intel)
+        if (opencl_load() == 0) {
             int oclDevices = opencl_get_device_count();
             if (oclDevices > 0) {
                 gpuMiningAvailable = true;
@@ -397,8 +381,7 @@ void MiningPage::detectGPU()
         }
 
         ui->groupBoxGPUMining->setEnabled(gpuMiningAvailable);
-        ui->labelGPUInfo->setText(QString("%1 GPU(s) detected").arg(gpuDevices.size()));
-        ui->labelCUDAInfo->setText(backendInfo);
+        ui->labelGPUInfo->setText(QString("%1 GPU(s) — %2").arg(gpuDevices.size()).arg(backendInfo));
         logMessage(QString("Total %1 GPU(s) detected. Mining backend: %2")
             .arg(gpuDevices.size()).arg(backendInfo));
         return;
@@ -408,45 +391,7 @@ void MiningPage::detectGPU()
     ui->groupBoxGPUMining->setEnabled(false);
     ui->groupBoxGPUMining->setChecked(false);
     ui->labelGPUInfo->setText("No GPU detected");
-    ui->labelCUDAInfo->setText("No compatible GPU found");
     logMessage("No GPU detected for mining");
-}
-
-bool MiningPage::detectCUDA()
-{
-    // Use CUDA Driver API (loaded dynamically — no SDK needed at build time)
-    if (cuda_load() != 0) {
-        logMessage("CUDA driver not available");
-        return false;
-    }
-
-    int deviceCount = cuda_get_device_count();
-    if (deviceCount == 0) {
-        logMessage("No CUDA devices found");
-        return false;
-    }
-
-    logMessage(QString("Found %1 CUDA device(s)").arg(deviceCount));
-
-    for (int i = 0; i < deviceCount; i++) {
-        GPUDevice dev;
-        dev.id = i;
-        dev.name = cuda_get_device_name(i);
-        dev.memory = cuda_get_device_memory(i);
-
-        int sm_count = cuda_get_sm_count(i);
-        dev.computeCapability = 0;  // Not critical for display
-        dev.available = true;
-        gpuDevices.push_back(dev);
-
-        logMessage(QString("  GPU %1: %2 (%3 MB, %4 SMs)")
-            .arg(i)
-            .arg(QString::fromStdString(dev.name))
-            .arg(dev.memory / (1024*1024))
-            .arg(sm_count));
-    }
-
-    return !gpuDevices.empty();
 }
 
 void MiningPage::populateGPUComboBox()
@@ -550,14 +495,10 @@ void MiningPage::miningThreadFunc()
         logMessage(QString("Mining to: %1").arg(miningAddress));
     }, Qt::QueuedConnection);
 
-    // Determine mining tier: prefer CUDA > OpenCL > CPU-only
+    // Determine mining tier: OpenCL GPU or CPU-only
     MiningTier tier = MiningTier::CPU_ONLY;
-    if (m_gpuMiningEnabled && !gpuDevices.empty()) {
-        if (cuda_is_loaded() && cuda_get_device_count() > 0) {
-            tier = MiningTier::CPU_CUDA;
-        } else if (opencl_is_loaded()) {
-            tier = MiningTier::CPU_OPENCL;
-        }
+    if (m_gpuMiningEnabled && !gpuDevices.empty() && opencl_is_loaded()) {
+        tier = MiningTier::CPU_OPENCL;
     }
 
     // Create mining engine with user's thread/GPU settings
@@ -786,12 +727,12 @@ void MiningPage::updateStats()
     // and accumulate previous values into running totals
     if (m_lastStats.primes_found < m_prevStats.primes_found) {
         m_totalPrimes += m_prevStats.primes_found;
-        m_totalNonces += m_prevStats.tests_performed;
+        m_totalNonces += m_prevStats.nonces_tested;
     }
     m_prevStats = m_lastStats;
 
     uint64_t cumulativePrimes = m_totalPrimes + m_lastStats.primes_found;
-    uint64_t cumulativeNonces = m_totalNonces + m_lastStats.tests_performed;
+    uint64_t cumulativeNonces = m_totalNonces + m_lastStats.nonces_tested;
 
     // Calculate primes per second
     double primesPerSec = 0.0;
