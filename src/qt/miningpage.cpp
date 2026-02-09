@@ -562,11 +562,13 @@ void MiningPage::miningThreadFunc()
 
     // Create mining engine with user's thread/GPU settings
     m_engine = std::make_unique<MiningEngine>(tier, m_numThreads);
+    m_engine->set_gpu_intensity(m_gpuIntensity);
 
     QMetaObject::invokeMethod(this, [this]() {
-        logMessage(QString("Mining engine: %1 (%2 threads)")
+        logMessage(QString("Mining engine: %1 (%2 threads, intensity %3)")
             .arg(m_engine->get_hardware_info())
-            .arg(m_numThreads));
+            .arg(m_numThreads)
+            .arg(m_gpuIntensity));
     }, Qt::QueuedConnection);
 
     // Mining loop — create block templates and mine them

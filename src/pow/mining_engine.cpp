@@ -1072,11 +1072,103 @@ MiningTier MiningEngine::detect_tier() {
     return MiningTier::CPU_ONLY;
 }
 
+void MiningEngine::set_gpu_intensity(int intensity) {
+    m_gpu_intensity = std::clamp(intensity, 1, 10);
+}
+
+/** Map GPU intensity (1-10) to sieve size cap.
+ *  Higher intensity = larger sieve range per nonce = more candidates for GPU/CPU testing.
+ */
+static uint64_t intensity_to_sieve_cap(int intensity) {
+    static constexpr uint64_t caps[] = {
+         1048576,  //  1: 1M   (minimal — fast nonce iteration)
+         2097152,  //  2: 2M
+         4194304,  //  3: 4M
+         8388608,  //  4: 8M
+        16777216,  //  5: 16M  (default — balanced)
+        25165824,  //  6: 24M
+        33554432,  //  7: 32M
+        50331648,  //  8: 48M
+        67108864,  //  9: 64M
+       134217728,  // 10: 128M (maximum — thorough search, high GPU load)
+    };
+    int idx = std::clamp(intensity, 1, 10) - 1;
+    return caps[idx];
+}
+
 void MiningEngine::run_sieve(PoW* pow, PoWProcessor* processor,
                              std::vector<uint8_t>* offset) {
     pipeline->set_processor(processor);
     pipeline->start_mining(pow, offset);
     pipeline->wait_for_completion();
+}
+
+void MiningEngine::gpu_worker_func() {
+    // Initialize GPU backend
+    if (tier == MiningTier::CPU_CUDA) {
+        if (cuda_fermat_init(0) != 0) {
+            LogPrintf("Mining: GPU worker failed to init CUDA, falling back to CPU\n");
+            gpu_initialized = false;
+            return;
+        }
+        gpu_initialized = true;
+        LogPrintf("Mining: GPU worker initialized (CUDA)\n");
+    } else if (tier == MiningTier::CPU_OPENCL) {
+        if (opencl_fermat_init(0) != 0) {
+            LogPrintf("Mining: GPU worker failed to init OpenCL, falling back to CPU\n");
+            gpu_initialized = false;
+            return;
+        }
+        gpu_initialized = true;
+        LogPrintf("Mining: GPU worker initialized (OpenCL)\n");
+    }
+
+    while (!stop_requested) {
+        std::shared_ptr<GPURequest> request;
+        {
+            std::unique_lock<std::mutex> lock(gpu_queue_mutex);
+            gpu_queue_cv.wait(lock, [this] {
+                return !gpu_request_queue.empty() || stop_requested;
+            });
+            if (stop_requested && gpu_request_queue.empty()) break;
+            if (gpu_request_queue.empty()) continue;
+            request = gpu_request_queue.front();
+            gpu_request_queue.pop();
+        }
+
+        // Run GPU Fermat primality pre-filter
+        if (tier == MiningTier::CPU_CUDA) {
+#ifdef HAVE_CGBN
+            if (cgbn_is_available()) {
+                cgbn_fermat_batch(request->results.data(),
+                                  request->batch.candidates.data(),
+                                  request->batch.count, request->batch.bits);
+            } else
+#endif
+            {
+                cuda_fermat_batch(request->results.data(),
+                                  request->batch.candidates.data(),
+                                  request->batch.count, request->batch.bits);
+            }
+        } else if (tier == MiningTier::CPU_OPENCL) {
+            opencl_fermat_batch(request->results.data(),
+                                request->batch.candidates.data(),
+                                request->batch.count, request->batch.bits);
+        }
+
+        // Signal the submitting CPU thread that results are ready
+        {
+            std::lock_guard<std::mutex> lock(request->mtx);
+            request->done = true;
+        }
+        request->cv.notify_one();
+    }
+
+    // Cleanup GPU
+    if (tier == MiningTier::CPU_CUDA) cuda_fermat_cleanup();
+    else if (tier == MiningTier::CPU_OPENCL) opencl_fermat_cleanup();
+
+    LogPrintf("Mining: GPU worker stopped\n");
 }
 
 void MiningEngine::mine_parallel(const std::vector<uint8_t>& header_template,
@@ -1091,12 +1183,20 @@ void MiningEngine::mine_parallel(const std::vector<uint8_t>& header_template,
 
     parallel_mining_active = true;
     stop_requested = false;
+    gpu_initialized = false;
     par_primes = 0;
     par_gaps = 0;
     par_tests = 0;
     mining_threads.clear();
 
-    // Launch worker threads
+    // Start GPU worker thread if we have a GPU
+    if (tier != MiningTier::CPU_ONLY) {
+        gpu_thread = std::thread(&MiningEngine::gpu_worker_func, this);
+        // Brief pause to let GPU init complete before sieve threads start submitting
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+
+    // Launch CPU sieve worker threads
     for (uint32_t i = 0; i < n_threads; i++) {
         mining_threads.emplace_back(&MiningEngine::parallel_worker, this,
                                      i, header_template, nonce_offset,
@@ -1104,13 +1204,22 @@ void MiningEngine::mine_parallel(const std::vector<uint8_t>& header_template,
                                      processor);
     }
 
-    // Wait for all threads to complete
+    // Wait for all CPU threads to complete
     for (auto& t : mining_threads) {
-        if (t.joinable()) {
-            t.join();
-        }
+        if (t.joinable()) t.join();
     }
     mining_threads.clear();
+
+    // Stop GPU worker
+    if (gpu_thread.joinable()) {
+        {
+            std::lock_guard<std::mutex> lock(gpu_queue_mutex);
+            stop_requested = true;
+        }
+        gpu_queue_cv.notify_all();
+        gpu_thread.join();
+    }
+
     parallel_mining_active = false;
 }
 
@@ -1122,7 +1231,9 @@ void MiningEngine::parallel_worker(uint32_t thread_id,
                                     uint32_t start_nonce,
                                     PoWProcessor* processor) {
     // Odd-only: each bit covers 2 integers, so half the bits cover the same range
-    const uint64_t sieve_size = std::min((1ULL << shift) / 2, 16777216ULL);
+    const uint64_t sieve_cap = intensity_to_sieve_cap(m_gpu_intensity);
+    const uint64_t half_range = (1ULL << shift) / 2;
+    const uint64_t sieve_size = (half_range < sieve_cap) ? half_range : sieve_cap;
 
     CombinedSegmentedSieve combined_sieve(DEFAULT_SIEVE_PRIMES, sieve_size);
     PrimalityTester tester;
@@ -1212,6 +1323,9 @@ void MiningEngine::parallel_worker(uint32_t thread_id,
         }
 
         // Phase 2: Sieve all intervals simultaneously
+        // Determine if GPU is available for Fermat pre-filtering
+        const bool use_gpu = gpu_initialized && (tier != MiningTier::CPU_ONLY);
+
         while (combined_sieve.sieve_next_segment() && !stop_requested) {
             // Phase 3: For each interval, extract candidates and test primality
             for (int k = 0; k < COMBINED_SIEVE_BATCH; k++) {
@@ -1220,7 +1334,133 @@ void MiningEngine::parallel_worker(uint32_t thread_id,
 
                 std::vector<uint64_t> candidates;
                 combined_sieve.get_candidates(k, candidates);
+                if (candidates.empty()) continue;
 
+                // === GPU PATH: Fermat pre-filter on GPU, BPSW confirm on CPU ===
+                if (use_gpu && candidates.size() >= 16) {
+                    // Prepare batch for GPU
+                    CandidateBatch batch;
+                    tester.prepare_batch(batch, states[k].mpz_start, candidates, 320);
+
+                    auto request = std::make_shared<GPURequest>();
+                    request->batch = std::move(batch);
+                    request->results.resize(request->batch.count, 0);
+
+                    // Submit to GPU worker queue
+                    {
+                        std::lock_guard<std::mutex> lock(gpu_queue_mutex);
+                        gpu_request_queue.push(request);
+                    }
+                    gpu_queue_cv.notify_one();
+
+                    // Wait for GPU to finish this batch
+                    {
+                        std::unique_lock<std::mutex> lock(request->mtx);
+                        request->cv.wait(lock, [&]{ return request->done.load(); });
+                    }
+
+                    par_tests.fetch_add(candidates.size(), std::memory_order_relaxed);
+
+                    // Only BPSW-confirm candidates that passed GPU Fermat
+                    for (size_t ci = 0; ci < candidates.size(); ci++) {
+                        if (stop_requested) break;
+                        if (!request->results[ci]) continue;
+
+                        uint64_t offset = candidates[ci];
+                        mpz_add_ui(states[k].mpz_candidate, states[k].mpz_start, offset);
+
+                        // Full BPSW confirmation (consensus-grade)
+                        if (tester.bpsw_test(states[k].mpz_candidate)) {
+                            states[k].primes_found++;
+
+                            if (!states[k].have_first_prime) {
+                                states[k].last_prime_offset = offset;
+                                states[k].have_first_prime = true;
+                            } else {
+                                uint64_t gap = offset - states[k].last_prime_offset;
+
+                                if (gap >= states[k].min_gap) {
+                                    states[k].valid_gaps++;
+                                    mpz_set_ui(states[k].mpz_adder, states[k].last_prime_offset);
+
+                                    PoW pow(states[k].mpz_hash, shift, states[k].mpz_adder,
+                                            target_difficulty, states[k].nonce);
+
+                                    if (pow.valid()) {
+                                        LogPrintf("Mining: VALID PROOF found! nonce=%u gap=%llu offset=%llu\n",
+                                                  states[k].nonce, (unsigned long long)gap,
+                                                  (unsigned long long)states[k].last_prime_offset);
+                                        if (processor) {
+                                            bool continue_mining = processor->process(&pow);
+                                            if (!continue_mining) {
+                                                stop_requested = true;
+                                                goto cleanup;
+                                            }
+                                        }
+                                    }
+                                }
+                                states[k].last_prime_offset = offset;
+                            }
+                        }
+                    }
+                    continue;  // Skip CPU-only paths below
+                }
+
+                // === AVX-512 IFMA PATH: batch Fermat on CPU SIMD, BPSW confirm ===
+                bool use_ifma = avx512_ifma_available() && candidates.size() >= 8;
+                if (use_ifma) {
+                    CandidateBatch ifma_batch;
+                    tester.prepare_batch(ifma_batch, states[k].mpz_start, candidates, 320);
+
+                    std::vector<uint8_t> fermat_results(ifma_batch.count, 0);
+                    avx512_fermat_batch(fermat_results.data(), ifma_batch.candidates.data(),
+                                        ifma_batch.count, ifma_batch.bits);
+                    par_tests.fetch_add(ifma_batch.count, std::memory_order_relaxed);
+
+                    for (size_t ci = 0; ci < candidates.size(); ci++) {
+                        if (stop_requested) break;
+                        if (!fermat_results[ci]) continue;
+
+                        uint64_t offset = candidates[ci];
+                        mpz_add_ui(states[k].mpz_candidate, states[k].mpz_start, offset);
+
+                        if (tester.bpsw_test(states[k].mpz_candidate)) {
+                            states[k].primes_found++;
+
+                            if (!states[k].have_first_prime) {
+                                states[k].last_prime_offset = offset;
+                                states[k].have_first_prime = true;
+                            } else {
+                                uint64_t gap = offset - states[k].last_prime_offset;
+
+                                if (gap >= states[k].min_gap) {
+                                    states[k].valid_gaps++;
+                                    mpz_set_ui(states[k].mpz_adder, states[k].last_prime_offset);
+
+                                    PoW pow(states[k].mpz_hash, shift, states[k].mpz_adder,
+                                            target_difficulty, states[k].nonce);
+
+                                    if (pow.valid()) {
+                                        LogPrintf("Mining: VALID PROOF found! nonce=%u gap=%llu offset=%llu\n",
+                                                  states[k].nonce, (unsigned long long)gap,
+                                                  (unsigned long long)states[k].last_prime_offset);
+                                        if (processor) {
+                                            bool continue_mining = processor->process(&pow);
+                                            if (!continue_mining) {
+                                                stop_requested = true;
+                                                goto cleanup;
+                                            }
+                                        }
+                                    }
+                                }
+                                states[k].last_prime_offset = offset;
+                            }
+                        }
+                    }
+                    continue;  // Skip scalar path
+                }
+
+                // === SCALAR CPU PATH: direct BPSW test (no pre-filter) ===
                 for (uint64_t offset : candidates) {
                     if (stop_requested) break;
 
@@ -1230,6 +1470,8 @@ void MiningEngine::parallel_worker(uint32_t thread_id,
                     if (mpz_gcd_ui(nullptr, states[k].mpz_candidate, PRIMORIAL_23) != 1) {
                         continue;
                     }
+
+                    par_tests.fetch_add(1, std::memory_order_relaxed);
 
                     if (tester.bpsw_test(states[k].mpz_candidate)) {
                         states[k].primes_found++;
@@ -1256,22 +1498,6 @@ void MiningEngine::parallel_worker(uint32_t thread_id,
                                         if (!continue_mining) {
                                             stop_requested = true;
                                             goto cleanup;
-                                        }
-                                    }
-                                } else {
-                                    thread_local int fail_count = 0;
-                                    if (fail_count < 50) {
-                                        fail_count++;
-                                        uint64_t achieved_diff = pow.difficulty();
-                                        uint64_t achieved_gap = pow.gap_len();
-                                        LogPrintf("Mining: Gap >= min_gap but pow.valid() FAILED! nonce=%u mining_gap=%llu pow_gap=%llu achieved=%016llx target=%016llx\n",
-                                                  states[k].nonce, (unsigned long long)gap,
-                                                  (unsigned long long)achieved_gap,
-                                                  (unsigned long long)achieved_diff,
-                                                  (unsigned long long)target_difficulty);
-                                        if (achieved_gap < gap) {
-                                            LogPrintf("Mining: SIEVE BUG - missed prime at offset %llu\n",
-                                                      (unsigned long long)(states[k].last_prime_offset + achieved_gap));
                                         }
                                     }
                                 }
@@ -1311,6 +1537,7 @@ cleanup:
 
 void MiningEngine::request_stop() {
     stop_requested = true;
+    gpu_queue_cv.notify_all();  // Wake GPU thread so it can exit
     if (pipeline) {
         pipeline->stop_mining();
     }
@@ -1319,13 +1546,13 @@ void MiningEngine::request_stop() {
 void MiningEngine::stop() {
     request_stop();
     for (auto& t : mining_threads) {
-        if (t.joinable()) {
-            t.join();
-        }
+        if (t.joinable()) t.join();
     }
     mining_threads.clear();
+    if (gpu_thread.joinable()) gpu_thread.join();
     parallel_mining_active = false;
     stop_requested = false;
+    gpu_initialized = false;
 }
 
 bool MiningEngine::is_mining() const {

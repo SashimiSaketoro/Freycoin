@@ -61,6 +61,19 @@ class PrimalityTester;
 class MiningPipeline;
 
 /**
+ * GPU batch request: submitted by CPU sieve threads, processed by GPU worker.
+ * Each request carries a candidate batch and a result buffer. The submitting
+ * thread blocks on the condition variable until the GPU thread sets done=true.
+ */
+struct GPURequest {
+    CandidateBatch batch;
+    std::vector<uint8_t> results;
+    std::mutex mtx;
+    std::condition_variable cv;
+    std::atomic<bool> done{false};
+};
+
+/**
  * SegmentedSieve: L1 cache-optimized segmented sieve
  *
  * Key features:
@@ -275,6 +288,10 @@ public:
                        uint32_t start_nonce,
                        PoWProcessor* processor);
 
+    /** Set GPU intensity (1-10). Controls sieve range per nonce.
+     *  Higher = more work per nonce, better GPU utilization. Default: 5. */
+    void set_gpu_intensity(int intensity);
+
     /** Stop any ongoing mining operation (blocks until workers finish) */
     void stop();
 
@@ -290,6 +307,7 @@ public:
 private:
     MiningTier tier;
     uint32_t n_threads;
+    int m_gpu_intensity{5};
     char hardware_info[256];
     std::unique_ptr<MiningPipeline> pipeline;
 
@@ -302,6 +320,13 @@ private:
     std::atomic<uint64_t> par_gaps{0};
     std::atomic<uint64_t> par_tests{0};
 
+    // GPU worker infrastructure for mine_parallel()
+    std::thread gpu_thread;
+    std::queue<std::shared_ptr<GPURequest>> gpu_request_queue;
+    std::mutex gpu_queue_mutex;
+    std::condition_variable gpu_queue_cv;
+    bool gpu_initialized{false};
+
     MiningTier detect_tier();
     void parallel_worker(uint32_t thread_id,
                          std::vector<uint8_t> header_template,
@@ -310,6 +335,7 @@ private:
                          uint64_t target_difficulty,
                          uint32_t start_nonce,
                          PoWProcessor* processor);
+    void gpu_worker_func();
 };
 
 #endif // FREYCOIN_POW_MINING_ENGINE_H

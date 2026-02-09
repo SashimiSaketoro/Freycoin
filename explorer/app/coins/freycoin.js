@@ -112,16 +112,27 @@ module.exports = {
 	utxoSetCheckpointsByNetwork: {},
 
 	genesisBlockHashesByNetwork:{
-		"main":	"0000000000000000000000000000000000000000000000000000000000000000",
-		"test":	"bf0bc1c9f3a5dcaa07b498707469f3c53104b015a0034b84bf978ae2c8ea9a69",
+		"main":	"017aad31d0a3986ce744b83be34375dd1211be1053132e7aa6ce7a1e1c57c872",
+		"test":	"0c54acc761b21500aa39f1a6574206e137f6e8e2929133a47832dc76c61b491e",
 		"regtest": "0000000000000000000000000000000000000000000000000000000000000000",
 	},
 	genesisCoinbaseTransactionIdsByNetwork: {
-		"main":	"0000000000000000000000000000000000000000000000000000000000000000",
+		"main":	"87925d0a69a0e00b2aab9512c4771fad6d918d370bf8bab5fd951789b20ddd29",
 		"test":	"3d88cf475c00c0a831fb98c7816aa8ad8dae0edcaca6d012cbb4cef3bc6402d5",
 		"regtest": "0000000000000000000000000000000000000000000000000000000000000000",
 	},
 	genesisCoinbaseTransactionsByNetwork:{
+		"main": {
+			"txid": "87925d0a69a0e00b2aab9512c4771fad6d918d370bf8bab5fd951789b20ddd29",
+			"hash": "87925d0a69a0e00b2aab9512c4771fad6d918d370bf8bab5fd951789b20ddd29",
+			"version": 1,
+			"size": 176,
+			"vsize": 176,
+			"weight": 704,
+			"locktime": 0,
+			"vin": [{"coinbase": "04ffff001d01044a4a6f6e6e69652046726579202831393839e2809332303137292070726f76656420506f572063616e20616476616e63652068756d616e206b6e6f776c65646765", "sequence": 4294967295}],
+			"vout": [{"value": 0, "n": 0, "scriptPubKey": {"asm": "OP_RETURN", "hex": "6a", "type": "nulldata"}}]
+		},
 		"test": {
 			"txid": "3d88cf475c00c0a831fb98c7816aa8ad8dae0edcaca6d012cbb4cef3bc6402d5",
 			"hash": "3d88cf475c00c0a831fb98c7816aa8ad8dae0edcaca6d012cbb4cef3bc6402d5",
@@ -145,9 +156,9 @@ module.exports = {
 					}
 				}
 			],
-			"blockhash": "bf0bc1c9f3a5dcaa07b498707469f3c53104b015a0034b84bf978ae2c8ea9a69",
-			"time": 1770499200,
-			"blocktime": 1770499200
+			"blockhash": "0c54acc761b21500aa39f1a6574206e137f6e8e2929133a47832dc76c61b491e",
+			"time": 1770630206,
+			"blocktime": 1770630206
 		},
 	},
 	genesisBlockStatsByNetwork:{
@@ -155,7 +166,7 @@ module.exports = {
 			"avgfee": 0,
 			"avgfeerate": 0,
 			"avgtxsize": 0,
-			"blockhash": "bf0bc1c9f3a5dcaa07b498707469f3c53104b015a0034b84bf978ae2c8ea9a69",
+			"blockhash": "0c54acc761b21500aa39f1a6574206e137f6e8e2929133a47832dc76c61b491e",
 			"feerate_percentiles": [0, 0, 0, 0, 0],
 			"height": 0,
 			"ins": 0,
@@ -163,7 +174,7 @@ module.exports = {
 			"maxfeerate": 0,
 			"maxtxsize": 0,
 			"medianfee": 0,
-			"mediantime": 1770499200,
+			"mediantime": 1770630206,
 			"mediantxsize": 0,
 			"minfee": 0,
 			"minfeerate": 0,
@@ -173,7 +184,7 @@ module.exports = {
 			"swtotal_size": 0,
 			"swtotal_weight": 0,
 			"swtxs": 0,
-			"time": 1770499200,
+			"time": 1770630206,
 			"total_out": 0,
 			"total_size": 0,
 			"total_weight": 0,
