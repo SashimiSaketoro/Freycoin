@@ -32,8 +32,17 @@ CLAUDE.md
 .claude/
 IMPLEMENTATION_PLAN.md
 
-# Dev scripts with credentials
+# Deployment configs (keep separate from source)
+deploy/
+
+# Internal dev scripts and tools
 check_merit.ps1
+freycoin-testnet.bat
+tools/embed_ptx.py
+tools/validate_chain.py
+
+# Draft documents
+ANN_THREAD.md
 
 # Python version
 .python-version
