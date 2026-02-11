@@ -15,6 +15,7 @@
 #include <pow/pow_common.h>
 #include <pow/pow_utils.h>
 #include <cstdint>
+#include <memory>
 #include <string>
 #include <vector>
 #include <gmp.h>
@@ -134,7 +135,7 @@ private:
     mpz_t mpz_adder;          // Adder value
     uint64_t target_difficulty;  // Target difficulty
 
-    PoWUtils* utils;          // Utility functions
+    std::unique_ptr<PoWUtils> utils;  // Utility functions (RAII-managed)
 
     /**
      * Calculate start and end primes for this PoW.

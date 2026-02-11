@@ -18,6 +18,7 @@
 #include <windows.h>
 #else
 #include <sys/stat.h>
+#include <sys/wait.h>
 #include <unistd.h>
 #endif
 
@@ -53,13 +54,151 @@ std::string ShellEscape(const std::string& arg)
 void runCommand(const std::string& strCommand)
 {
     if (strCommand.empty()) return;
-#ifndef WIN32
-    int nErr = ::system(strCommand.c_str());
+#ifdef WIN32
+    // SECURITY: Use CreateProcessW instead of _wsystem() to avoid shell
+    // metacharacter injection via cmd.exe.  Analogous to the POSIX
+    // fork+execvp approach below.
+    //
+    // Tokenize the command, then rebuild a properly-quoted command line
+    // for CreateProcessW (which does NOT invoke cmd.exe).
+    {
+        std::vector<std::string> args;
+        const char* p = strCommand.c_str();
+        while (*p) {
+            while (*p == ' ' || *p == '\t') ++p;
+            if (!*p) break;
+            std::string arg;
+            if (*p == '\'') {
+                ++p;
+                while (*p && *p != '\'') arg += *p++;
+                if (*p == '\'') ++p;
+            } else if (*p == '"') {
+                ++p;
+                while (*p && *p != '"') arg += *p++;
+                if (*p == '"') ++p;
+            } else {
+                while (*p && *p != ' ' && *p != '\t') arg += *p++;
+            }
+            if (!arg.empty()) args.push_back(std::move(arg));
+        }
+        if (args.empty()) return;
+
+        // Rebuild a safe command line: quote every argument individually
+        // using Windows quoting rules (double-quotes, backslash-escape).
+        std::wstring cmdline;
+        std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t> conv;
+        for (size_t i = 0; i < args.size(); i++) {
+            if (i > 0) cmdline += L' ';
+            std::wstring warg = conv.from_bytes(args[i]);
+            cmdline += L'"';
+            for (auto ch : warg) {
+                if (ch == L'"') cmdline += L'\\';
+                cmdline += ch;
+            }
+            cmdline += L'"';
+        }
+
+        STARTUPINFOW si{};
+        si.cb = sizeof(si);
+        PROCESS_INFORMATION pi{};
+
+        // CreateProcessW needs a mutable command line buffer
+        std::vector<wchar_t> cmd_buf(cmdline.begin(), cmdline.end());
+        cmd_buf.push_back(L'\0');
+
+        BOOL ok = CreateProcessW(
+            nullptr,       // lpApplicationName — derive from cmdline
+            cmd_buf.data(),
+            nullptr,       // lpProcessAttributes
+            nullptr,       // lpThreadAttributes
+            FALSE,         // bInheritHandles
+            0,             // dwCreationFlags
+            nullptr,       // lpEnvironment
+            nullptr,       // lpCurrentDirectory
+            &si,
+            &pi);
+
+        if (!ok) {
+            LogPrintf("runCommand error: CreateProcessW failed (%d) for: %s\n",
+                      GetLastError(), strCommand);
+        } else {
+            WaitForSingleObject(pi.hProcess, INFINITE);
+            DWORD exitCode = 0;
+            GetExitCodeProcess(pi.hProcess, &exitCode);
+            if (exitCode != 0) {
+                LogPrintf("runCommand error: %s exited with code %lu\n",
+                          strCommand, exitCode);
+            }
+            CloseHandle(pi.hProcess);
+            CloseHandle(pi.hThread);
+        }
+    }
 #else
-    int nErr = ::_wsystem(std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>,wchar_t>().from_bytes(strCommand).c_str());
+    // SECURITY: Use fork+execvp instead of system() to avoid shell metacharacter
+    // injection. The command is split into argv[] and executed directly without
+    // invoking /bin/sh. This is defense-in-depth — callers already sanitize input.
+    //
+    // Tokenization: split on whitespace, respecting single-quoted strings
+    // (alertnotify wraps the %s substitution in single quotes).
+    std::vector<std::string> args;
+    {
+        const char* p = strCommand.c_str();
+        while (*p) {
+            // Skip whitespace
+            while (*p == ' ' || *p == '\t') ++p;
+            if (!*p) break;
+
+            std::string arg;
+            if (*p == '\'') {
+                // Single-quoted string: take everything until closing quote
+                ++p;
+                while (*p && *p != '\'') {
+                    arg += *p++;
+                }
+                if (*p == '\'') ++p;
+            } else {
+                // Unquoted token: take until whitespace
+                while (*p && *p != ' ' && *p != '\t') {
+                    arg += *p++;
+                }
+            }
+            if (!arg.empty()) {
+                args.push_back(std::move(arg));
+            }
+        }
+    }
+
+    if (args.empty()) return;
+
+    // Build argv for execvp
+    std::vector<char*> argv;
+    for (auto& a : args) {
+        argv.push_back(a.data());
+    }
+    argv.push_back(nullptr);
+
+    pid_t pid = fork();
+    if (pid == -1) {
+        LogPrintf("runCommand error: fork() failed for command: %s\n", strCommand);
+        return;
+    }
+
+    if (pid == 0) {
+        // Child process
+        execvp(argv[0], argv.data());
+        // execvp only returns on error
+        _exit(127);
+    }
+
+    // Parent: wait for child
+    int status = 0;
+    waitpid(pid, &status, 0);
+    if (WIFEXITED(status) && WEXITSTATUS(status) != 0) {
+        LogPrintf("runCommand error: %s exited with code %d\n", strCommand, WEXITSTATUS(status));
+    } else if (WIFSIGNALED(status)) {
+        LogPrintf("runCommand error: %s killed by signal %d\n", strCommand, WTERMSIG(status));
+    }
 #endif
-    if (nErr)
-        LogPrintf("runCommand error: system(%s) returned %d\n", strCommand, nErr);
 }
 #endif
 

@@ -19,6 +19,7 @@
 #include <pow/pow_processor.h>
 #include <gpu/opencl_loader.h>
 #include <gpu/opencl_fermat.h>
+#include <gpu/gpu_fermat.h>
 
 #include <interfaces/mining.h>
 #include <node/context.h>
@@ -40,8 +41,10 @@
 #include <windows.h>
 #else
 #include <unistd.h>
+#include <dirent.h>
 #include <fstream>
 #include <sstream>
+#include <string>
 #endif
 
 // GPU detection via dynamic loading (no SDK needed at build time)
@@ -261,68 +264,75 @@ void MiningPage::detectGPU()
     }
 
 #else
-    // === Linux: NVIDIA via nvidia-smi ===
-    FILE *fp = popen("nvidia-smi --query-gpu=name,memory.total --format=csv,noheader,nounits 2>/dev/null", "r");
-    if (fp) {
-        char buffer[256];
-        while (fgets(buffer, sizeof(buffer), fp)) {
-            QString line = QString::fromUtf8(buffer).trimmed();
-            if (!line.isEmpty()) {
-                GPUDevice dev;
-                dev.id = deviceIdx++;
-                QStringList parts = line.split(',');
-                dev.name = parts[0].trimmed().toStdString();
-                if (parts.size() > 1) {
-                    dev.memory = parts[1].trimmed().toLongLong() * 1024 * 1024;
-                }
-                dev.computeCapability = 0;
-                dev.available = true;
-                gpuDevices.push_back(dev);
-                logMessage(QString("Found NVIDIA GPU: %1").arg(QString::fromStdString(dev.name)));
-            }
-        }
-        pclose(fp);
-    }
-
-    // === Linux: AMD via rocm-smi or /sys/class/drm ===
-    fp = popen("rocm-smi --showproductname --csv 2>/dev/null | tail -n +2", "r");
-    if (fp) {
-        char buffer[256];
-        while (fgets(buffer, sizeof(buffer), fp)) {
-            QString line = QString::fromUtf8(buffer).trimmed();
-            if (!line.isEmpty() && !line.contains("device")) {
-                QStringList parts = line.split(',');
-                if (parts.size() >= 2) {
+    // === Linux: NVIDIA GPU detection via /proc sysfs (no shell invocation) ===
+    // SECURITY: Previously used popen("nvidia-smi ...") which is vulnerable to
+    // PATH manipulation. Now reads /proc directly — no shell involved.
+    {
+        DIR* nvidiaDir = opendir("/proc/driver/nvidia/gpus");
+        if (nvidiaDir) {
+            struct dirent* entry;
+            while ((entry = readdir(nvidiaDir)) != nullptr) {
+                if (entry->d_name[0] == '.') continue;
+                std::string infoPath = std::string("/proc/driver/nvidia/gpus/") + entry->d_name + "/information";
+                std::ifstream infoFile(infoPath);
+                if (infoFile.is_open()) {
+                    std::string gpuName = "NVIDIA GPU";
+                    std::string line;
+                    while (std::getline(infoFile, line)) {
+                        // Format: "Model:       GeForce GTX 1080"
+                        if (line.find("Model:") != std::string::npos) {
+                            size_t colonPos = line.find(':');
+                            if (colonPos != std::string::npos) {
+                                gpuName = line.substr(colonPos + 1);
+                                // Trim leading whitespace
+                                size_t start = gpuName.find_first_not_of(" \t");
+                                if (start != std::string::npos) gpuName = gpuName.substr(start);
+                            }
+                        }
+                    }
                     GPUDevice dev;
                     dev.id = deviceIdx++;
-                    dev.name = parts[1].trimmed().toStdString();
-                    dev.memory = 0;
+                    dev.name = gpuName;
+                    dev.memory = 0;  // sysfs doesn't expose memory easily; OpenCL will fill it
                     dev.computeCapability = 0;
                     dev.available = true;
                     gpuDevices.push_back(dev);
-                    logMessage(QString("Found AMD GPU: %1").arg(QString::fromStdString(dev.name)));
+                    logMessage(QString("Found NVIDIA GPU: %1").arg(QString::fromStdString(dev.name)));
                 }
             }
+            closedir(nvidiaDir);
         }
-        pclose(fp);
     }
 
-    // Fallback: /sys/class/drm for AMD cards
-    if (gpuDevices.empty() || std::none_of(gpuDevices.begin(), gpuDevices.end(),
-            [](const GPUDevice& d) { return d.name.find("AMD") != std::string::npos ||
-                                           d.name.find("Radeon") != std::string::npos; })) {
-        fp = popen("ls -d /sys/class/drm/card*/device/vendor 2>/dev/null | xargs cat 2>/dev/null", "r");
-        if (fp) {
-            char buffer[64];
-            int cardIdx = 0;
-            while (fgets(buffer, sizeof(buffer), fp)) {
-                QString vendor = QString::fromUtf8(buffer).trimmed();
+    // === Linux: AMD GPU detection via /sys/class/drm sysfs (no shell invocation) ===
+    // SECURITY: Previously used popen("rocm-smi ...") and popen("ls ... | xargs cat").
+    // Now reads sysfs vendor/product_name files directly.
+    {
+        DIR* drmDir = opendir("/sys/class/drm");
+        if (drmDir) {
+            struct dirent* entry;
+            while ((entry = readdir(drmDir)) != nullptr) {
+                std::string name(entry->d_name);
+                // Match card0, card1, etc. (skip renderD* and other entries)
+                if (name.find("card") != 0 || name.find('-') != std::string::npos) continue;
+
+                std::string vendorPath = "/sys/class/drm/" + name + "/device/vendor";
+                std::ifstream vendorFile(vendorPath);
+                if (!vendorFile.is_open()) continue;
+
+                std::string vendor;
+                std::getline(vendorFile, vendor);
+                // Trim whitespace
+                while (!vendor.empty() && (vendor.back() == '\n' || vendor.back() == ' ')) vendor.pop_back();
+
+                // 0x10de = NVIDIA (already detected above), 0x1002 = AMD
                 if (vendor == "0x1002") {
-                    QString cardPath = QString("/sys/class/drm/card%1/device").arg(cardIdx);
-                    std::ifstream nameFile((cardPath + "/product_name").toStdString());
+                    std::string productPath = "/sys/class/drm/" + name + "/device/product_name";
+                    std::ifstream productFile(productPath);
                     std::string cardName = "AMD Radeon GPU";
-                    if (nameFile.is_open()) {
-                        std::getline(nameFile, cardName);
+                    if (productFile.is_open()) {
+                        std::getline(productFile, cardName);
+                        while (!cardName.empty() && (cardName.back() == '\n' || cardName.back() == ' ')) cardName.pop_back();
                     }
                     GPUDevice dev;
                     dev.id = deviceIdx++;
@@ -333,9 +343,8 @@ void MiningPage::detectGPU()
                     gpuDevices.push_back(dev);
                     logMessage(QString("Found AMD GPU: %1").arg(QString::fromStdString(dev.name)));
                 }
-                cardIdx++;
             }
-            pclose(fp);
+            closedir(drmDir);
         }
     }
 #endif
@@ -347,32 +356,35 @@ void MiningPage::detectGPU()
         bool gpuMiningAvailable = false;
         QString backendInfo;
 
-        // Try OpenCL (works with any GPU vendor: NVIDIA, AMD, Intel)
-        if (opencl_load() == 0) {
-            int oclDevices = opencl_get_device_count();
-            if (oclDevices > 0) {
-                gpuMiningAvailable = true;
-                // Identify vendor from detected GPUs for clearer display
-                bool hasNvidia = false, hasAmd = false;
-                for (const auto& dev : gpuDevices) {
-                    if (dev.name.find("NVIDIA") != std::string::npos ||
-                        dev.name.find("GeForce") != std::string::npos ||
-                        dev.name.find("RTX") != std::string::npos)
-                        hasNvidia = true;
-                    if (dev.name.find("AMD") != std::string::npos ||
-                        dev.name.find("Radeon") != std::string::npos)
-                        hasAmd = true;
-                }
-                QString vendor;
-                if (hasNvidia && hasAmd) vendor = "NVIDIA+AMD";
-                else if (hasNvidia) vendor = "NVIDIA";
-                else if (hasAmd) vendor = "AMD";
-                else vendor = "";
+        // Try GPU backends (Metal on Apple Silicon, OpenCL elsewhere)
+        int gpuDeviceCount = gpu_get_device_count();
+        if (gpuDeviceCount > 0) {
+            gpuMiningAvailable = true;
+            // Identify vendor from detected GPUs for clearer display
+            bool hasNvidia = false, hasAmd = false, hasApple = false;
+            for (const auto& dev : gpuDevices) {
+                if (dev.name.find("NVIDIA") != std::string::npos ||
+                    dev.name.find("GeForce") != std::string::npos ||
+                    dev.name.find("RTX") != std::string::npos)
+                    hasNvidia = true;
+                if (dev.name.find("AMD") != std::string::npos ||
+                    dev.name.find("Radeon") != std::string::npos)
+                    hasAmd = true;
+                if (dev.name.find("Apple") != std::string::npos)
+                    hasApple = true;
+            }
+            QString vendor;
+            if (hasApple) vendor = "Apple";
+            else if (hasNvidia && hasAmd) vendor = "NVIDIA+AMD";
+            else if (hasNvidia) vendor = "NVIDIA";
+            else if (hasAmd) vendor = "AMD";
+            else vendor = "";
 
-                QString vendorLabel = vendor.isEmpty() ? QString() : (QString(" ") + vendor);
-                backendInfo = QString("OpenCL%1 (%2 device%3)")
-                    .arg(vendorLabel)
-                    .arg(oclDevices).arg(oclDevices > 1 ? "s" : "");
+            QString vendorLabel = vendor.isEmpty() ? QString() : (QString(" ") + vendor);
+            backendInfo = QString("%1%2 (%3 device%4)")
+                .arg(QString::fromUtf8(gpu_get_backend_name()))
+                .arg(vendorLabel)
+                .arg(gpuDeviceCount).arg(gpuDeviceCount > 1 ? "s" : "");
             } else {
                 backendInfo = "OpenCL loaded, no GPU devices found";
             }

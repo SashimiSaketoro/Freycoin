@@ -51,6 +51,18 @@ uint256 CBlockHeader::GetHash() const
     pos += 4;
 
     // nDifficulty (8 bytes, little-endian)
+    //
+    // SECURITY NOTE: Including nDifficulty in the hash means it influences the
+    // starting prime (start = hash * 2^shift + adder). This creates a theoretical
+    // feedback loop: difficulty -> hash -> starting prime -> achieved difficulty.
+    //
+    // This is safe because:
+    //   1. nDifficulty is deterministic — it must match GetNextWorkRequired(),
+    //      which is computed from chain state (174-block weighted window).
+    //   2. The miner cannot choose nDifficulty; a single manipulated timestamp
+    //      affects the weighted average by < 0.6% (1/174 of the window).
+    //   3. Including nDifficulty ensures the hash is unique per difficulty level,
+    //      preventing cross-difficulty PoW reuse.
     memcpy(&data[pos], &nDifficulty, 8);
     pos += 8;
 

@@ -7,8 +7,12 @@
  *
  * In memory of Jonnie Frey (1989-2017), creator of Gapcoin.
  *
- * Uses dynamic OpenCL loading — no SDK required at build time.
+ * Uses dynamic OpenCL loading -- no SDK required at build time.
  * OpenCL.dll / libOpenCL.so is loaded at runtime if available.
+ *
+ * Optimizations:
+ * - Persistent buffer reuse across batches (avoid per-batch alloc/free)
+ * - CL_MEM_USE_HOST_PTR on unified memory platforms (zero-copy)
  */
 
 #include "opencl_fermat.h"
@@ -30,6 +34,15 @@ static int g_initialized = 0;
 static char g_device_name[256] = {0};
 static size_t g_device_memory = 0;
 
+/* Unified memory detection */
+static int g_unified_memory = 0;
+
+/* Persistent buffer state */
+static cl_mem g_primes_buf = nullptr;
+static cl_mem g_results_buf = nullptr;
+static size_t g_primes_buf_size = 0;
+static size_t g_results_buf_size = 0;
+
 /* Embedded kernel source (generated from fermat.cl) */
 static const char* kernel_source =
 #include "fermat_cl_source.h"
@@ -50,11 +63,80 @@ static char* load_kernel_file(const char* filename, size_t* size) {
         return nullptr;
     }
 
-    fread(source, 1, *size, f);
-    source[*size] = '\0';
+    size_t nread = fread(source, 1, *size, f);
     fclose(f);
+    if (nread != (size_t)*size) {
+        /* Short read: kernel source would be truncated/uninitialized */
+        free(source);
+        return nullptr;
+    }
+    source[*size] = '\0';
 
     return source;
+}
+
+/* Release persistent buffers */
+static void release_persistent_buffers(void) {
+    if (g_primes_buf) {
+        ocl_clReleaseMemObject(g_primes_buf);
+        g_primes_buf = nullptr;
+        g_primes_buf_size = 0;
+    }
+    if (g_results_buf) {
+        ocl_clReleaseMemObject(g_results_buf);
+        g_results_buf = nullptr;
+        g_results_buf_size = 0;
+    }
+}
+
+/* Ensure persistent buffers are large enough for the given batch */
+static int ensure_buffers(size_t primes_size, size_t results_size) {
+    cl_int err;
+
+    if (g_primes_buf && g_primes_buf_size >= primes_size &&
+        g_results_buf && g_results_buf_size >= results_size) {
+        return 0;  /* Existing buffers are large enough */
+    }
+
+    /* Release old buffers */
+    release_persistent_buffers();
+
+    /* Allocate with 25% headroom to reduce reallocations */
+    size_t alloc_primes = primes_size + (primes_size / 4);
+    size_t alloc_results = results_size + (results_size / 4);
+    if (alloc_primes < 16384) alloc_primes = 16384;
+    if (alloc_results < 4096) alloc_results = 4096;
+
+    if (g_unified_memory) {
+        /* Unified memory: use CL_MEM_ALLOC_HOST_PTR for optimal zero-copy.
+         * We'll use clEnqueueWriteBuffer to update contents, but the driver
+         * can map host memory directly without PCIe transfer. */
+        g_primes_buf = ocl_clCreateBuffer(g_context,
+                                           CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR,
+                                           alloc_primes, nullptr, &err);
+    } else {
+        g_primes_buf = ocl_clCreateBuffer(g_context, CL_MEM_READ_ONLY,
+                                           alloc_primes, nullptr, &err);
+    }
+    if (err != CL_SUCCESS) return -1;
+
+    if (g_unified_memory) {
+        g_results_buf = ocl_clCreateBuffer(g_context,
+                                            CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR,
+                                            alloc_results, nullptr, &err);
+    } else {
+        g_results_buf = ocl_clCreateBuffer(g_context, CL_MEM_WRITE_ONLY,
+                                            alloc_results, nullptr, &err);
+    }
+    if (err != CL_SUCCESS) {
+        ocl_clReleaseMemObject(g_primes_buf);
+        g_primes_buf = nullptr;
+        return -1;
+    }
+
+    g_primes_buf_size = alloc_primes;
+    g_results_buf_size = alloc_results;
+    return 0;
 }
 
 int opencl_fermat_init(int device_id) {
@@ -98,6 +180,12 @@ int opencl_fermat_init(int device_id) {
     /* Get device info */
     ocl_clGetDeviceInfo(g_device, CL_DEVICE_NAME, sizeof(g_device_name), g_device_name, nullptr);
     ocl_clGetDeviceInfo(g_device, CL_DEVICE_GLOBAL_MEM_SIZE, sizeof(g_device_memory), &g_device_memory, nullptr);
+
+    /* Detect unified memory (Apple Silicon, integrated GPUs, etc.) */
+    cl_bool unified = CL_FALSE;
+    err = ocl_clGetDeviceInfo(g_device, CL_DEVICE_HOST_UNIFIED_MEMORY,
+                               sizeof(unified), &unified, nullptr);
+    g_unified_memory = (err == CL_SUCCESS && unified == CL_TRUE) ? 1 : 0;
 
     /* Create context */
     g_context = ocl_clCreateContext(nullptr, 1, &g_device, nullptr, nullptr, &err);
@@ -172,6 +260,9 @@ int opencl_fermat_init(int device_id) {
 void opencl_fermat_cleanup(void) {
     if (!g_initialized) return;
 
+    /* Release persistent buffers */
+    release_persistent_buffers();
+
     if (g_kernel_320) ocl_clReleaseKernel(g_kernel_320);
     if (g_kernel_352) ocl_clReleaseKernel(g_kernel_352);
     if (g_program) ocl_clReleaseProgram(g_program);
@@ -184,6 +275,7 @@ void opencl_fermat_cleanup(void) {
     g_queue = nullptr;
     g_context = nullptr;
     g_initialized = 0;
+    g_unified_memory = 0;
 }
 
 int opencl_fermat_batch(uint8_t *h_results, const uint32_t *h_primes,
@@ -193,50 +285,41 @@ int opencl_fermat_batch(uint8_t *h_results, const uint32_t *h_primes,
 
     cl_int err;
     int limbs = (bits <= 320) ? 10 : 11;
-    size_t primes_size = count * limbs * sizeof(uint32_t);
-    size_t results_size = count * sizeof(uint8_t);
+    size_t primes_size = (size_t)count * limbs * sizeof(uint32_t);
+    size_t results_size = (size_t)count * sizeof(uint8_t);
 
-    /* Create buffers */
-    cl_mem d_primes = ocl_clCreateBuffer(g_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-                                         primes_size, (void*)h_primes, &err);
-    if (err != CL_SUCCESS) return -1;
-
-    cl_mem d_results = ocl_clCreateBuffer(g_context, CL_MEM_WRITE_ONLY,
-                                          results_size, nullptr, &err);
-    if (err != CL_SUCCESS) {
-        ocl_clReleaseMemObject(d_primes);
+    /* Ensure persistent results buffer is large enough */
+    if (ensure_buffers(primes_size, results_size) != 0) {
         return -1;
     }
+
+    /* Write primes data into the persistent g_primes_buf.
+     * SECURITY: Using the persistent driver-allocated buffer instead of
+     * per-batch CL_MEM_USE_HOST_PTR avoids:
+     *   (a) alignment violations (std::vector data may not meet CL_DEVICE_MEM_BASE_ADDR_ALIGN)
+     *   (b) per-batch buffer create/destroy overhead
+     *   (c) the wasted g_primes_buf allocation that was never used before */
+    err = ocl_clEnqueueWriteBuffer(g_queue, g_primes_buf, CL_TRUE, 0,
+                                    primes_size, h_primes, 0, nullptr, nullptr);
+    if (err != CL_SUCCESS) return -1;
 
     /* Select kernel */
     cl_kernel kernel = (bits <= 320) ? g_kernel_320 : g_kernel_352;
 
     /* Set kernel arguments */
-    ocl_clSetKernelArg(kernel, 0, sizeof(cl_mem), &d_results);
-    ocl_clSetKernelArg(kernel, 1, sizeof(cl_mem), &d_primes);
+    ocl_clSetKernelArg(kernel, 0, sizeof(cl_mem), &g_results_buf);
+    ocl_clSetKernelArg(kernel, 1, sizeof(cl_mem), &g_primes_buf);
     ocl_clSetKernelArg(kernel, 2, sizeof(uint32_t), &count);
 
     /* Execute kernel */
     size_t global_size = ((count + 63) / 64) * 64;
     size_t local_size = 64;
     err = ocl_clEnqueueNDRangeKernel(g_queue, kernel, 1, nullptr, &global_size, &local_size, 0, nullptr, nullptr);
-    if (err != CL_SUCCESS) {
-        ocl_clReleaseMemObject(d_results);
-        ocl_clReleaseMemObject(d_primes);
-        return -1;
-    }
+    if (err != CL_SUCCESS) return -1;
 
-    /* Read results */
-    err = ocl_clEnqueueReadBuffer(g_queue, d_results, CL_TRUE, 0, results_size, h_results, 0, nullptr, nullptr);
-    if (err != CL_SUCCESS) {
-        ocl_clReleaseMemObject(d_results);
-        ocl_clReleaseMemObject(d_primes);
-        return -1;
-    }
-
-    /* Cleanup */
-    ocl_clReleaseMemObject(d_results);
-    ocl_clReleaseMemObject(d_primes);
+    /* Read results from the persistent results buffer */
+    err = ocl_clEnqueueReadBuffer(g_queue, g_results_buf, CL_TRUE, 0, results_size, h_results, 0, nullptr, nullptr);
+    if (err != CL_SUCCESS) return -1;
 
     return 0;
 }

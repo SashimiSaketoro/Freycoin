@@ -23,11 +23,13 @@
 
 #include <cstring>
 
+#if defined(__x86_64__) || defined(__i386__) || defined(_M_X64) || defined(_M_IX86)
 #ifdef _WIN32
 #include <intrin.h>
 #else
 #include <cpuid.h>
 #endif
+#endif /* x86 */
 
 /* Number of 52-bit limbs for numbers up to 364 bits (covers 320 and 352) */
 #define NLIMBS 7
@@ -45,6 +47,7 @@ static bool g_ifma_checked = false;
 bool avx512_ifma_available() {
     if (g_ifma_checked) return g_ifma_detected;
 
+#if defined(__x86_64__) || defined(__i386__) || defined(_M_X64) || defined(_M_IX86)
 #ifdef _WIN32
     int cpuinfo[4] = {0};
     __cpuidex(cpuinfo, 7, 0);
@@ -61,6 +64,10 @@ bool avx512_ifma_available() {
         bool has_ifma = (ecx >> 21) & 1;
         g_ifma_detected = has_avx512f && has_ifma;
     }
+#endif
+#else
+    /* Non-x86 (ARM, etc.): AVX-512 IFMA is never available */
+    g_ifma_detected = false;
 #endif
 
     g_ifma_checked = true;

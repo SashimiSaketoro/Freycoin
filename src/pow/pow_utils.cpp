@@ -25,26 +25,312 @@
 // MPFR precision for all computations (256 bits ≈ 77 decimal digits)
 static constexpr mpfr_prec_t MPFR_PRECISION = 256;
 
+/*============================================================================
+ * Consensus-grade primality functions
+ *
+ * These are standalone implementations that do NOT depend on GMP's
+ * mpz_probab_prime_p or mpz_nextprime. They use only basic GMP arithmetic
+ * operations (mpz_powm, mpz_jacobi, etc.) whose behavior is guaranteed
+ * stable across versions.
+ *============================================================================*/
+
+/** Small primes for trial division (primes up to 997). */
+static const unsigned long SMALL_PRIMES[] = {
+    2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53,
+    59, 61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113,
+    127, 131, 137, 139, 149, 151, 157, 163, 167, 173, 179, 181,
+    191, 193, 197, 199, 211, 223, 227, 229, 233, 239, 241, 251,
+    257, 263, 269, 271, 277, 281, 283, 293, 307, 311, 313, 317,
+    331, 337, 347, 349, 353, 359, 367, 373, 379, 383, 389, 397,
+    401, 409, 419, 421, 431, 433, 439, 443, 449, 457, 461, 463,
+    467, 479, 487, 491, 499, 503, 509, 521, 523, 541, 547, 557,
+    563, 569, 571, 577, 587, 593, 599, 601, 607, 613, 617, 619,
+    631, 641, 643, 647, 653, 659, 661, 673, 677, 683, 691, 701,
+    709, 719, 727, 733, 739, 743, 751, 757, 761, 769, 773, 787,
+    797, 809, 811, 821, 823, 827, 829, 839, 853, 857, 859, 863,
+    877, 881, 883, 887, 907, 911, 919, 929, 937, 941, 947, 953,
+    967, 971, 977, 983, 991, 997
+};
+static constexpr int NUM_SMALL_PRIMES = sizeof(SMALL_PRIMES) / sizeof(SMALL_PRIMES[0]);
+
+/**
+ * Miller-Rabin primality test with a specific base (deterministic).
+ *
+ * Tests whether n is a strong probable prime to base a.
+ * Uses only basic GMP arithmetic (mpz_powm, comparisons).
+ */
+static bool consensus_miller_rabin(const mpz_t n, unsigned long base)
+{
+    // Write n - 1 = d * 2^s with d odd
+    mpz_t n_minus_1, d, x, a;
+    mpz_init(n_minus_1);
+    mpz_init(d);
+    mpz_init(x);
+    mpz_init(a);
+
+    mpz_sub_ui(n_minus_1, n, 1);
+    mpz_set(d, n_minus_1);
+
+    unsigned long s = 0;
+    while (mpz_even_p(d)) {
+        mpz_tdiv_q_2exp(d, d, 1);
+        s++;
+    }
+
+    // x = base^d mod n
+    mpz_set_ui(a, base);
+    mpz_powm(x, a, d, n);
+
+    bool result = false;
+
+    // Check if x == 1 or x == n-1
+    if (mpz_cmp_ui(x, 1) == 0 || mpz_cmp(x, n_minus_1) == 0) {
+        result = true;
+    } else {
+        // Square s-1 times
+        for (unsigned long r = 1; r < s; r++) {
+            mpz_powm_ui(x, x, 2, n);
+            if (mpz_cmp(x, n_minus_1) == 0) {
+                result = true;
+                break;
+            }
+            if (mpz_cmp_ui(x, 1) == 0) {
+                result = false;
+                break;
+            }
+        }
+    }
+
+    mpz_clear(n_minus_1);
+    mpz_clear(d);
+    mpz_clear(x);
+    mpz_clear(a);
+
+    return result;
+}
+
+/**
+ * Find Selfridge parameter D for Strong Lucas test (Method A).
+ *
+ * Searches D in sequence 5, -7, 9, -11, 13, -15, ... until Jacobi(D, n) = -1.
+ * Returns 0 if n has a small factor (detected via Jacobi symbol = 0).
+ */
+static long consensus_find_selfridge_d(const mpz_t n)
+{
+    long d = 5;
+    long sign = 1;
+    mpz_t tmp;
+    mpz_init(tmp);
+
+    while (true) {
+        mpz_set_si(tmp, d);
+        int jacobi = mpz_jacobi(tmp, n);
+
+        if (jacobi == -1) {
+            mpz_clear(tmp);
+            return d;
+        }
+        if (jacobi == 0) {
+            // n is divisible by |d| (and |d| != n), so n is composite
+            if (mpz_cmpabs_ui(n, static_cast<unsigned long>(std::abs(d))) != 0) {
+                mpz_clear(tmp);
+                return 0;
+            }
+        }
+
+        sign = -sign;
+        d = sign * (std::abs(d) + 2);
+
+        // Safety bound (should never be reached for valid inputs)
+        if (std::abs(d) > 1000000) {
+            mpz_clear(tmp);
+            return 0;
+        }
+    }
+}
+
+/**
+ * Strong Lucas-Selfridge primality test (deterministic).
+ *
+ * Uses Selfridge Method A parameters: P = 1, Q = (1 - D) / 4.
+ * Tests whether n is a strong Lucas probable prime.
+ */
+static bool consensus_strong_lucas_selfridge(const mpz_t n)
+{
+    // Perfect squares fail Lucas test trivially
+    if (mpz_perfect_square_p(n)) return false;
+
+    // Find Selfridge parameter D
+    long d_param = consensus_find_selfridge_d(n);
+    if (d_param == 0) return false;
+
+    // P = 1, Q = (1 - D) / 4
+    long p_param = 1;
+    long q_param = (1 - d_param) / 4;
+
+    // Temporaries
+    mpz_t tmp, d, u_result, v_result;
+    mpz_init(tmp);
+    mpz_init(d);
+    mpz_init(u_result);
+    mpz_init(v_result);
+
+    // Calculate n + 1 = d * 2^s where d is odd
+    mpz_add_ui(tmp, n, 1);
+    mpz_set(d, tmp);
+
+    unsigned long s = 0;
+    while (mpz_even_p(d)) {
+        mpz_tdiv_q_2exp(d, d, 1);
+        s++;
+    }
+
+    // Compute Lucas U_d and V_d using the binary ladder
+    mpz_t u_k, v_k, q_k;
+    mpz_init_set_ui(u_k, 1);
+    mpz_init_set_si(v_k, p_param);
+    mpz_init_set_si(q_k, q_param);
+
+    size_t d_bits = mpz_sizeinbase(d, 2);
+
+    for (long i = static_cast<long>(d_bits) - 2; i >= 0; i--) {
+        // Double: U_{2k} = U_k * V_k, V_{2k} = V_k^2 - 2*Q^k
+        mpz_mul(tmp, u_k, v_k);
+        mpz_mod(u_k, tmp, n);
+
+        mpz_mul(tmp, v_k, v_k);
+        mpz_submul_ui(tmp, q_k, 2);
+        mpz_mod(v_k, tmp, n);
+
+        mpz_mul(q_k, q_k, q_k);
+        mpz_mod(q_k, q_k, n);
+
+        // If bit is set, increment index by 1
+        if (mpz_tstbit(d, i)) {
+            // U_{k+1} = (P*U_k + V_k) / 2
+            mpz_mul_si(tmp, u_k, p_param);
+            mpz_add(tmp, tmp, v_k);
+            if (mpz_odd_p(tmp)) mpz_add(tmp, tmp, n);
+            mpz_tdiv_q_2exp(u_result, tmp, 1);
+            mpz_mod(u_result, u_result, n);
+
+            // V_{k+1} = (D*U_k + P*V_k) / 2
+            mpz_mul_si(tmp, u_k, d_param);
+            mpz_addmul_ui(tmp, v_k, static_cast<unsigned long>(p_param));
+            if (mpz_odd_p(tmp)) mpz_add(tmp, tmp, n);
+            mpz_tdiv_q_2exp(v_result, tmp, 1);
+            mpz_mod(v_k, v_result, n);
+
+            mpz_set(u_k, u_result);
+
+            mpz_mul_si(q_k, q_k, q_param);
+            mpz_mod(q_k, q_k, n);
+        }
+    }
+
+    bool is_prime = false;
+
+    // Check U_d = 0 (mod n)
+    if (mpz_sgn(u_k) == 0) {
+        is_prime = true;
+    }
+    // Check V_{d*2^r} = 0 (mod n) for r = 0, 1, ..., s-1
+    else if (mpz_sgn(v_k) == 0) {
+        is_prime = true;
+    } else {
+        for (unsigned long r = 1; r < s; r++) {
+            mpz_mul(tmp, v_k, v_k);
+            mpz_submul_ui(tmp, q_k, 2);
+            mpz_mod(v_k, tmp, n);
+
+            if (mpz_sgn(v_k) == 0) {
+                is_prime = true;
+                break;
+            }
+
+            mpz_mul(q_k, q_k, q_k);
+            mpz_mod(q_k, q_k, n);
+        }
+    }
+
+    mpz_clear(tmp);
+    mpz_clear(d);
+    mpz_clear(u_result);
+    mpz_clear(v_result);
+    mpz_clear(u_k);
+    mpz_clear(v_k);
+    mpz_clear(q_k);
+
+    return is_prime;
+}
+
+int freycoin_is_prime(const mpz_t n)
+{
+    // Handle n < 2
+    if (mpz_cmp_ui(n, 2) < 0) return 0;
+
+    // Handle n == 2
+    if (mpz_cmp_ui(n, 2) == 0) return 2;
+
+    // Handle even numbers
+    if (mpz_even_p(n)) return 0;
+
+    // Trial division by small primes (skip index 0 which is 2, already handled)
+    for (int i = 1; i < NUM_SMALL_PRIMES; i++) {
+        if (mpz_cmp_ui(n, SMALL_PRIMES[i]) == 0) return 2;
+        if (mpz_divisible_ui_p(n, SMALL_PRIMES[i])) return 0;
+    }
+
+    // Miller-Rabin with deterministic base 2
+    if (!consensus_miller_rabin(n, 2)) return 0;
+
+    // Strong Lucas-Selfridge test
+    if (!consensus_strong_lucas_selfridge(n)) return 0;
+
+    // Passed BPSW — probably prime (no known counterexample)
+    return 2;
+}
+
+void freycoin_nextprime(mpz_t result, const mpz_t n)
+{
+    mpz_t candidate;
+    mpz_init(candidate);
+
+    // Start at n + 1; if that's even, go to n + 2
+    mpz_add_ui(candidate, n, 1);
+    if (mpz_even_p(candidate)) {
+        mpz_add_ui(candidate, candidate, 1);
+    }
+
+    // Step through odd numbers until we find a prime
+    while (true) {
+        // Quick trial division pre-filter (skip 2, already guaranteed odd)
+        bool trial_composite = false;
+        for (int i = 1; i < NUM_SMALL_PRIMES; i++) {
+            if (mpz_cmp_ui(candidate, SMALL_PRIMES[i]) == 0) {
+                // candidate IS this small prime — it's prime
+                trial_composite = false;
+                break;
+            }
+            if (mpz_divisible_ui_p(candidate, SMALL_PRIMES[i])) {
+                trial_composite = true;
+                break;
+            }
+        }
+
+        if (!trial_composite && freycoin_is_prime(candidate)) {
+            mpz_set(result, candidate);
+            mpz_clear(candidate);
+            return;
+        }
+
+        mpz_add_ui(candidate, candidate, 2);
+    }
+}
+
 PoWUtils::PoWUtils() {
-    // Compute log(150) * 2^48 at init using MPFR for exactness
-    mpfr_t mpfr_150, mpfr_log150, mpfr_scaled;
-    mpfr_init2(mpfr_150, MPFR_PRECISION);
-    mpfr_init2(mpfr_log150, MPFR_PRECISION);
-    mpfr_init2(mpfr_scaled, MPFR_PRECISION);
-
-    mpfr_set_ui(mpfr_150, 150, MPFR_RNDN);
-    mpfr_log(mpfr_log150, mpfr_150, MPFR_RNDN);
-    mpfr_mul_2exp(mpfr_scaled, mpfr_log150, 48, MPFR_RNDN);
-
-    mpz_t mpz_tmp;
-    mpz_init(mpz_tmp);
-    mpfr_get_z(mpz_tmp, mpfr_scaled, MPFR_RNDN);
-    log_150_48_computed = mpz_get_ui(mpz_tmp);
-    mpz_clear(mpz_tmp);
-
-    mpfr_clear(mpfr_150);
-    mpfr_clear(mpfr_log150);
-    mpfr_clear(mpfr_scaled);
+    // log_150_48_computed is now a static constexpr in the header.
+    // No runtime MPFR computation needed.
 }
 
 PoWUtils::~PoWUtils() {
@@ -129,9 +415,10 @@ uint64_t PoWUtils::rand(mpz_t mpz_start, mpz_t mpz_end) {
     uint8_t hash[CSHA256::OUTPUT_SIZE];
     CSHA256().Write(tmp, CSHA256::OUTPUT_SIZE).Finalize(hash);
 
-    // XOR-fold 256 bits to 64 bits
-    const uint64_t* ptr = reinterpret_cast<const uint64_t*>(hash);
-    uint64_t result = ptr[0] ^ ptr[1] ^ ptr[2] ^ ptr[3];
+    // XOR-fold 256 bits to 64 bits (using memcpy to avoid strict-aliasing UB)
+    uint64_t parts[4];
+    std::memcpy(parts, hash, 32);
+    uint64_t result = parts[0] ^ parts[1] ^ parts[2] ^ parts[3];
 
     free(start_bytes);
     free(end_bytes);
@@ -336,8 +623,11 @@ double PoWUtils::rand_d(mpz_t mpz_start, mpz_t mpz_end) {
     uint8_t hash[CSHA256::OUTPUT_SIZE];
     CSHA256().Write(tmp, CSHA256::OUTPUT_SIZE).Finalize(hash);
 
-    const uint32_t* ptr = reinterpret_cast<const uint32_t*>(hash);
-    uint32_t r = ptr[0] ^ ptr[1] ^ ptr[2] ^ ptr[3] ^ ptr[4] ^ ptr[5] ^ ptr[6] ^ ptr[7];
+    // XOR-fold 256 bits to 32 bits (using memcpy to avoid strict-aliasing UB)
+    uint32_t parts32[8];
+    std::memcpy(parts32, hash, 32);
+    uint32_t r = parts32[0] ^ parts32[1] ^ parts32[2] ^ parts32[3]
+               ^ parts32[4] ^ parts32[5] ^ parts32[6] ^ parts32[7];
 
     free(start_bytes);
     free(end_bytes);

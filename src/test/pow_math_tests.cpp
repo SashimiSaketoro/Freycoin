@@ -143,9 +143,9 @@ BOOST_AUTO_TEST_CASE(merit_large_prime_precision)
     mpz_set_ui(start, 1);
     mpz_mul_2exp(start, start, 255);
     mpz_add_ui(start, start, 95);
-    BOOST_REQUIRE(mpz_probab_prime_p(start, 25) > 0);
+    BOOST_REQUIRE(freycoin_is_prime(start) > 0);
 
-    mpz_nextprime(end, start);
+    freycoin_nextprime(end, start);
 
     mpz_t gap;
     mpz_init(gap);
@@ -223,11 +223,11 @@ BOOST_AUTO_TEST_CASE(merit_known_record_gaps)
     mpz_set_str(start, "1693182318746371", 10);
 
     // Verify it's actually prime
-    BOOST_REQUIRE_MESSAGE(mpz_probab_prime_p(start, 25) > 0,
+    BOOST_REQUIRE_MESSAGE(freycoin_is_prime(start) > 0,
         "Test start value 1693182318746371 should be prime");
 
     mpz_set_str(end, "1693182318747503", 10);
-    BOOST_REQUIRE_MESSAGE(mpz_probab_prime_p(end, 25) > 0,
+    BOOST_REQUIRE_MESSAGE(freycoin_is_prime(end) > 0,
         "Test end value 1693182318747503 should be prime");
 
     uint64_t merit = utils.merit(start, end);
@@ -253,11 +253,11 @@ BOOST_AUTO_TEST_CASE(merit_256bit_primes)
     mpz_set_ui(start, 1);
     mpz_mul_2exp(start, start, 255);
     mpz_add_ui(start, start, 95);
-    BOOST_REQUIRE_MESSAGE(mpz_probab_prime_p(start, 25) > 0,
+    BOOST_REQUIRE_MESSAGE(freycoin_is_prime(start) > 0,
         "2^255 + 95 should be prime");
 
-    // Find next prime
-    mpz_nextprime(end, start);
+    // Find next prime (deterministic)
+    freycoin_nextprime(end, start);
 
     // Calculate gap
     mpz_sub(gap, end, start);
@@ -353,7 +353,7 @@ BOOST_AUTO_TEST_CASE(difficulty_exceeds_merit)
 
     // For any valid gap, difficulty >= merit
     mpz_set_ui(start, 1000003);
-    mpz_nextprime(end, start);
+    freycoin_nextprime(end, start);
 
     uint64_t merit = utils.merit(start, end);
     uint64_t diff = utils.difficulty(start, end);
@@ -379,7 +379,7 @@ BOOST_AUTO_TEST_CASE(difficulty_deterministic)
     mpz_init(end);
 
     mpz_set_ui(start, 104729);  // 10000th prime
-    mpz_nextprime(end, start);
+    freycoin_nextprime(end, start);
 
     uint64_t d1 = utils.difficulty(start, end);
     uint64_t d2 = utils.difficulty(start, end);
@@ -583,8 +583,8 @@ BOOST_AUTO_TEST_CASE(merit_twin_primes_boundary)
 
     // Large twin primes: 1000000007 and next prime
     mpz_set_ui(start, 1000000007);
-    BOOST_REQUIRE(mpz_probab_prime_p(start, 25) > 0);
-    mpz_nextprime(end, start);
+    BOOST_REQUIRE(freycoin_is_prime(start) > 0);
+    freycoin_nextprime(end, start);
 
     uint64_t merit = utils.merit(start, end);
     double merit_d = static_cast<double>(merit) / TWO_POW48;

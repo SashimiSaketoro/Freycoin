@@ -3826,6 +3826,13 @@ static bool CheckBlockHeader(const CBlockHeader& block, BlockValidationState& st
         return true;
     }
 
+    // Reject blocks with non-zero reserved field to prevent
+    // future soft-fork confusion and reduce header malleability.
+    if (block.nReserved != 0) {
+        return state.Invalid(BlockValidationResult::BLOCK_INVALID_HEADER,
+            "bad-reserved", "nReserved must be zero");
+    }
+
     // Check proof of work matches claimed amount (prime gap validation)
     if (fCheckPOW && !CheckProofOfWork(block, consensusParams))
         return state.Invalid(BlockValidationResult::BLOCK_INVALID_HEADER, "invalid-gap", "prime gap proof of work failed");

@@ -18,9 +18,11 @@
 #include <walletinitinterface.h>
 
 #include <algorithm>
+#include <chrono>
 #include <iterator>
 #include <map>
 #include <memory>
+#include <mutex>
 #include <optional>
 #include <set>
 #include <string>
@@ -37,6 +39,24 @@ static std::vector<std::vector<std::string>> g_rpcauth;
 /* RPC Auth Whitelist */
 static std::map<std::string, std::set<std::string>> g_rpc_whitelist;
 static bool g_rpc_whitelist_default = false;
+
+/** Exponential backoff state for failed RPC auth attempts, keyed by peer IP.
+ *
+ * SECURITY: After 4+ failures the request is rejected immediately (no sleep),
+ * preventing an attacker from tying up HTTP worker threads.  Stale entries
+ * are garbage-collected when the map exceeds RPC_FAIL_MAP_MAX_SIZE so that
+ * IP-rotating attacks cannot cause unbounded memory growth. */
+namespace {
+struct RpcFailureRecord {
+    int count{0};
+    std::chrono::steady_clock::time_point last_attempt;
+};
+static std::mutex g_rpc_fail_mutex;
+static std::map<std::string, RpcFailureRecord> g_rpc_fail_map;
+static constexpr auto RPC_FAIL_RESET_AFTER = std::chrono::seconds{60};
+static constexpr size_t RPC_FAIL_MAP_MAX_SIZE = 1000;
+static constexpr int RPC_FAIL_MAX_BEFORE_DROP = 4;
+} // namespace
 
 static void JSONErrorReply(HTTPRequest* req, UniValue objError, const JSONRPCRequest& jreq)
 {
@@ -122,14 +142,48 @@ static bool HTTPReq_JSONRPC(const std::any& context, HTTPRequest* req)
     if (!RPCAuthorized(authHeader.second, jreq.authUser)) {
         LogPrintf("ThreadRPCServer incorrect password attempt from %s\n", jreq.peerAddr);
 
-        /* Deter brute-forcing
+        /* Deter brute-forcing with per-IP failure tracking.
+           After RPC_FAIL_MAX_BEFORE_DROP consecutive failures the request
+           is rejected immediately without sleeping, so worker threads are
+           never blocked for more than a trivial amount of time.
+           Resets after 60s of inactivity or successful auth.
            If this results in a DoS the user really
            shouldn't have their RPC port exposed. */
-        UninterruptibleSleep(std::chrono::milliseconds{250});
+        {
+            std::string peer_ip = req->GetPeer().ToStringAddr();
+            std::lock_guard<std::mutex> lock(g_rpc_fail_mutex);
+            auto now = std::chrono::steady_clock::now();
+
+            /* Garbage-collect stale entries to prevent unbounded map growth
+               from an attacker rotating source IPs. */
+            if (g_rpc_fail_map.size() > RPC_FAIL_MAP_MAX_SIZE) {
+                for (auto it = g_rpc_fail_map.begin(); it != g_rpc_fail_map.end(); ) {
+                    if ((now - it->second.last_attempt) > RPC_FAIL_RESET_AFTER) {
+                        it = g_rpc_fail_map.erase(it);
+                    } else {
+                        ++it;
+                    }
+                }
+            }
+
+            auto& rec = g_rpc_fail_map[peer_ip];
+            if (rec.count > 0 && (now - rec.last_attempt) > RPC_FAIL_RESET_AFTER) {
+                rec.count = 0;
+            }
+            rec.count++;
+            rec.last_attempt = now;
+        }
 
         req->WriteHeader("WWW-Authenticate", WWW_AUTH_HEADER_DATA);
         req->WriteReply(HTTP_UNAUTHORIZED);
         return false;
+    }
+
+    // Successful auth — reset brute-force backoff for this peer
+    {
+        std::string peer_ip = req->GetPeer().ToStringAddr();
+        std::lock_guard<std::mutex> lock(g_rpc_fail_mutex);
+        g_rpc_fail_map.erase(peer_ip);
     }
 
     try {

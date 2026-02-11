@@ -30,10 +30,13 @@
 #include <logging.h>
 
 #include <algorithm>
+#include <cassert>
 #include <chrono>
 #include <cmath>
+#include <cstdint>
 #include <cstdio>
 #include <cstring>
+#include <memory>
 #include <stdexcept>
 #include <thread>
 
@@ -47,15 +50,14 @@
 
 #include <gpu/opencl_loader.h>
 #include <gpu/opencl_fermat.h>
+#include <gpu/gpu_fermat.h>
 
 /*============================================================================
  * Utility macros
  *============================================================================*/
 
-#define set_bit64(ary, i) ((ary)[(i) >> 6] |= (1ULL << ((i) & 0x3f)))
-#define clear_bit64(ary, i) ((ary)[(i) >> 6] &= ~(1ULL << ((i) & 0x3f)))
-#define test_bit64(ary, i) (((ary)[(i) >> 6] & (1ULL << ((i) & 0x3f))) != 0)
-#define round_up(x, y) ((((x) + (y) - 1) / (y)) * (y))
+/* Bit manipulation and rounding utilities are now inline functions
+ * in pow_common.h (freycoin_set_bit64 etc.) to avoid namespace pollution. */
 
 static inline uint64_t get_time_usec() {
     auto now = std::chrono::high_resolution_clock::now();
@@ -78,7 +80,7 @@ static inline bool is_coprime_2310(uint64_t n) {
 
 SegmentedSieve::SegmentedSieve(uint64_t n_primes, uint64_t total_sieve_size) {
     this->n_primes = n_primes;
-    this->total_size = round_up(total_sieve_size, SEGMENT_SIZE_BITS);
+    this->total_size = freycoin_round_up(total_sieve_size, (uint64_t)SEGMENT_SIZE_BITS);
     this->total_segments = this->total_size / SEGMENT_SIZE_BITS;
     this->current_segment = 0;
     this->hash_initialized = false;
@@ -147,7 +149,7 @@ SegmentedSieve::~SegmentedSieve() {
 void SegmentedSieve::init_primes(uint64_t n) {
     // Upper bound for nth prime: p_n < n * (ln(n) + ln(ln(n))) for n >= 6
     uint64_t limit = static_cast<uint64_t>(n * (std::log(n) + std::log(std::log(n)))) + 100;
-    limit = round_up(limit, 64);
+    limit = freycoin_round_up(limit, (uint64_t)64);
 
     // Simple sieve to generate small primes
     uint64_t* sieve_buf = static_cast<uint64_t*>(std::calloc(limit / 64 + 1, sizeof(uint64_t)));
@@ -155,9 +157,9 @@ void SegmentedSieve::init_primes(uint64_t n) {
 
     // Mark composites
     for (uint64_t i = 3; i <= sqrt_limit; i += 2) {
-        if (!test_bit64(sieve_buf, i >> 1)) {
+        if (!freycoin_test_bit64(sieve_buf, i >> 1)) {
             for (uint64_t j = i * i; j < limit; j += i * 2) {
-                set_bit64(sieve_buf, j >> 1);
+                freycoin_set_bit64(sieve_buf, j >> 1);
             }
         }
     }
@@ -166,7 +168,7 @@ void SegmentedSieve::init_primes(uint64_t n) {
     primes[0] = 2;
     uint64_t count = 1;
     for (uint64_t i = 3; count < n && i < limit; i += 2) {
-        if (!test_bit64(sieve_buf, i >> 1)) {
+        if (!freycoin_test_bit64(sieve_buf, i >> 1)) {
             primes[count] = i;
             count++;
         }
@@ -299,7 +301,7 @@ void SegmentedSieve::sieve_small_primes() {
         // Sieve all odd multiples of p in this segment (step = p in odd-only indexing)
         uint32_t pos = start;
         for (; pos < SEGMENT_SIZE_BITS; pos += p) {
-            set_bit64(segment, pos);
+            freycoin_set_bit64(segment, pos);
         }
 
         // Save starting position for next segment
@@ -318,7 +320,7 @@ void SegmentedSieve::process_bucket() {
 
         // Mark position as composite
         if (pos < SEGMENT_SIZE_BITS) {
-            set_bit64(segment, pos);
+            freycoin_set_bit64(segment, pos);
         }
 
         // In odd-only indexing, step between consecutive odd multiples is p
@@ -355,7 +357,7 @@ void SegmentedSieve::get_candidates(std::vector<uint64_t>& candidates, uint64_t 
     // In odd-only indexing, bit k represents integer offset 2*(seg_start + k) + 1
     // Iterate all bits — each one is an odd number
     for (uint64_t k = 0; k < SEGMENT_SIZE_BITS; k++) {
-        if (!test_bit64(segment, k)) {
+        if (!freycoin_test_bit64(segment, k)) {
             uint64_t integer_offset = 2 * (seg_start + k) + 1;
             uint64_t pos_mod = (base_mod + integer_offset) % 2310;
             if (is_coprime_2310(pos_mod)) {
@@ -366,7 +368,7 @@ void SegmentedSieve::get_candidates(std::vector<uint64_t>& candidates, uint64_t 
 }
 
 bool SegmentedSieve::is_composite(uint64_t pos) const {
-    return test_bit64(segment, pos);
+    return freycoin_test_bit64(segment, pos);
 }
 
 uint64_t SegmentedSieve::get_segment_offset() const {
@@ -618,7 +620,10 @@ void PrimalityTester::prepare_batch(CandidateBatch& batch,
             batch.candidates[i * limbs + j] = 0;
         }
 
-        batch.indices[i] = candidates[i];
+        /* Sieve offsets should always fit in uint32_t (max sieve size ~33.5M).
+         * Guard against future changes that might widen the sieve range. */
+        assert(candidates[i] <= UINT32_MAX && "sieve offset exceeds uint32_t range");
+        batch.indices[i] = static_cast<uint32_t>(candidates[i]);
     }
 }
 
@@ -727,7 +732,7 @@ void MiningPipeline::sieve_worker(uint32_t thread_id) {
     mpz_init(mpz_candidate);
     mpz_init(local_mpz_adder);
 
-    SegmentedSieve* sieve = nullptr;
+    std::unique_ptr<SegmentedSieve> sieve;
     uint16_t last_shift = 0;
     uint64_t sieve_size = 0;
 
@@ -743,10 +748,9 @@ void MiningPipeline::sieve_worker(uint32_t thread_id) {
 
         // Recreate sieve if shift changed
         if (shift != last_shift) {
-            delete sieve;
-            sieve = nullptr;
+            sieve.reset();
             try {
-                sieve = new SegmentedSieve(n_primes, sieve_size);
+                sieve = std::make_unique<SegmentedSieve>(n_primes, sieve_size);
             } catch (const std::exception& e) {
                 mpz_clear(local_mpz_start);
                 mpz_clear(mpz_candidate);
@@ -815,6 +819,10 @@ void MiningPipeline::sieve_worker(uint32_t thread_id) {
                                 uint64_t gap = offset - local_last_prime_offset;
 
                                 if (gap >= local_min_gap) {
+                                    // SECURITY: Lock shared current_pow before mutation.
+                                    // GMP mpz_set is not thread-safe; multiple sieve
+                                    // threads share current_pow.
+                                    std::lock_guard<std::mutex> pow_lock(pow_result_mutex);
                                     mpz_set_ui(local_mpz_adder, local_last_prime_offset);
                                     current_pow->set_adder(local_mpz_adder);
 
@@ -824,7 +832,6 @@ void MiningPipeline::sieve_worker(uint32_t thread_id) {
                                             bool continue_mining = processor->process(current_pow);
                                             if (!continue_mining) {
                                                 mining_active = false;
-                                                delete sieve;
                                                 mpz_clear(local_mpz_start);
                                                 mpz_clear(mpz_candidate);
                                                 mpz_clear(local_mpz_adder);
@@ -861,6 +868,8 @@ void MiningPipeline::sieve_worker(uint32_t thread_id) {
                             uint64_t gap = offset - local_last_prime_offset;
 
                             if (gap >= local_min_gap) {
+                                // SECURITY: Lock shared current_pow before mutation.
+                                std::lock_guard<std::mutex> pow_lock(pow_result_mutex);
                                 mpz_set_ui(local_mpz_adder, local_last_prime_offset);
                                 current_pow->set_adder(local_mpz_adder);
 
@@ -870,7 +879,6 @@ void MiningPipeline::sieve_worker(uint32_t thread_id) {
                                         bool continue_mining = processor->process(current_pow);
                                         if (!continue_mining) {
                                             mining_active = false;
-                                            delete sieve;
                                             mpz_clear(local_mpz_start);
                                             mpz_clear(mpz_candidate);
                                             mpz_clear(local_mpz_adder);
@@ -897,7 +905,7 @@ void MiningPipeline::sieve_worker(uint32_t thread_id) {
         }
     }
 
-    delete sieve;
+    // sieve is a unique_ptr — automatically cleaned up
     mpz_clear(local_mpz_start);
     mpz_clear(mpz_candidate);
     mpz_clear(local_mpz_adder);
@@ -905,7 +913,7 @@ void MiningPipeline::sieve_worker(uint32_t thread_id) {
 
 void MiningPipeline::gpu_worker() {
     if (tier == MiningTier::CPU_OPENCL) {
-        opencl_fermat_init(0);
+        gpu_fermat_init(0);
     }
 
     while (mining_active && !shutdown_requested) {
@@ -923,17 +931,17 @@ void MiningPipeline::gpu_worker() {
             gpu_queue.pop();
         }
 
-        // Run OpenCL Fermat test
+        // Run GPU Fermat test (Metal on Apple Silicon, OpenCL elsewhere)
         std::vector<uint8_t> results(batch.count);
-        opencl_fermat_batch(results.data(), batch.candidates.data(),
-                            batch.count, batch.bits);
+        gpu_fermat_batch(results.data(), batch.candidates.data(),
+                         batch.count, batch.bits);
 
         // Process results
         process_gpu_results(batch, results);
     }
 
     if (tier == MiningTier::CPU_OPENCL) {
-        opencl_fermat_cleanup();
+        gpu_fermat_cleanup();
     }
 }
 
@@ -1013,8 +1021,15 @@ MiningEngine::~MiningEngine() {
 }
 
 MiningTier MiningEngine::detect_tier() {
-    // OpenCL: dynamically loaded at runtime, no SDK needed at build time
-    // Works for all GPU vendors (NVIDIA, AMD, Intel)
+    // GPU detection: try unified dispatch layer (Metal on Apple Silicon, OpenCL elsewhere)
+    int gpu_devices = gpu_get_device_count();
+    if (gpu_devices > 0) {
+        std::snprintf(hardware_info, sizeof(hardware_info),
+                 "GPU: %d device(s) - %s [%s]",
+                 gpu_devices, gpu_get_device_name(0), gpu_get_backend_name());
+        return MiningTier::CPU_OPENCL;
+    }
+    // Fallback: try OpenCL directly in case dispatch layer missed something
     if (opencl_load() == 0) {
         int opencl_devices = opencl_get_device_count();
         if (opencl_devices > 0) {
@@ -1078,15 +1093,16 @@ void MiningEngine::run_sieve(PoW* pow, PoWProcessor* processor,
 }
 
 void MiningEngine::gpu_worker_func() {
-    // Initialize OpenCL GPU backend
+    // Initialize GPU backend (Metal on Apple Silicon, OpenCL elsewhere)
     if (tier == MiningTier::CPU_OPENCL) {
-        if (opencl_fermat_init(0) != 0) {
-            LogPrintf("Mining: GPU worker failed to init OpenCL, falling back to CPU\n");
+        if (gpu_fermat_init(0) != 0) {
+            LogPrintf("Mining: GPU worker failed to init (%s), falling back to CPU\n",
+                      gpu_get_backend_name());
             gpu_initialized = false;
             return;
         }
         gpu_initialized = true;
-        LogPrintf("Mining: GPU worker initialized (OpenCL)\n");
+        LogPrintf("Mining: GPU worker initialized (%s)\n", gpu_get_backend_name());
     }
 
     while (!stop_requested) {
@@ -1102,10 +1118,10 @@ void MiningEngine::gpu_worker_func() {
             gpu_request_queue.pop();
         }
 
-        // Run OpenCL Fermat primality pre-filter
-        opencl_fermat_batch(request->results.data(),
-                            request->batch.candidates.data(),
-                            request->batch.count, request->batch.bits);
+        // Run GPU Fermat primality pre-filter
+        gpu_fermat_batch(request->results.data(),
+                         request->batch.candidates.data(),
+                         request->batch.count, request->batch.bits);
 
         // Signal the submitting CPU thread that results are ready
         {
@@ -1116,7 +1132,7 @@ void MiningEngine::gpu_worker_func() {
     }
 
     // Cleanup GPU
-    if (tier == MiningTier::CPU_OPENCL) opencl_fermat_cleanup();
+    if (tier == MiningTier::CPU_OPENCL) gpu_fermat_cleanup();
 
     LogPrintf("Mining: GPU worker stopped\n");
 }
@@ -1312,10 +1328,16 @@ void MiningEngine::parallel_worker(uint32_t thread_id,
                     }
                     gpu_queue_cv.notify_one();
 
-                    // Wait for GPU to finish this batch
+                    // Wait for GPU to finish this batch (with timeout to
+                    // prevent deadlock if the GPU worker dies or hangs).
                     {
                         std::unique_lock<std::mutex> lock(request->mtx);
-                        request->cv.wait(lock, [&]{ return request->done.load(); });
+                        request->cv.wait_for(lock, std::chrono::seconds(10),
+                            [&]{ return request->done.load() || stop_requested; });
+                        if (!request->done.load()) {
+                            // GPU timeout or shutdown — fall back to CPU path
+                            break;
+                        }
                     }
 
                     par_tests.fetch_add(candidates.size(), std::memory_order_relaxed);

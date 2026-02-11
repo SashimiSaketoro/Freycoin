@@ -779,20 +779,19 @@ bool CWallet::EncryptWallet(const SecureString& strWalletPassphrase)
     {
         LOCK2(m_relock_mutex, cs_wallet);
         mapMasterKeys[++nMasterKeyMaxID] = master_key;
-        WalletBatch* encrypted_batch = new WalletBatch(GetDatabase());
+        // SECURITY: Use unique_ptr to guarantee cleanup on all exit paths
+        // (including exceptions), preventing WalletBatch leaks and ensuring
+        // deterministic destruction of key-adjacent state.
+        auto encrypted_batch = std::make_unique<WalletBatch>(GetDatabase());
         if (!encrypted_batch->TxnBegin()) {
-            delete encrypted_batch;
-            encrypted_batch = nullptr;
             return false;
         }
         encrypted_batch->WriteMasterKey(nMasterKeyMaxID, master_key);
 
         for (const auto& spk_man_pair : m_spk_managers) {
             auto spk_man = spk_man_pair.second.get();
-            if (!spk_man->Encrypt(plain_master_key, encrypted_batch)) {
+            if (!spk_man->Encrypt(plain_master_key, encrypted_batch.get())) {
                 encrypted_batch->TxnAbort();
-                delete encrypted_batch;
-                encrypted_batch = nullptr;
                 // We now probably have half of our keys encrypted in memory, and half not...
                 // die and let the user reload the unencrypted wallet.
                 assert(false);
@@ -800,15 +799,12 @@ bool CWallet::EncryptWallet(const SecureString& strWalletPassphrase)
         }
 
         if (!encrypted_batch->TxnCommit()) {
-            delete encrypted_batch;
-            encrypted_batch = nullptr;
             // We now have keys encrypted in memory, but not on disk...
             // die to avoid confusion and let the user reload the unencrypted wallet.
             assert(false);
         }
 
-        delete encrypted_batch;
-        encrypted_batch = nullptr;
+        encrypted_batch.reset();
 
         Lock();
         Unlock(strWalletPassphrase);

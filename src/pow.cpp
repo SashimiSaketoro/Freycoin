@@ -9,6 +9,7 @@
 
 #include <chain.h>
 #include <crypto/sha256.h>
+#include <pow/pow_utils.h>
 #include <primitives/block.h>
 #include <uint256.h>
 #include <util/check.h>
@@ -17,16 +18,25 @@
 #include <mpfr.h>
 #include <cstring>
 
-/**
- * 2^48 - fixed-point precision for difficulty/merit calculations.
- * 1.0 merit = 0x0001_0000_0000_0000
- */
-static constexpr uint64_t TWO_POW48 = 1ULL << 48;
+// TWO_POW48 is defined in pow/pow_common.h (via pow/pow_utils.h)
 
 /**
  * MPFR precision for all computations (256 bits = ~77 decimal digits).
  */
 static constexpr mpfr_prec_t MPFR_PRECISION = 256;
+
+/**
+ * Hardcoded consensus constant: ln(150) * 2^48.
+ *
+ * This eliminates MPFR as a runtime dependency for the difficulty adjustment
+ * path. The value was computed via MPFR at 256-bit precision and verified
+ * independently with mpmath at 80-decimal-digit precision. Both produce
+ * the same integer result.
+ *
+ * ln(150) = 5.0106352940962555...
+ * ln(150) * 2^48 = 1410368452711334 (0x000502b8fea053a6)
+ */
+static constexpr uint64_t LOG_TARGET_SPACING_48 = 1410368452711334ULL;
 
 /**
  * Convert uint256 to mpz_t (little-endian).
@@ -182,8 +192,8 @@ static uint64_t CalculateDifficulty(const mpz_t start, const mpz_t end)
  * 1. Validate nShift is in [MIN_SHIFT, MAX_SHIFT]
  * 2. Validate nDifficulty >= minimum
  * 3. Construct start = GetHash() * 2^nShift + nAdd
- * 4. Verify start is prime (BPSW via GMP, 25 Miller-Rabin rounds)
- * 5. Find next prime after start
+ * 4. Verify start is prime (deterministic BPSW via freycoin_is_prime)
+ * 5. Find next prime after start (deterministic via freycoin_nextprime)
  * 6. Calculate achieved difficulty = f(merit, random)
  * 7. Accept if achieved >= required
  */
@@ -240,17 +250,16 @@ bool CheckProofOfWork(const CBlockHeader& block, const Consensus::Params& params
     mpz_clear(mpz_hash);
     mpz_clear(mpz_adder);
 
-    // Verify start is prime (BPSW + 25 Miller-Rabin rounds)
-    int prime_result = mpz_probab_prime_p(mpz_start, 25);
-    if (prime_result == 0) {
+    // Verify start is prime (deterministic BPSW — version-independent)
+    if (freycoin_is_prime(mpz_start) == 0) {
         mpz_clear(mpz_start);
         return false;
     }
 
-    // Find next prime after start
+    // Find next prime after start (deterministic — version-independent)
     mpz_t mpz_end;
     mpz_init(mpz_end);
-    mpz_nextprime(mpz_end, mpz_start);
+    freycoin_nextprime(mpz_end, mpz_start);
 
     // Calculate achieved difficulty
     uint64_t achieved = CalculateDifficulty(mpz_start, mpz_end);
@@ -265,8 +274,16 @@ bool CheckProofOfWork(const CBlockHeader& block, const Consensus::Params& params
 /**
  * Calculate the next required difficulty.
  *
- * Uses logarithmic adjustment (Gapcoin algorithm):
- *   next = current + log(target_spacing / actual_spacing)
+ * Uses a linearly-weighted moving average of block timespans over a
+ * configurable window (default 174 blocks ≈ 7.25 hours), combined with
+ * logarithmic adjustment (Gapcoin-style):
+ *
+ *   weighted_timespan = sum(weight_i * timespan_i) / sum(weight_i)
+ *   next = current + log(target_spacing / weighted_timespan) / damping
+ *
+ * The weighted average prevents single-block timestamp manipulation from
+ * controlling difficulty. Recent blocks are weighted more heavily (linear
+ * ramp: weight 1 for oldest, weight N for most recent).
  *
  * Damping:
  *   - Increases: 1/256 of adjustment (slow up, prevents runaway)
@@ -290,32 +307,67 @@ uint64_t GetNextWorkRequired(const CBlockIndex* pindexLast, const Consensus::Par
         return pindexLast->nDifficulty;
     }
 
-    // Need previous block for timing
+    // Need at least one previous block for timing
     const CBlockIndex* pindexPrev = pindexLast->pprev;
     if (!pindexPrev) {
         return pindexLast->nDifficulty;
     }
 
-    // Actual timespan between last two blocks
-    int64_t nActualTimespan = pindexLast->GetBlockTime() - pindexPrev->GetBlockTime();
+    // Walk back up to nDifficultyWindow blocks, computing a linearly
+    // weighted average of individual block timespans.
+    //
+    // Weight scheme: the most recent block gets weight = window_used,
+    // the second most recent gets weight = window_used - 1, etc.
+    // This makes the algorithm responsive to recent changes while being
+    // resistant to single-block timestamp manipulation.
+    const int window = params.nDifficultyWindow;
+    int64_t weighted_sum = 0;
+    int64_t weight_total = 0;
 
-    return CalculateNextWorkRequired(pindexLast->nDifficulty, nActualTimespan, params);
+    const CBlockIndex* pindex = pindexLast;
+
+    for (int i = 0; i < window && pindex->pprev != nullptr; i++) {
+        int64_t timespan = pindex->GetBlockTime() - pindex->pprev->GetBlockTime();
+
+        // Clamp individual timespans to [1, 12 * target] to limit outlier influence
+        if (timespan < 1) timespan = 1;
+        if (timespan > 12 * params.nPowTargetSpacing) timespan = 12 * params.nPowTargetSpacing;
+
+        // Weight: most recent block gets highest weight
+        int64_t weight = window - i;
+        weighted_sum += weight * timespan;
+        weight_total += weight;
+
+        pindex = pindex->pprev;
+    }
+
+    // Compute weighted average timespan
+    int64_t nWeightedTimespan = (weight_total > 0) ? (weighted_sum / weight_total) : params.nPowTargetSpacing;
+
+    return CalculateNextWorkRequired(pindexLast->nDifficulty, nWeightedTimespan, params);
 }
 
 /**
- * Calculate next difficulty from previous difficulty and solve time.
+ * Calculate next difficulty from previous difficulty and weighted average timespan.
  *
  * Formula: next = current + log(target/actual) / damping
  *
- * All logarithms computed via MPFR at 256-bit precision.
+ * The nActualTimespan parameter is typically the linearly-weighted average
+ * of individual block timespans over the difficulty window (see
+ * GetNextWorkRequired). Individual timespans are pre-clamped, but we
+ * apply a safety clamp here as well for robustness.
+ *
+ * ln(actual_timespan) is computed via MPFR at 256-bit precision.
+ * ln(target_spacing) uses the hardcoded LOG_TARGET_SPACING_48 constant
+ * to eliminate MPFR version dependency for consensus-critical output.
  */
 uint64_t CalculateNextWorkRequired(uint64_t nDifficulty, int64_t nActualTimespan, const Consensus::Params& params)
 {
-    // Clamp extreme timespans
+    // Safety clamp (individual timespans are already clamped in GetNextWorkRequired,
+    // but this protects against direct callers with extreme values)
     if (nActualTimespan < 1) {
         nActualTimespan = 1;
     }
-    // Max 12x target (30 minutes for 150s target)
     if (nActualTimespan > 12 * params.nPowTargetSpacing) {
         nActualTimespan = 12 * params.nPowTargetSpacing;
     }
@@ -335,19 +387,11 @@ uint64_t CalculateNextWorkRequired(uint64_t nDifficulty, int64_t nActualTimespan
     uint64_t log_actual = mpz_get_uint64(mpz_log_actual_z);
     mpz_clear(mpz_log_actual_z);
 
-    // Compute ln(150) * 2^48 using MPFR (target spacing)
-    mpfr_set_ui(mpfr_actual, 150, MPFR_RNDN);
-    mpfr_log(mpfr_ln, mpfr_actual, MPFR_RNDN);
-    mpfr_mul_2exp(mpfr_ln, mpfr_ln, 48, MPFR_RNDN);
-
-    mpz_t mpz_log_target_z;
-    mpz_init(mpz_log_target_z);
-    mpfr_get_z(mpz_log_target_z, mpfr_ln, MPFR_RNDN);
-    uint64_t log_target = mpz_get_uint64(mpz_log_target_z);
-    mpz_clear(mpz_log_target_z);
-
     mpfr_clear(mpfr_actual);
     mpfr_clear(mpfr_ln);
+
+    // Use hardcoded ln(150) * 2^48 — eliminates MPFR version dependency
+    uint64_t log_target = LOG_TARGET_SPACING_48;
 
     uint64_t next = nDifficulty;
 

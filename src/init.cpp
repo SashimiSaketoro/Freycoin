@@ -899,6 +899,18 @@ bool AppInitBasicSetup(const ArgsManager& args, std::atomic<int>& exit_status)
 bool AppInitParameterInteraction(const ArgsManager& args)
 {
     const CChainParams& chainparams = Params();
+
+    // LAUNCH-BLOCKER: Warn if nMinimumChainWork is zero on mainnet.
+    // With zero minimum chain work, a node accepts any chain during initial sync,
+    // making it vulnerable to long-range attacks. This MUST be set to a real value
+    // before production launch (checkpoint after sufficient chain work accumulates).
+    if (chainparams.GetChainType() == ChainType::MAIN &&
+        chainparams.GetConsensus().nMinimumChainWork == uint256{}) {
+        InitWarning(_("WARNING: nMinimumChainWork is not set for mainnet. "
+            "This node is vulnerable to long-range attacks during initial sync. "
+            "Set -minimumchainwork=<hex> once the chain has meaningful work."));
+    }
+
     // ********************************************************* Step 2: parameter interactions
 
     // also see: InitParameterInteraction()

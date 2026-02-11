@@ -15,6 +15,7 @@
 
 #include <algorithm>
 #include <cstdio>
+#include <mutex>
 #include <vector>
 
 #ifdef _WIN32
@@ -30,6 +31,10 @@
  *============================================================================*/
 
 CpuFeatures g_cpu_features;
+
+#if defined(__x86_64__) || defined(__i386__) || defined(_M_X64) || defined(_M_IX86)
+
+/* --- x86 CPU feature detection via CPUID --- */
 
 #ifdef _WIN32
 static void run_cpuid(int leaf, int subleaf, int* eax, int* ebx, int* ecx, int* edx) {
@@ -76,41 +81,61 @@ static bool os_supports_avx512() {
     return (xcr0 & 0xE6) == 0xE6;
 }
 
+// SECURITY: Use std::call_once so concurrent callers never race
+// through the detection logic and see partially-initialized flags.
+static std::once_flag cpu_features_once;
+
 void detect_cpu_features() {
-    if (g_cpu_features.detected) {
-        return;
-    }
+    std::call_once(cpu_features_once, []() {
+        int eax, ebx, ecx, edx;
 
-    int eax, ebx, ecx, edx;
+        /* CPUID leaf 1: Basic features */
+        run_cpuid(1, 0, &eax, &ebx, &ecx, &edx);
 
-    /* CPUID leaf 1: Basic features */
-    run_cpuid(1, 0, &eax, &ebx, &ecx, &edx);
+        /* SSE2 is in EDX bit 26 */
+        g_cpu_features.has_sse2 = (edx & (1 << 26)) != 0;
 
-    /* SSE2 is in EDX bit 26 */
-    g_cpu_features.has_sse2 = (edx & (1 << 26)) != 0;
+        /* POPCNT is in ECX bit 23 */
+        g_cpu_features.has_popcnt = (ecx & (1 << 23)) != 0;
 
-    /* POPCNT is in ECX bit 23 */
-    g_cpu_features.has_popcnt = (ecx & (1 << 23)) != 0;
+        /* Check for extended features (leaf 7) */
+        run_cpuid(0, 0, &eax, &ebx, &ecx, &edx);
+        if (eax >= 7) {
+            run_cpuid(7, 0, &eax, &ebx, &ecx, &edx);
 
-    /* Check for extended features (leaf 7) */
-    run_cpuid(0, 0, &eax, &ebx, &ecx, &edx);
-    if (eax >= 7) {
-        run_cpuid(7, 0, &eax, &ebx, &ecx, &edx);
+            /* AVX2 is in EBX bit 5 */
+            if ((ebx & (1 << 5)) && os_supports_avx()) {
+                g_cpu_features.has_avx2 = true;
+            }
 
-        /* AVX2 is in EBX bit 5 */
-        if ((ebx & (1 << 5)) && os_supports_avx()) {
-            g_cpu_features.has_avx2 = true;
+            /* AVX-512F is in EBX bit 16, AVX-512BW is in EBX bit 30 */
+            if ((ebx & (1 << 16)) && (ebx & (1 << 30)) && os_supports_avx512()) {
+                g_cpu_features.has_avx512f = true;
+                g_cpu_features.has_avx512bw = true;
+            }
         }
 
-        /* AVX-512F is in EBX bit 16, AVX-512BW is in EBX bit 30 */
-        if ((ebx & (1 << 16)) && (ebx & (1 << 30)) && os_supports_avx512()) {
-            g_cpu_features.has_avx512f = true;
-            g_cpu_features.has_avx512bw = true;
-        }
-    }
-
-    g_cpu_features.detected = true;
+        g_cpu_features.detected = true;
+    });
 }
+
+#else /* ARM / other architectures */
+
+static std::once_flag cpu_features_once;
+
+void detect_cpu_features() {
+    std::call_once(cpu_features_once, []() {
+        /* No x86 SIMD on ARM; NEON is always available on aarch64. */
+        g_cpu_features.has_sse2 = false;
+        g_cpu_features.has_avx2 = false;
+        g_cpu_features.has_avx512f = false;
+        g_cpu_features.has_avx512bw = false;
+        g_cpu_features.has_popcnt = false;
+        g_cpu_features.detected = true;
+    });
+}
+
+#endif /* x86 vs ARM */
 
 const CpuFeatures* get_cpu_features() {
     detect_cpu_features();
@@ -174,7 +199,7 @@ const uint32_t presieve_total_bytes = 126330;
 static uint8_t* presieve_table_data[PRESIEVE_NUM_TABLES] = {nullptr};
 const uint8_t* presieve_tables[PRESIEVE_NUM_TABLES] = {nullptr};
 
-static bool tables_initialized = false;
+static std::once_flag tables_once;
 
 /*============================================================================
  * Table Generation
@@ -216,16 +241,14 @@ static void generate_table(int table_idx) {
     presieve_tables[table_idx] = table;
 }
 
+// SECURITY: Use std::call_once so concurrent sieve threads never
+// double-init or see partially-generated tables.
 void presieve_generate_tables() {
-    if (tables_initialized) {
-        return;
-    }
-
-    for (int i = 0; i < PRESIEVE_NUM_TABLES; i++) {
-        generate_table(i);
-    }
-
-    tables_initialized = true;
+    std::call_once(tables_once, []() {
+        for (int i = 0; i < PRESIEVE_NUM_TABLES; i++) {
+            generate_table(i);
+        }
+    });
 }
 
 void presieve_free_tables() {
@@ -739,6 +762,112 @@ void presieve_apply_avx512(uint8_t* sieve, size_t sieve_bytes, uint64_t segment_
 #endif /* AVX-512 */
 
 /*============================================================================
+ * ARM NEON Implementation (16 bytes per iteration)
+ *
+ * NEON is always available on aarch64 (ARM64), providing 128-bit SIMD
+ * registers equivalent in width to SSE2. No runtime detection needed.
+ *============================================================================*/
+
+#if defined(__aarch64__) || defined(__ARM_NEON)
+
+static inline uint8x16_t load_cyclic_neon(const uint8_t* table, uint32_t table_size,
+                                            uint32_t* pos) {
+    uint8_t buf[16];
+    for (int i = 0; i < 16; i++) {
+        buf[i] = table[*pos];
+        *pos = (*pos + 1) % table_size;
+    }
+    return vld1q_u8(buf);
+}
+
+void presieve_init_neon(uint8_t* sieve, size_t sieve_bytes, uint64_t segment_low) {
+    if (!tables_initialized) {
+        presieve_generate_tables();
+    }
+
+    uint32_t pos0 = get_table_position(0, segment_low);
+    uint32_t pos1 = get_table_position(1, segment_low);
+    uint32_t pos2 = get_table_position(2, segment_low);
+    uint32_t pos3 = get_table_position(3, segment_low);
+
+    const uint8_t* t0 = presieve_tables[0];
+    const uint8_t* t1 = presieve_tables[1];
+    const uint8_t* t2 = presieve_tables[2];
+    const uint8_t* t3 = presieve_tables[3];
+
+    uint32_t size0 = presieve_info[0].byte_size;
+    uint32_t size1 = presieve_info[1].byte_size;
+    uint32_t size2 = presieve_info[2].byte_size;
+    uint32_t size3 = presieve_info[3].byte_size;
+
+    size_t i = 0;
+    for (; i + 16 <= sieve_bytes; i += 16) {
+        uint8x16_t v0 = load_cyclic_neon(t0, size0, &pos0);
+        uint8x16_t v1 = load_cyclic_neon(t1, size1, &pos1);
+        uint8x16_t v2 = load_cyclic_neon(t2, size2, &pos2);
+        uint8x16_t v3 = load_cyclic_neon(t3, size3, &pos3);
+
+        uint8x16_t result = vorrq_u8(vorrq_u8(v0, v1), vorrq_u8(v2, v3));
+        vst1q_u8(sieve + i, result);
+    }
+
+    for (; i < sieve_bytes; i++) {
+        sieve[i] = t0[pos0] | t1[pos1] | t2[pos2] | t3[pos3];
+        pos0 = (pos0 + 1) % size0;
+        pos1 = (pos1 + 1) % size1;
+        pos2 = (pos2 + 1) % size2;
+        pos3 = (pos3 + 1) % size3;
+    }
+}
+
+void presieve_apply_neon(uint8_t* sieve, size_t sieve_bytes, uint64_t segment_low) {
+    if (!tables_initialized) return;
+
+    for (int group = 1; group < 4; group++) {
+        int base = group * 4;
+        if (base >= PRESIEVE_NUM_TABLES) break;
+
+        uint32_t pos0 = get_table_position(base + 0, segment_low);
+        uint32_t pos1 = get_table_position(base + 1, segment_low);
+        uint32_t pos2 = get_table_position(base + 2, segment_low);
+        uint32_t pos3 = get_table_position(base + 3, segment_low);
+
+        const uint8_t* t0 = presieve_tables[base + 0];
+        const uint8_t* t1 = presieve_tables[base + 1];
+        const uint8_t* t2 = presieve_tables[base + 2];
+        const uint8_t* t3 = presieve_tables[base + 3];
+
+        uint32_t size0 = presieve_info[base + 0].byte_size;
+        uint32_t size1 = presieve_info[base + 1].byte_size;
+        uint32_t size2 = presieve_info[base + 2].byte_size;
+        uint32_t size3 = presieve_info[base + 3].byte_size;
+
+        size_t i = 0;
+        for (; i + 16 <= sieve_bytes; i += 16) {
+            uint8x16_t v0 = load_cyclic_neon(t0, size0, &pos0);
+            uint8x16_t v1 = load_cyclic_neon(t1, size1, &pos1);
+            uint8x16_t v2 = load_cyclic_neon(t2, size2, &pos2);
+            uint8x16_t v3 = load_cyclic_neon(t3, size3, &pos3);
+
+            uint8x16_t existing = vld1q_u8(sieve + i);
+            uint8x16_t combined = vorrq_u8(vorrq_u8(v0, v1), vorrq_u8(v2, v3));
+            uint8x16_t result = vorrq_u8(existing, combined);
+            vst1q_u8(sieve + i, result);
+        }
+
+        for (; i < sieve_bytes; i++) {
+            sieve[i] |= t0[pos0] | t1[pos1] | t2[pos2] | t3[pos3];
+            pos0 = (pos0 + 1) % size0;
+            pos1 = (pos1 + 1) % size1;
+            pos2 = (pos2 + 1) % size2;
+            pos3 = (pos3 + 1) % size3;
+        }
+    }
+}
+
+#endif /* ARM NEON */
+
+/*============================================================================
  * Runtime Dispatch Functions
  *============================================================================*/
 
@@ -766,6 +895,12 @@ void presieve_init(uint8_t* sieve, size_t sieve_bytes, uint64_t segment_low) {
     }
 #endif
 
+#if defined(__aarch64__) || defined(__ARM_NEON)
+    /* NEON is always available on aarch64 — no feature check needed */
+    presieve_init_neon(sieve, sieve_bytes, segment_low);
+    return;
+#endif
+
     presieve_init_default(sieve, sieve_bytes, segment_low);
 }
 
@@ -791,6 +926,12 @@ void presieve_apply(uint8_t* sieve, size_t sieve_bytes, uint64_t segment_low) {
         presieve_apply_sse2(sieve, sieve_bytes, segment_low);
         return;
     }
+#endif
+
+#if defined(__aarch64__) || defined(__ARM_NEON)
+    /* NEON is always available on aarch64 — no feature check needed */
+    presieve_apply_neon(sieve, sieve_bytes, segment_low);
+    return;
 #endif
 
     presieve_apply_default(sieve, sieve_bytes, segment_low);

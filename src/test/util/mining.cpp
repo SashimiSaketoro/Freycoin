@@ -11,6 +11,7 @@
 #include <key_io.h>
 #include <node/context.h>
 #include <pow.h>
+#include <pow/pow_utils.h>
 #include <primitives/transaction.h>
 #include <test/util/script.h>
 #include <uint256.h>
@@ -67,8 +68,8 @@ bool FindValidPoW(CBlock& block, const Consensus::Params& params)
             mpz_set_ui(mpz_adder, adder);
             mpz_add(mpz_start, mpz_base, mpz_adder);
 
-            // Check if start is prime
-            if (mpz_probab_prime_p(mpz_start, 25) > 0) {
+            // Check if start is prime (deterministic BPSW)
+            if (freycoin_is_prime(mpz_start) > 0) {
                 // Found a prime! Set the adder in the block
                 block.nAdd.SetNull();
                 // Store adder in little-endian format using data() pointer

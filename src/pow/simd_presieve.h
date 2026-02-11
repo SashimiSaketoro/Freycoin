@@ -29,13 +29,15 @@
 
 #ifdef _WIN32
 #include <intrin.h>
-#else
+#elif defined(__x86_64__) || defined(__i386__)
 #include <cpuid.h>
 #endif
 
 /* Platform-specific SIMD headers */
 #if defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || defined(_M_IX86)
 #include <immintrin.h>
+#elif defined(__aarch64__) || defined(__ARM_NEON)
+#include <arm_neon.h>
 #endif
 
 /*============================================================================
@@ -156,6 +158,12 @@ void presieve_apply_avx2(uint8_t* sieve, size_t sieve_bytes, uint64_t segment_lo
 #if defined(__SSE2__) || defined(_M_X64) || defined(_M_IX86)
 void presieve_init_sse2(uint8_t* sieve, size_t sieve_bytes, uint64_t segment_low);
 void presieve_apply_sse2(uint8_t* sieve, size_t sieve_bytes, uint64_t segment_low);
+#endif
+
+/* ARM NEON implementations (16 bytes per iteration) */
+#if defined(__aarch64__) || defined(__ARM_NEON)
+void presieve_init_neon(uint8_t* sieve, size_t sieve_bytes, uint64_t segment_low);
+void presieve_apply_neon(uint8_t* sieve, size_t sieve_bytes, uint64_t segment_low);
 #endif
 
 /* Portable implementation (8 bytes per iteration) */

@@ -129,24 +129,36 @@ void CBlockIndex::BuildSkip()
  * Compute chain work for a block.
  *
  * For prime gap PoW, the expected work to find a gap with difficulty D is approximately e^D
- * where D is the merit (nDifficulty / 2^48). Since e^D grows extremely fast, we use
- * 2^(D * log2(e)) = 2^(D * 1.4427...) ≈ 2^(3*D/2) as an integer approximation.
+ * where D is the merit (nDifficulty / 2^48). We convert to base-2:
  *
- * This means each +1 increase in merit roughly triples the work (since 2^1.44 ≈ 2.7).
+ *   work = e^merit = 2^(merit * log2(e)) = 2^(merit * 1.4427...)
+ *
+ * Integer approximation using log2(e) * 2^16 = 94548:
+ *   shiftAmount = nDifficulty * 94548 / 2^64
+ *
+ * This gives correct exponential scaling:
+ *   merit 20 -> 2^29 (~500M work units)
+ *   merit 30 -> 2^43 (~8T work units)
+ *   merit 40 -> 2^58 work units
+ *
+ * Each +1 increase in merit multiplies work by ~2.72 (e), as expected.
  * The approximation preserves ordering: higher difficulty = more work.
  */
 arith_uint256 GetBlockProof(const CBlockIndex& block)
 {
-    // Convert fixed-point difficulty to approximate work
-    // nDifficulty is 2^48 fixed-point, so real merit = nDifficulty >> 48
-    // Work ≈ e^merit ≈ 2^(merit * 1.44) ≈ 2^(nDifficulty >> 47) for a rough approximation
+    // work ≈ 2^(merit * log2(e))
+    // merit = nDifficulty / 2^48
+    // shiftAmount = nDifficulty * log2(e) / 2^48
     //
-    // Use a shift that keeps values reasonable in 256 bits:
-    // merit 20 → 2^29 ≈ 500M work units
-    // merit 30 → 2^43 ≈ 8T work units
-    // merit 40 → 2^58 work units
-    uint64_t shiftAmount = block.nDifficulty >> 47;  // Roughly 1.5x the integer merit
-    if (shiftAmount > 250) shiftAmount = 250;  // Prevent overflow
+    // To stay in integer arithmetic:
+    //   log2(e) * 2^16 = 94548 (1.44269504... * 65536 = 94548.42..., truncated)
+    //   shiftAmount = (nDifficulty * 94548) >> 64
+    //
+    // Using 128-bit multiplication to avoid overflow:
+    uint64_t shiftAmount = static_cast<uint64_t>(
+        (static_cast<__uint128_t>(block.nDifficulty) * 94548) >> 64);
+
+    if (shiftAmount > 250) shiftAmount = 250;  // Prevent overflow of 256-bit value
 
     arith_uint256 work = arith_uint256(1) << static_cast<unsigned int>(shiftAmount);
     return work;

@@ -18,6 +18,9 @@
  * These tests verify the algorithm against attack scenarios and edge cases.
  */
 
+#include <chain.h>
+#include <chainparams.h>
+#include <pow.h>
 #include <pow/pow_utils.h>
 #include <pow/pow_common.h>
 #include <test/util/setup_common.h>
@@ -25,6 +28,9 @@
 #include <boost/test/unit_test.hpp>
 #include <cmath>
 #include <vector>
+
+#include <gmp.h>
+#include <mpfr.h>
 
 BOOST_FIXTURE_TEST_SUITE(difficulty_adjustment_tests, BasicTestingSetup)
 
@@ -454,6 +460,167 @@ BOOST_AUTO_TEST_CASE(adjustment_deterministic)
             BOOST_CHECK_EQUAL(next1, next2);
         }
     }
+}
+
+/*============================================================================
+ * Windowed GetNextWorkRequired tests
+ *
+ * These tests verify that the 174-block weighted moving average resists
+ * single-block timestamp manipulation attacks.
+ *============================================================================*/
+
+/** Helper: build a chain of CBlockIndex objects with given timespans. */
+static std::vector<CBlockIndex> BuildChain(int height, int64_t start_time,
+                                            int64_t spacing, uint64_t difficulty)
+{
+    std::vector<CBlockIndex> blocks(height + 1);
+    for (int i = 0; i <= height; i++) {
+        blocks[i].pprev = (i > 0) ? &blocks[i - 1] : nullptr;
+        blocks[i].nHeight = i;
+        blocks[i].nTime = static_cast<uint32_t>(start_time + i * spacing);
+        blocks[i].nDifficulty = difficulty;
+    }
+    return blocks;
+}
+
+BOOST_AUTO_TEST_CASE(windowed_on_target_stable)
+{
+    const auto chainParams = CreateChainParams(*m_node.args, ChainType::MAIN);
+    const auto& params = chainParams->GetConsensus();
+
+    // Build a chain of 200 blocks all at target spacing (150s)
+    uint64_t diff = 20 * TWO_POW48;
+    auto blocks = BuildChain(200, 1770668772, params.nPowTargetSpacing, diff);
+
+    uint64_t next = GetNextWorkRequired(&blocks[200], params);
+
+    // Should be very close to current difficulty (on-target)
+    double delta = std::abs(static_cast<double>(static_cast<int64_t>(next) - static_cast<int64_t>(diff))) / TWO_POW48;
+    BOOST_CHECK_MESSAGE(delta < 0.001,
+        "On-target windowed adjustment was " << delta << ", expected ~0");
+}
+
+BOOST_AUTO_TEST_CASE(windowed_resists_single_block_manipulation)
+{
+    const auto chainParams = CreateChainParams(*m_node.args, ChainType::MAIN);
+    const auto& params = chainParams->GetConsensus();
+
+    // Build a chain of 200 blocks at target spacing
+    uint64_t diff = 20 * TWO_POW48;
+    auto blocks = BuildChain(200, 1770668772, params.nPowTargetSpacing, diff);
+
+    // Save the normal next difficulty
+    uint64_t next_normal = GetNextWorkRequired(&blocks[200], params);
+
+    // Now manipulate the LAST block's timestamp to be 1 second after previous
+    // (timestamp manipulation attack)
+    blocks[200].nTime = blocks[199].nTime + 1;
+
+    uint64_t next_manipulated = GetNextWorkRequired(&blocks[200], params);
+
+    // With 174-block window, a single manipulated block should have minimal
+    // effect. The difference should be much less than with 1-block lookback.
+    double diff_normal = static_cast<double>(next_normal) / TWO_POW48;
+    double diff_manipulated = static_cast<double>(next_manipulated) / TWO_POW48;
+    double impact = std::abs(diff_manipulated - diff_normal);
+
+    // Impact should be tiny (< 0.02 merit) because 1 block out of 174 is ~0.6%
+    BOOST_CHECK_MESSAGE(impact < 0.02,
+        "Single block manipulation impact was " << impact << ", expected < 0.02");
+}
+
+BOOST_AUTO_TEST_CASE(windowed_responds_to_sustained_hashrate_change)
+{
+    const auto chainParams = CreateChainParams(*m_node.args, ChainType::MAIN);
+    const auto& params = chainParams->GetConsensus();
+
+    // Build a chain where blocks come at 75s (2x hashrate)
+    uint64_t diff = 20 * TWO_POW48;
+    auto blocks = BuildChain(200, 1770668772, 75, diff);
+
+    uint64_t next = GetNextWorkRequired(&blocks[200], params);
+
+    // With sustained fast blocks, difficulty should increase
+    BOOST_CHECK_GT(next, diff);
+}
+
+BOOST_AUTO_TEST_CASE(windowed_graceful_startup)
+{
+    const auto chainParams = CreateChainParams(*m_node.args, ChainType::MAIN);
+    const auto& params = chainParams->GetConsensus();
+
+    // Build a short chain (< 174 blocks) — should still work
+    uint64_t diff = 20 * TWO_POW48;
+    auto blocks = BuildChain(10, 1770668772, params.nPowTargetSpacing, diff);
+
+    uint64_t next = GetNextWorkRequired(&blocks[10], params);
+
+    // Should be close to original difficulty (all on-target)
+    double delta = std::abs(static_cast<double>(static_cast<int64_t>(next) - static_cast<int64_t>(diff))) / TWO_POW48;
+    BOOST_CHECK_MESSAGE(delta < 0.01,
+        "Short chain on-target adjustment was " << delta << ", expected ~0");
+}
+
+BOOST_AUTO_TEST_CASE(windowed_resists_oscillation_attack)
+{
+    const auto chainParams = CreateChainParams(*m_node.args, ChainType::MAIN);
+    const auto& params = chainParams->GetConsensus();
+
+    // Build a chain where timestamps alternate between 1s and 299s
+    // (average = 150s = on target, but trying to game the system)
+    uint64_t diff = 20 * TWO_POW48;
+    auto blocks = BuildChain(200, 1770668772, 150, diff);
+
+    // Override timestamps to alternate
+    for (int i = 1; i <= 200; i++) {
+        if (i % 2 == 1) {
+            blocks[i].nTime = blocks[i-1].nTime + 1;     // 1 second
+        } else {
+            blocks[i].nTime = blocks[i-1].nTime + 299;   // 299 seconds
+        }
+    }
+
+    uint64_t next = GetNextWorkRequired(&blocks[200], params);
+
+    // The weighted average should be close to target (150s), so difficulty
+    // should not deviate significantly
+    double final_diff = static_cast<double>(next) / TWO_POW48;
+    BOOST_CHECK_MESSAGE(std::abs(final_diff - 20.0) < 1.0,
+        "Oscillation attack result: " << final_diff << ", expected ~20.0");
+}
+
+/**
+ * Verify the hardcoded LOG_TARGET_SPACING_48 constant matches MPFR runtime computation.
+ *
+ * This ensures the constant in src/pow.cpp (1410368452711334) equals ln(150) * 2^48
+ * as computed by the local MPFR installation. If this test fails, the local MPFR
+ * disagrees with the consensus constant — investigate before deploying.
+ */
+BOOST_AUTO_TEST_CASE(log_target_spacing_constant_matches_mpfr)
+{
+    // Hardcoded value from src/pow.cpp
+    static constexpr uint64_t LOG_TARGET_SPACING_48 = 1410368452711334ULL;
+
+    // Compute ln(150) * 2^48 via MPFR at 256-bit precision
+    mpfr_t val, ln_val;
+    mpfr_init2(val, 256);
+    mpfr_init2(ln_val, 256);
+
+    mpfr_set_ui(val, 150, MPFR_RNDN);
+    mpfr_log(ln_val, val, MPFR_RNDN);
+    mpfr_mul_2exp(ln_val, ln_val, 48, MPFR_RNDN);
+
+    mpz_t result;
+    mpz_init(result);
+    mpfr_get_z(result, ln_val, MPFR_RNDN);
+
+    uint64_t runtime_value = mpz_get_ui(result);
+
+    mpz_clear(result);
+    mpfr_clear(val);
+    mpfr_clear(ln_val);
+
+    BOOST_CHECK_EQUAL(LOG_TARGET_SPACING_48, runtime_value);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -216,6 +216,7 @@ private:
     PoWProcessor* processor;
     MiningStats stats;
 
+    std::mutex pow_result_mutex;  // Protects set_adder+valid+process on shared current_pow
     std::mutex gap_mutex;
     uint64_t last_prime_offset;
     bool have_first_prime;
@@ -330,7 +331,7 @@ private:
     std::queue<std::shared_ptr<GPURequest>> gpu_request_queue;
     std::mutex gpu_queue_mutex;
     std::condition_variable gpu_queue_cv;
-    bool gpu_initialized{false};
+    std::atomic<bool> gpu_initialized{false};
 
     MiningTier detect_tier();
     void parallel_worker(uint32_t thread_id,

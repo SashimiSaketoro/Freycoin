@@ -53,9 +53,13 @@ typedef struct _cl_event*          cl_event;
 #define CL_DEVICE_TYPE_GPU          (1 << 2)
 #define CL_DEVICE_NAME              0x102B
 #define CL_DEVICE_GLOBAL_MEM_SIZE   0x101F
-#define CL_MEM_READ_ONLY            (1 << 2)
+#define CL_MEM_READ_WRITE            (1 << 0)
 #define CL_MEM_WRITE_ONLY           (1 << 1)
+#define CL_MEM_READ_ONLY            (1 << 2)
+#define CL_MEM_USE_HOST_PTR         (1 << 3)
+#define CL_MEM_ALLOC_HOST_PTR       (1 << 4)
 #define CL_MEM_COPY_HOST_PTR        (1 << 5)
+#define CL_DEVICE_HOST_UNIFIED_MEMORY 0x1035
 #define CL_PROGRAM_BUILD_LOG        0x1183
 #define CL_TRUE                     1
 #define CL_FALSE                    0

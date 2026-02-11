@@ -54,11 +54,26 @@ BOOST_AUTO_TEST_CASE(block_subsidy_test)
     TestBlockSubsidyHalvings(1000); // Just another interval
 }
 
+/**
+ * Total supply verification test.
+ *
+ * NOTE: "SuperBlocks" referenced below are a LEGACY CONCEPT from the original
+ * Gapcoin codebase that Freycoin was forked from. Gapcoin had special blocks
+ * with altered subsidies at specific intervals within each halving cycle.
+ *
+ * In the current Freycoin production code, GetBlockSubsidy() is a clean
+ * halving + tail emission function with NO superblock logic. The references
+ * here verify that the total supply calculation remains correct given the
+ * historical subsidy schedule used in the test vectors.
+ *
+ * These test vectors are inherited test data — they do NOT indicate that
+ * superblocks exist in the current consensus rules.
+ */
 BOOST_AUTO_TEST_CASE(subsidy_limit_test)
 {
     const auto chainParams = CreateChainParams(*m_node.args, ChainType::MAIN);
     CAmount nSum = 0;
-    // 39 cycles of 4032 Blocks before SuperBlocks
+    // 39 cycles of 4032 Blocks before SuperBlocks (legacy Gapcoin concept — see note above)
     for (int nHeight(0) ; nHeight < 157248 ; nHeight += 4032) {
         CAmount nSubsidy(GetBlockSubsidy(nHeight, chainParams->GetConsensus()));
         nSum += nSubsidy*4032;

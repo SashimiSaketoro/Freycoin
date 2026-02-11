@@ -174,16 +174,23 @@ enum class SIMDLevel {
 };
 
 /**
- * Utility macros for bit manipulation in 64-bit arrays
+ * Inline utilities for bit manipulation in 64-bit arrays and rounding.
+ * SECURITY: These replace generic #define macros (set_bit64, round_up, etc.)
+ * that polluted the global namespace and risked collisions with system headers.
  */
-#define set_bit64(ary, i) ((ary)[(i) >> 6] |= (1ULL << ((i) & 0x3f)))
-#define clear_bit64(ary, i) ((ary)[(i) >> 6] &= ~(1ULL << ((i) & 0x3f)))
-#define test_bit64(ary, i) (((ary)[(i) >> 6] & (1ULL << ((i) & 0x3f))) != 0)
-
-/**
- * Utility: round up to multiple
- */
-#define round_up(x, y) ((((x) + (y) - 1) / (y)) * (y))
+inline void freycoin_set_bit64(uint64_t* ary, uint64_t i) {
+    ary[i >> 6] |= (1ULL << (i & 0x3f));
+}
+inline void freycoin_clear_bit64(uint64_t* ary, uint64_t i) {
+    ary[i >> 6] &= ~(1ULL << (i & 0x3f));
+}
+inline bool freycoin_test_bit64(const uint64_t* ary, uint64_t i) {
+    return (ary[i >> 6] & (1ULL << (i & 0x3f))) != 0;
+}
+template<typename T>
+inline T freycoin_round_up(T x, T y) {
+    return (((x) + (y) - 1) / (y)) * (y);
+}
 
 /**
  * Convert uint256-like byte array to mpz_t (little-endian)
@@ -194,11 +201,22 @@ inline void ary_to_mpz(mpz_t result, const uint8_t* ary, size_t len) {
 
 /**
  * Convert mpz_t to byte array (little-endian)
- * Returns pointer to allocated buffer that caller must free
+ * Returns pointer to malloc'd buffer that caller must free().
+ *
+ * SECURITY: mpz_export() returns NULL when the value is zero.
+ * We handle that case explicitly to prevent NULL-pointer dereferences
+ * at every callsite (memcpy, SHA256::Write, vector::assign, free).
  */
 inline uint8_t* mpz_to_ary(mpz_t src, size_t* len) {
+    if (mpz_sgn(src) == 0) {
+        uint8_t* zero_buf = static_cast<uint8_t*>(malloc(1));
+        if (zero_buf) zero_buf[0] = 0;
+        if (len) *len = (zero_buf ? 1 : 0);
+        return zero_buf;
+    }
     size_t count;
-    uint8_t* result = static_cast<uint8_t*>(mpz_export(nullptr, &count, -1, sizeof(uint8_t), -1, 0, src));
+    uint8_t* result = static_cast<uint8_t*>(
+        mpz_export(nullptr, &count, -1, sizeof(uint8_t), -1, 0, src));
     if (len) *len = count;
     return result;
 }

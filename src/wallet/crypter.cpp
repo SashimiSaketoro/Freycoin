@@ -108,6 +108,22 @@ bool CCrypter::Decrypt(const std::span<const unsigned char> ciphertext, CKeyingM
     return true;
 }
 
+/**
+ * Encrypt a private key using AES-256-CBC.
+ *
+ * IV DERIVATION DESIGN (inherited from Bitcoin Core):
+ *   The IV (nIV) is the Hash(pubkey) of the corresponding public key. Each
+ *   private key is encrypted with a unique (master_key, IV) pair because each
+ *   public key hash is unique. This means no two encryptions share the same
+ *   (key, IV) combination, which is the AES-CBC security requirement.
+ *
+ *   The IV is deterministic (not random) by design — this enables decryption
+ *   without storing the IV separately. The public key is already stored
+ *   unencrypted in the wallet, so the IV can be rederived at decrypt time.
+ *
+ *   This is a well-analyzed Bitcoin Core design decision dating to the original
+ *   wallet encryption implementation.
+ */
 bool EncryptSecret(const CKeyingMaterial& vMasterKey, const CKeyingMaterial &vchPlaintext, const uint256& nIV, std::vector<unsigned char> &vchCiphertext)
 {
     CCrypter cKeyCrypter;

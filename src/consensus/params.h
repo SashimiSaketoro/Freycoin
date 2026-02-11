@@ -82,6 +82,12 @@ struct Params {
     /** Target block spacing in seconds */
     int64_t nPowTargetSpacing;
 
+    /** Difficulty adjustment window size (number of blocks).
+     *  The algorithm averages timespans over this many recent blocks
+     *  with linearly increasing weights (recent blocks weighted more).
+     *  174 blocks * 150s = 26100s ≈ 7.25 hours of smoothing. */
+    int nDifficultyWindow{174};
+
     std::chrono::seconds PowTargetSpacing() const
     {
         return std::chrono::seconds{nPowTargetSpacing};

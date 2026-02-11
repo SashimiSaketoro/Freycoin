@@ -10,21 +10,23 @@
  */
 
 #include <pow/pow.h>
+#include <pow/pow_utils.h>
 #include <cstdio>
 #include <cstring>
 #include <sstream>
 #include <iomanip>
 
 PoW::PoW(mpz_t hash, uint16_t shift, mpz_t adder, uint64_t difficulty, uint32_t nonce)
-    : nonce(nonce), shift(shift), target_difficulty(difficulty) {
+    : nonce(nonce), shift(shift), target_difficulty(difficulty),
+      utils(std::make_unique<PoWUtils>()) {
     mpz_init_set(mpz_hash, hash);
     mpz_init_set(mpz_adder, adder);
-    utils = new PoWUtils();
 }
 
 PoW::PoW(const std::vector<uint8_t>& hash, uint16_t shift,
          const std::vector<uint8_t>& adder, uint64_t difficulty, uint32_t nonce)
-    : nonce(nonce), shift(shift), target_difficulty(difficulty) {
+    : nonce(nonce), shift(shift), target_difficulty(difficulty),
+      utils(std::make_unique<PoWUtils>()) {
     mpz_init(mpz_hash);
     mpz_init(mpz_adder);
 
@@ -34,14 +36,12 @@ PoW::PoW(const std::vector<uint8_t>& hash, uint16_t shift,
     if (!adder.empty()) {
         ary_to_mpz(mpz_adder, adder.data(), adder.size());
     }
-
-    utils = new PoWUtils();
 }
 
 PoW::~PoW() {
     mpz_clear(mpz_hash);
     mpz_clear(mpz_adder);
-    delete utils;
+    // utils is automatically destroyed by unique_ptr
 }
 
 bool PoW::get_end_points(mpz_t mpz_start, mpz_t mpz_end) {
@@ -67,13 +67,13 @@ bool PoW::get_end_points(mpz_t mpz_start, mpz_t mpz_end) {
     mpz_mul_2exp(mpz_start, mpz_start, shift);
     mpz_add(mpz_start, mpz_start, mpz_adder);
 
-    // Verify start is prime (BPSW + 25 Miller-Rabin rounds)
-    if (mpz_probab_prime_p(mpz_start, 25) == 0) {
+    // Verify start is prime (deterministic BPSW — version-independent)
+    if (freycoin_is_prime(mpz_start) == 0) {
         return false;
     }
 
-    // Find next prime
-    mpz_nextprime(mpz_end, mpz_start);
+    // Find next prime (deterministic — version-independent)
+    freycoin_nextprime(mpz_end, mpz_start);
 
     return true;
 }
@@ -189,14 +189,20 @@ void PoW::set_adder(const std::vector<uint8_t>& adder) {
 std::string PoW::to_string() {
     std::ostringstream oss;
 
-    char* hash_str = mpz_get_str(nullptr, 16, mpz_hash);
-    char* adder_str = mpz_get_str(nullptr, 16, mpz_adder);
+    // SECURITY: mpz_get_str(nullptr, ...) returns a malloc'd string that can
+    // be NULL on allocation failure.  Use pre-allocated buffers instead.
+    size_t hash_digits = mpz_sizeinbase(mpz_hash, 16) + 2;
+    size_t adder_digits = mpz_sizeinbase(mpz_adder, 16) + 2;
+    std::vector<char> hash_buf(hash_digits);
+    std::vector<char> adder_buf(adder_digits);
+    mpz_get_str(hash_buf.data(), 16, mpz_hash);
+    mpz_get_str(adder_buf.data(), 16, mpz_adder);
 
     oss << "PoW{"
         << "nonce=" << nonce
         << ", shift=" << shift
-        << ", hash=0x" << hash_str
-        << ", adder=0x" << adder_str
+        << ", hash=0x" << hash_buf.data()
+        << ", adder=0x" << adder_buf.data()
         << ", target=" << std::fixed << std::setprecision(6)
         << PoWUtils::get_readable_difficulty(target_difficulty)
         << ", achieved=" << std::fixed << std::setprecision(6)
@@ -204,9 +210,6 @@ std::string PoW::to_string() {
         << ", gap=" << gap_len()
         << ", valid=" << (valid() ? "true" : "false")
         << "}";
-
-    free(hash_str);
-    free(adder_str);
 
     return oss.str();
 }

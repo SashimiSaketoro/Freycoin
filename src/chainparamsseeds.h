@@ -7,6 +7,10 @@
  * Seeds will be added after testnet/mainnet infrastructure is deployed.
  */
 
+// LAUNCH-BLOCKER: Replace these dummy arrays with real seed node IP addresses
+// before mainnet/testnet launch. Use contrib/seeds/generate-seeds.py to produce
+// the encoded seed data from a list of reachable node IPs.
+
 // Mainnet seeds - empty for new chain (dummy byte for MSVC compatibility)
 static const uint8_t chainparams_seed_main[] = {0x00};
 

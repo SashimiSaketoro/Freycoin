@@ -39,7 +39,7 @@ static inline bool is_coprime_2310(uint64_t n) {
 
 CombinedSegmentedSieve::CombinedSegmentedSieve(uint64_t n_primes, uint64_t total_sieve_size) {
     this->n_primes = n_primes;
-    this->total_size = round_up(total_sieve_size, SEGMENT_SIZE_BITS);
+    this->total_size = freycoin_round_up(total_sieve_size, (uint64_t)SEGMENT_SIZE_BITS);
     this->total_segments = this->total_size / SEGMENT_SIZE_BITS;
     this->current_segment = 0;
 
@@ -111,15 +111,15 @@ CombinedSegmentedSieve::~CombinedSegmentedSieve() {
 void CombinedSegmentedSieve::init_primes(uint64_t n) {
     // Upper bound for nth prime: p_n < n * (ln(n) + ln(ln(n))) for n >= 6
     uint64_t limit = static_cast<uint64_t>(n * (std::log(n) + std::log(std::log(n)))) + 100;
-    limit = round_up(limit, 64);
+    limit = freycoin_round_up(limit, (uint64_t)64);
 
     uint64_t* sieve_buf = static_cast<uint64_t*>(std::calloc(limit / 64 + 1, sizeof(uint64_t)));
     uint64_t sqrt_limit = static_cast<uint64_t>(std::sqrt(static_cast<double>(limit))) + 1;
 
     for (uint64_t i = 3; i <= sqrt_limit; i += 2) {
-        if (!test_bit64(sieve_buf, i >> 1)) {
+        if (!freycoin_test_bit64(sieve_buf, i >> 1)) {
             for (uint64_t j = i * i; j < limit; j += i * 2) {
-                set_bit64(sieve_buf, j >> 1);
+                freycoin_set_bit64(sieve_buf, j >> 1);
             }
         }
     }
@@ -127,7 +127,7 @@ void CombinedSegmentedSieve::init_primes(uint64_t n) {
     primes[0] = 2;
     uint64_t count = 1;
     for (uint64_t i = 3; count < n && i < limit; i += 2) {
-        if (!test_bit64(sieve_buf, i >> 1)) {
+        if (!freycoin_test_bit64(sieve_buf, i >> 1)) {
             primes[count] = i;
             count++;
         }
@@ -263,7 +263,7 @@ void CombinedSegmentedSieve::sieve_small_primes_combined() {
             uint64_t* seg = intervals[k].segment;
             uint32_t pos = start;
             for (; pos < SEGMENT_SIZE_BITS; pos += p) {
-                set_bit64(seg, pos);
+                freycoin_set_bit64(seg, pos);
             }
 
             // Save starting position for next segment
@@ -283,7 +283,7 @@ void CombinedSegmentedSieve::process_buckets_combined() {
         uint32_t pos = entry.next_hit;
 
         if (pos < SEGMENT_SIZE_BITS) {
-            set_bit64(intervals[k].segment, pos);
+            freycoin_set_bit64(intervals[k].segment, pos);
         }
 
         uint32_t next = pos + p;
@@ -347,7 +347,7 @@ void CombinedSegmentedSieve::get_candidates(int k, std::vector<uint64_t>& candid
     uint64_t seg_start = (current_segment > 0) ? (current_segment - 1) * SEGMENT_SIZE_BITS : 0;
 
     for (uint64_t bit = 0; bit < SEGMENT_SIZE_BITS; bit++) {
-        if (!test_bit64(intervals[k].segment, bit)) {
+        if (!freycoin_test_bit64(intervals[k].segment, bit)) {
             uint64_t integer_offset = 2 * (seg_start + bit) + 1;
             uint64_t pos_mod = (intervals[k].base_mod + integer_offset) % 2310;
             if (is_coprime_2310(pos_mod)) {

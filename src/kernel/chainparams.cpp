@@ -92,6 +92,7 @@ public:
         // Prime gap PoW parameters
         consensus.nDifficultyMin = MIN_DIFFICULTY;
         consensus.nPowTargetSpacing = 150; // 2.5 minutes
+        consensus.nDifficultyWindow = 174; // ~7.25 hours of smoothing
         consensus.fPowNoRetargeting = false;
 
         // BIP9 deployments
@@ -102,7 +103,10 @@ public:
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].threshold = 3024; // 75%
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].period = 4032;
 
-        consensus.nMinimumChainWork = uint256{}; // Will be set after mainnet launch
+        // LAUNCH-BLOCKER: Set to real chain work value before production launch!
+        // With uint256{} (zero), nodes accept any chain during IBD, enabling long-range attacks.
+        // After launch, checkpoint: consensus.nMinimumChainWork = uint256{"0x<hex_of_accumulated_work>"};
+        consensus.nMinimumChainWork = uint256{};
 
         // Network message magic (Freycoin mainnet)
         pchMessageStart[0] = 0xf7;
@@ -118,6 +122,10 @@ public:
         const char* pszTimestamp = "Jonnie Frey (1989-2017) proved PoW can advance human knowledge";
         const CScript genesisOutputScript = CScript() << OP_RETURN; // Unspendable
 
+        // LAUNCH-BLOCKER: Genesis block must be properly mined before mainnet launch!
+        // Currently nNonce=0 and nShift=14 (minimum) — these are placeholders.
+        // Steps: (1) mine the genesis block, (2) update nNonce/nShift/nAdd with
+        // the mined values, (3) update the hash assertions below.
         genesis = CreateGenesisBlock(
             pszTimestamp,
             genesisOutputScript,
@@ -130,6 +138,7 @@ public:
             0                 // No coinbase reward for genesis
         );
 
+        // LAUNCH-BLOCKER: Update these hashes after mining the genesis block.
         consensus.hashGenesisBlock = genesis.GetHash();
         assert(consensus.hashGenesisBlock == uint256{"4475b999b591b660d891ca240451bfd6519e716ac2547133d464ab749a6c27fe"});
         assert(genesis.hashMerkleRoot == uint256{"87925d0a69a0e00b2aab9512c4771fad6d918d370bf8bab5fd951789b20ddd29"});
@@ -142,7 +151,10 @@ public:
         vSeeds.emplace_back("seed1.freycoin.tech");
         vSeeds.emplace_back("seed2.freycoin.tech");
         vSeeds.emplace_back("seed3.freycoin.tech");
-        vFixedSeeds.clear();  // Until VPS IPs are hardcoded
+        // LAUNCH-BLOCKER: Populate vFixedSeeds with real node IPs before launch.
+        // DNS seeds above will fail if freycoin.tech DNS is not configured.
+        // Without fixed seeds OR working DNS seeds, the network cannot bootstrap.
+        vFixedSeeds.clear();
 
         fDefaultConsistencyChecks = false;
         m_is_mockable_chain = false;
@@ -171,6 +183,7 @@ public:
         // Prime gap PoW parameters - merit ~1 minimum for practical CPU testnet mining
         consensus.nDifficultyMin = 1ULL << 48;
         consensus.nPowTargetSpacing = 150; // 2.5 minutes
+        consensus.nDifficultyWindow = 174; // Same window as mainnet
         consensus.fPowNoRetargeting = false;
 
         // BIP9 deployments
@@ -181,6 +194,7 @@ public:
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].threshold = 1512; // 75%
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].period = 2016;
 
+        // LAUNCH-BLOCKER: Set to real chain work value before testnet goes live.
         consensus.nMinimumChainWork = uint256{};
 
         // Network message magic (Freycoin testnet)
@@ -213,6 +227,7 @@ public:
         assert(consensus.hashGenesisBlock == uint256{"6716f28b571cf6b4f40ab00d454bae73cf7c30270197fed22369fccb762027eb"});
         assert(genesis.hashMerkleRoot == uint256{"3d88cf475c00c0a831fb98c7816aa8ad8dae0edcaca6d012cbb4cef3bc6402d5"});
 
+        // LAUNCH-BLOCKER: Populate vFixedSeeds and verify DNS seeds before testnet launch.
         vFixedSeeds.clear();
         vSeeds.clear();
         vSeeds.emplace_back("testseed1.freycoin.tech");
@@ -253,6 +268,7 @@ public:
         // Merit ~1 means any gap is acceptable
         consensus.nDifficultyMin = 1ULL << 48;
         consensus.nPowTargetSpacing = 150;
+        consensus.nDifficultyWindow = 174; // Same as mainnet (unused since fPowNoRetargeting=true)
         consensus.fPowNoRetargeting = true; // No difficulty adjustment
 
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].bit = 28;

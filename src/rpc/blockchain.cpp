@@ -33,6 +33,7 @@
 #include <node/transaction.h>
 #include <node/utxo_snapshot.h>
 #include <pow.h>
+#include <pow/pow_utils.h>
 #include <node/warnings.h>
 #include <primitives/transaction.h>
 #include <rpc/server.h>
@@ -123,7 +124,7 @@ double ComputeRealMerit(const CBlockIndex& blockindex)
     mpz_mul_2exp(mpz_start, mpz_hash, blockindex.nShift);
     mpz_import(mpz_adder, 32, -1, 1, -1, 0, blockindex.nAdd.data());
     mpz_add(mpz_start, mpz_start, mpz_adder);
-    mpz_nextprime(mpz_end, mpz_start);
+    freycoin_nextprime(mpz_end, mpz_start);
     mpz_sub(mpz_gap, mpz_end, mpz_start);
     uint64_t gap_size = mpz_get_ui(mpz_gap);
 
@@ -187,13 +188,15 @@ static const CBlockIndex* ParseHashOrHeight(const UniValue& param, ChainstateMan
     }
 }
 
-/** Convert mpz_t to hex string */
+/** Convert mpz_t to hex string.
+ *  SECURITY: Uses pre-allocated buffer instead of mpz_get_str(nullptr, ...)
+ *  which returns a malloc'd pointer that can be NULL on allocation failure. */
 static std::string MpzToHex(const mpz_t n)
 {
-    char* str = mpz_get_str(nullptr, 16, n);
-    std::string result(str);
-    free(str);
-    return result;
+    size_t digits = mpz_sizeinbase(n, 16) + 2;
+    std::vector<char> buf(digits);
+    mpz_get_str(buf.data(), 16, n);
+    return std::string(buf.data());
 }
 
 /** Compute prime gap data for a block (start prime, end prime, gap) */
@@ -223,8 +226,8 @@ static void ComputePrimeGapData(const CBlockIndex& blockindex, UniValue& result)
     mpz_import(mpz_adder, 32, -1, 1, -1, 0, blockindex.nAdd.data());
     mpz_add(mpz_start, mpz_start, mpz_adder);
 
-    // Find next prime after start
-    mpz_nextprime(mpz_end, mpz_start);
+    // Find next prime after start (deterministic — version-independent)
+    freycoin_nextprime(mpz_end, mpz_start);
 
     // Compute gap = end - start
     mpz_sub(mpz_gap, mpz_end, mpz_start);
@@ -1440,7 +1443,7 @@ static RPCHelpMan getresult()
         mpz_mul_2exp(mpz_start, mpz_hash, pblockindex->nShift);
         mpz_import(mpz_adder, 32, -1, 1, -1, 0, pblockindex->nAdd.data());
         mpz_add(mpz_start, mpz_start, mpz_adder);
-        mpz_nextprime(mpz_end, mpz_start);
+        freycoin_nextprime(mpz_end, mpz_start);
         mpz_sub(mpz_gap, mpz_end, mpz_start);
         gap_size = mpz_get_ui(mpz_gap);
         mpz_clear(mpz_hash); mpz_clear(mpz_start); mpz_clear(mpz_adder);
